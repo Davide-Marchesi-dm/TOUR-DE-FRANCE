@@ -765,7 +765,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 # ==========================================
 # 6. MENU LATERALE (SIDEBAR)
 # ==========================================
-with st.sidebar:
+#with st.sidebar:
     st.title("≡ Filtri globali")
     st.selectbox("Seleziona Nazionalità:", ["Tutte", "Italia", "Francia", "Spagna"])
     st.checkbox("Mostra solo i team World Tour")
