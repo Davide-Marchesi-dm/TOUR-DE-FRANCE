@@ -23,8 +23,7 @@ def load_all_datasets():
     url_tour_w = "https://docs.google.com/spreadsheets/d/1GrXwBG2Cda93AvOsWa-oDT19gwWCaF-2/export?format=xlsx"
     
     # 1. NUOVO LINK GOOGLE DRIVE PER LE COORDINATE
-    # Sostituisci la stringa sotto con l'ID del tuo file
-    url_coords = "https://docs.google.com/spreadsheets/d/1iSU9_d7SIO1h-RvcWDICO5PTtLFZj5z4/export?format=xlsx"
+    url_coords = "https://docs.google.com/spreadsheets/d/1dDokNRT4pKzvXSA4BcL4nUKIG1owMQBA/export?format=xlsx"
     # Caricamento file esistenti
     try:
         df_storico = pd.read_excel(url_storico, engine="openpyxl")
