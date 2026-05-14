@@ -1,16 +1,18 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+import plotly.express as px
+import plotly.graph_objects as go
+from geopy.geocoders import Nominatim
+from geopy.extra.rate_limiter import RateLimiter
+import time
+
+# 1. Configurazione della pagina
+st.set_page_config(layout="wide", page_title="App Tour de France")
 
 
 # ==========================================
-# FUNZIONE PER CARICARE I DATI
-# ==========================================
-# ==========================================
-# FUNZIONE PER CARICARE I DATI (3 LINK)
-# ==========================================
-# ==========================================
-# FUNZIONE PER CARICARE I DATI (LINK CORRETTI)
+# FUNZIONE PER CARICARE I DATI 
 # ==========================================
 @st.cache_data
 def load_all_datasets():
@@ -43,7 +45,6 @@ def load_all_datasets():
 # 1. Carichiamo i tre dataframe (CHIAMATA UNICA)
 df_storico, df_stage_h, df_tour_w = load_all_datasets()
 
-# 2. RIMUOVI la riga "df_storico = load_data()" perché è un doppione che causa l'errore!
 # 1. Configurazione della pagina
 st.set_page_config(layout="wide", page_title="App Tour de France")
 
@@ -658,9 +659,6 @@ elif st.session_state.pagina_corrente == "corridori":
             st.markdown("<br>", unsafe_allow_html=True)
         
         # ==========================================
-        # 5. CARRIERA COMPLETA IN FONDO (Larghezza intera)
-        # ==========================================
-        # ==========================================
         # 5. CARRIERA COMPLETA E CONFRONTO (Grafico Interattivo)
         # ==========================================
         st.markdown("<hr style='border: 1px dashed #ccc; margin-top: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
@@ -740,21 +738,161 @@ elif st.session_state.pagina_corrente == "corridori":
 
 
 elif st.session_state.pagina_corrente == "tappe":
+    # --- PREPARAZIONE DATI ---
+    df_stage_h['Year'] = df_stage_h['Year'].fillna(0).astype(int)
+
     st.title("🗺️ Tappe del Tour")
-    st.write("Pagina in costruzione...")
-    
-    st.markdown("<p style='font-weight: bold; color: #333;'>L'evoluzione della Velocità Media (Storico)</p>", unsafe_allow_html=True)
+
+    # ==========================================
+    # 1. STORICO: VELOCITÀ MEDIA
+    # ==========================================
+    st.markdown("<p style='font-weight: bold; color: #333; font-size: 1.2rem;'>L'evoluzione della Velocità Media (Storico)</p>", unsafe_allow_html=True)
+
     df_vincitori = df_storico[(df_storico['Rank'] == 1) | (df_storico['Rank'] == '1')].copy()
-            
-            # Filtro globale per eliminare gli anni con dati difettosi sul tempo
     df_vincitori = df_vincitori[df_vincitori['TotalSeconds'].notna()]
     df_vincitori = df_vincitori[df_vincitori['TotalSeconds'] > 0]
-            
+
     df_vincitori['Velocità Media (km/h)'] = df_vincitori['Distance (km)'] / (df_vincitori['TotalSeconds'] / 3600)
-    df_vincitori.set_index('Year', inplace=True)
-    df_vincitori.sort_index(inplace=True)
+    df_vincitori_chart = df_vincitori[['Year', 'Velocità Media (km/h)']].set_index('Year').sort_index()
+
+    st.line_chart(df_vincitori_chart['Velocità Media (km/h)'])
+
+    # ==========================================
+    # 2. STORICO: DISTANZA TOTALE E MEDIA NEL TEMPO
+    # ==========================================
+    col_dist1, col_dist2 = st.columns(2)
+
+    with col_dist1:
+        st.markdown("<p style='font-weight: bold; color: #333; font-size: 1.2rem;'>Distanza Totale (Storico)</p>", unsafe_allow_html=True)
+        df_distanza = df_stage_h.groupby('Year')['TotalTDFDistance'].max().reset_index()
+        df_distanza = df_distanza[df_distanza['Year'] > 0] 
+        
+        fig_dist = px.line(df_distanza, x='Year', y='TotalTDFDistance', 
+                           labels={'TotalTDFDistance': 'Distanza Totale (km)', 'Year': 'Anno'},
+                           markers=True)
+        fig_dist.update_traces(line_color='#FFCC00', line_width=3, marker=dict(size=4, color='white'))
+        fig_dist.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", height=350, margin=dict(l=0, r=0, t=30, b=0))
+        st.plotly_chart(fig_dist, use_container_width=True)
+
+    with col_dist2:
+        st.markdown("<p style='font-weight: bold; color: #333; font-size: 1.2rem;'>Intensità: Km Medi per Tappa</p>", unsafe_allow_html=True)
+        df_dist_avg = df_stage_h.groupby('Year').agg({'TotalTDFDistance': 'max', 'Stages': 'count'}).reset_index()
+        df_dist_avg = df_dist_avg[df_dist_avg['Year'] > 0]
+        df_dist_avg['Distanza_Media_Tappa'] = df_dist_avg['TotalTDFDistance'] / df_dist_avg['Stages']
+        
+        fig_avg_dist = px.area(df_dist_avg, x='Year', y='Distanza_Media_Tappa',
+                               labels={'Distanza_Media_Tappa': 'Km Medi / Tappa', 'Year': 'Anno'})
+        fig_avg_dist.update_traces(line_color='#FF6666', fillcolor='rgba(255, 102, 102, 0.3)')
+        fig_avg_dist.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", height=350, margin=dict(l=0, r=0, t=30, b=0))
+        st.plotly_chart(fig_avg_dist, use_container_width=True)
+
+    st.markdown("<hr style='border: 1px solid #FFCC00; margin-top: 30px; margin-bottom: 30px;'>", unsafe_allow_html=True)
+
+    # ==========================================
+    # 3. DETTAGLIO TAPPE E LEADERBOARD EDIZIONE
+    # ==========================================
+    st.markdown("### 📅 Dettaglio Percorso e Leaderboard")
+
+    lista_anni = sorted(df_stage_h['Year'].unique(), reverse=True)
+    lista_anni = [anno for anno in lista_anni if anno > 0]
+    anno_scelto = st.selectbox("Seleziona un'edizione per vedere i dettagli:", lista_anni)
+
+    df_anno = df_stage_h[df_stage_h['Year'] == anno_scelto].sort_values('Stages').copy()
+
+    if not df_anno.empty:
+        # --- PREPARAZIONE METRICHE AVANZATE ---
+        distanza_tot = df_anno['TotalTDFDistance'].iloc[0] if 'TotalTDFDistance' in df_anno.columns else "N/D"
+        num_tappe = len(df_anno)
+        
+        # Pulizia nomi vincitori e Team
+        df_anno['Vincitore_Clean'] = df_anno['Winner of stage'].apply(
+            lambda x: str(x).split('(')[0].strip() if pd.notnull(x) else "N/D"
+        )
+        df_anno['Team'] = df_anno['Winner of stage'].str.extract(r'\((.*?)\)')
+        df_anno['Team'] = df_anno['Team'].fillna('Indipendente/Sconosciuto')
+
+        vittorie_count = df_anno['Vincitore_Clean'].value_counts()
+        top_rider = vittorie_count.index[0] if not vittorie_count.empty and vittorie_count.index[0] != "N/D" else "N/D"
+        n_vittorie = vittorie_count.iloc[0] if not vittorie_count.empty else 0
+
+        vincitore_finale = "N/D"
+        cambi_maglia = "N/D"
+        colonna_leader = 'Leader' # Assicurati che si chiami così nel tuo dataset
+        
+        if colonna_leader in df_anno.columns:
+            leader_validi = df_anno[colonna_leader].dropna()
+            if not leader_validi.empty:
+                vincitore_finale = leader_validi.iloc[-1]
+                cambi_maglia = (df_anno[colonna_leader] != df_anno[colonna_leader].shift()).sum() - 1
+                cambi_maglia = max(0, cambi_maglia)
+
+        # --- VISUALIZZAZIONE KPI ---
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Distanza Totale", f"{distanza_tot} km")
+        m2.metric("Vincitore Finale", vincitore_finale)
+        m3.metric("Cannibale (Vittorie)", top_rider, f"{n_vittorie} tappe")
+        m4.metric("Cambi Maglia Gialla", cambi_maglia)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # --- TIMELINE MAGLIA GIALLA ---
+        if colonna_leader in df_anno.columns and not leader_validi.empty:
+            st.markdown(f"**🎽 Evoluzione della Leadership nel {anno_scelto}**")
+            fig_leader = px.line(df_anno.dropna(subset=[colonna_leader]), x='Stages', y=colonna_leader, markers=True)
+            fig_leader.update_traces(line_shape='hv', line_color='#FFCC00', marker=dict(size=8, color='black'))
+            fig_leader.update_layout(xaxis_title="Tappa", yaxis_title="", height=300, 
+                                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=10, b=0))
+            st.plotly_chart(fig_leader, use_container_width=True)
+
+        # ==========================================
+        # 4. DASHBOARD MULTI-LEADER (DISTRIBUZIONE MAGLIE)
+        # ==========================================
+        # Personalizza i nomi di queste colonne in base a come sono scritte nel tuo CSV/Excel
+        col_gialla = 'Leader'
+        col_verde = 'Green' # Inserisci il nome reale
+        col_pois = 'Polka'  # Inserisci il nome reale
+        col_bianca = 'White'# Inserisci il nome reale
+
+        # Controlliamo se almeno alcune di queste maglie sono presenti nel dataset
+        maglie_presenti = [col for col in [col_gialla, col_verde, col_pois, col_bianca] if col in df_anno.columns]
+        
+        if len(maglie_presenti) > 1:
+            st.markdown("### 👕 I detentori delle Maglie tappa per tappa")
+            # Mostriamo una tabella focalizzata solo sulle maglie per un confronto rapido
+            df_maglie = df_anno[['Stages'] + maglie_presenti].copy()
+            st.dataframe(df_maglie, use_container_width=True, hide_index=True)
             
-    st.line_chart(df_vincitori['Velocità Media (km/h)'])
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # --- GRAFICI SECONDARI E TABELLA AFFIANCATI ---
+        col_chart1, col_chart2, col_table = st.columns([1, 1, 1.5], gap="medium")
+
+        with col_chart1:
+            st.markdown("**Plurivincitori**")
+            df_top10 = vittorie_count.reset_index()
+            df_top10.columns = ['Atleta', 'Vittorie']
+            df_top10 = df_top10[df_top10['Atleta'] != 'N/D'].head(8) 
+            
+            fig_vittorie = px.bar(df_top10, y='Atleta', x='Vittorie', orientation='h', color_discrete_sequence=['#FFCC00'])
+            fig_vittorie.update_layout(yaxis={'categoryorder':'total ascending', 'title':''}, xaxis={'title': 'Vittorie'},
+                                       height=350, margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig_vittorie, use_container_width=True)
+
+        with col_chart2:
+            st.markdown("**Dominanza Squadre**")
+            team_counts = df_anno['Team'].value_counts().reset_index()
+            team_counts.columns = ['Team', 'Vittorie']
+            team_counts = team_counts[team_counts['Team'] != 'Indipendente/Sconosciuto'].head(10)
+            
+            fig_team = px.treemap(team_counts, path=['Team'], values='Vittorie', color='Vittorie', color_continuous_scale='Blues')
+            fig_team.update_layout(height=350, margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig_team, use_container_width=True)
+
+        with col_table:
+            st.markdown("**Dettaglio Percorso**")
+            cols_to_show = ['Stages', 'Start', 'End', 'Vincitore_Clean']
+            df_display = df_anno[cols_to_show].copy()
+            st.dataframe(df_display, use_container_width=True, hide_index=True, height=350)
 
 elif st.session_state.pagina_corrente == "teams":
     st.title("👥 Squadre Partecipanti")
