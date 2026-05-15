@@ -869,8 +869,32 @@ elif st.session_state.pagina_corrente == "tappe":
     # 🎛️ CONTROLLO GLOBALE: SLIDER ANNI
     # ==========================================
     
+   # 1. Aggiungiamo il CSS per lo sfondo nero e il testo dello slider bianco
+    st.markdown(
+        """
+        <style>
+        [data-testid="stSlider"] {
+            background-color: #000000;
+            padding: 15px 20px;
+            border-radius: 8px;
+        }
+        [data-testid="stWidgetLabel"] p {
+            color: #ffffff !important;
+        }
+        [data-testid="stSliderTickBarMin"], 
+        [data-testid="stSliderTickBarMax"], 
+        div[data-testid="stSlider"] div {
+            color: #ffffff !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # 2. Il tuo markdown: ho cambiato 'color: black' in 'color: white'
     st.markdown("<p style='font-weight: bold; color: black; font-family: sans-serif; font-size: 1.2rem;'>Esplora i Dati Storici</p>", unsafe_allow_html=True)
-    
+
+    # 3. La tua logica per i dati storici (invariata)
     anno_min_assoluto = int(df_stage_h[df_stage_h['Year'] > 0]['Year'].min())
     anno_max_assoluto = int(df_stage_h['Year'].max())
 
@@ -881,7 +905,7 @@ elif st.session_state.pagina_corrente == "tappe":
         value=(anno_min_assoluto, anno_max_assoluto), 
         step=1
     )
-    
+
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ==========================================
