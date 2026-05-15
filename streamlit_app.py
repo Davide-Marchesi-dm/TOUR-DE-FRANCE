@@ -432,9 +432,23 @@ elif st.session_state.pagina_corrente == "classifica":
                 # 3. Impostiamo questa nuova colonna come indice per il grafico
                 df_top10.set_index('Rider_Label', inplace=True)
                 
-                # Ora il grafico li ordinerà da 01° a 10° usando la colonna in minuti
-                # AGGIUNTA: color="#FFCC00" per fare le barre gialle!
-                st.bar_chart(df_top10['Gap (Minuti)'].fillna(0), color="#FFCC00")
+                # Convertiamo in Altair per forzare lo sfondo nero e i testi bianchi
+                df_bar_chart = df_top10.reset_index()
+                grafico_barre = alt.Chart(df_bar_chart).mark_bar(color="#FFCC00").encode(
+                    x=alt.X('Rider_Label:N', sort=None, title='', axis=alt.Axis(labelAngle=-45)),
+                    y=alt.Y('Gap (Minuti):Q', title='Gap (Minuti)')
+                ).configure(
+                    background='black',
+                    view=alt.ViewConfig(stroke='transparent'),
+                    axis=alt.AxisConfig(
+                        labelColor='white', 
+                        titleColor='white', 
+                        gridColor='#333333', 
+                        domainColor='#333333', 
+                        tickColor='white'
+                    )
+                )
+                st.altair_chart(grafico_barre, use_container_width=True, theme=None)
             else:
                 st.info("ℹ️ I dati sui distacchi cronometrici non sono disponibili per questa edizione.")
         with col_stat2:
@@ -516,11 +530,21 @@ elif st.session_state.pagina_corrente == "classifica":
                 x='Year:Q'
             )
             
-            # 6. Sovrapposizione finale
-            grafico_completo = alt.layer(linea_storico, punti_storico, linea_vert_rossa, punto_rosso).configure_view(strokeWidth=0)
+            # 6. Sovrapposizione finale con aggiunta del tema nero
+            grafico_completo = alt.layer(linea_storico, punti_storico, linea_vert_rossa, punto_rosso).configure(
+                background='black', 
+                view=alt.ViewConfig(stroke='transparent'), 
+                axis=alt.AxisConfig(
+                    labelColor='white', 
+                    titleColor='white', 
+                    gridColor='#333333', 
+                    domainColor='#333333', 
+                    tickColor='white' 
+                )
+            )
             
-            # Mostriamo il grafico
-            st.altair_chart(grafico_completo, use_container_width=True)
+            # Mostriamo il grafico usando theme=None per bloccare il tema chiaro di Streamlit
+            st.altair_chart(grafico_completo, use_container_width=True, theme=None)
         st.markdown("<hr style='border: 1px dashed #ccc; margin-top: 10px; margin-bottom: 20px;'>", unsafe_allow_html=True)
         
         c_met1, c_met2, c_met3 = st.columns(3)
@@ -533,7 +557,6 @@ elif st.session_state.pagina_corrente == "classifica":
             c_met3.metric("Velocità Media Vincitore", f"{vel_media:.1f} km/h")
         else:
             c_met3.metric("Velocità Media Vincitore", "N/D")
-
         # ==========================================
         # 5. TABELLA DATI COMPLETI
         # ==========================================
@@ -1056,7 +1079,7 @@ elif st.session_state.pagina_corrente == "tappe":
         }
 
         scelta_maglia = st.radio(
-            "Seleziona la classifica:", 
+            "Seleziona la maglia:", 
             list(maglie_config.keys()), 
             horizontal=True
         )
