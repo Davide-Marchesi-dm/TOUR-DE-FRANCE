@@ -1272,8 +1272,8 @@ elif st.session_state.pagina_corrente == "tappe":
     
     
 elif st.session_state.pagina_corrente == "teams":
-    st.title("👥 Squadre Partecipanti")
-    st.write("Pagina in costruzione...")
+    st.title("Squadre Partecipanti")
+    st.write("TEAMS : composizione squadra, storia medagliere, numero di tappe vinte per tour")
 
 st.markdown('</div>', unsafe_allow_html=True)
 # ==========================================
