@@ -1296,11 +1296,247 @@ elif st.session_state.pagina_corrente == "tappe":
     
     
 elif st.session_state.pagina_corrente == "teams":
-    st.title("Squadre Partecipanti")
-    st.write("TEAMS : composizione squadra, storia medagliere, numero di tappe vinte per tour")
+        
+        # --- 1. INIEZIONE CSS PER SELECTBOX SCURI E LABEL NERA ---
+        css_selectbox_scuro = """
+        <style>
+            div[data-testid="stSelectbox"] label p {
+                color: #000000 !important;
+                font-family: 'Georgia', serif !important;
+            }
+            div[data-baseweb="select"] > div {
+                background-color: #111111 !important;
+                border: 1px solid #ff0000 !important;
+                border-radius: 4px !important;
+            }
+            div[data-baseweb="select"] span {
+                color: #ffffff !important;
+                font-family: 'Georgia', serif !important;
+                font-size: 16px !important;
+            }
+            div[data-baseweb="select"] div[data-testid="stSelectbox"] svg,
+            div[data-baseweb="select"] svg {
+                color: #ffffff !important;
+            }
+            div[data-baseweb="popover"] div[role="listbox"],
+            div[data-baseweb="popover"] ul {
+                background-color: #111111 !important;
+                border: 1px solid #333333 !important;
+            }
+            div[data-baseweb="popover"] ul li {
+                color: #ffffff !important;
+                font-family: 'Georgia', serif !important;
+                background-color: #111111 !important;
+                padding-top: 10px !important;
+                padding-bottom: 10px !important;
+            }
+            div[data-baseweb="popover"] ul li:hover, 
+            div[data-baseweb="popover"] ul li[aria-selected="true"],
+            div[data-baseweb="popover"] ul li[aria-selected="true"]:hover {
+                background-color: #2b2d30 !important;
+                color: #ffffff !important;
+            }
+        </style>
+        """
+        st.markdown(css_selectbox_scuro, unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True)
-# ==========================================
+        # --- 2. HEADER DELLA PAGINA (Testo Nero) ---
+        st.markdown('<h1 class="vintage-title" style="color: #000000;">Analisi Team</h1>', unsafe_allow_html=True)
+        st.markdown('<p class="journal-subtitle" style="color: #000000;">Esplora le performance storiche, la composizione e il palmarès delle squadre.</p>', unsafe_allow_html=True)
+
+        # --- 3. GESTIONE DATI STORICI E FILTRI ANOMALIE ---
+        anni_revocati = [1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006]
+        
+        teams_disponibili = sorted(df_storico['Team'].dropna().unique())
+        team_selezionato = st.selectbox("Seleziona una squadra dal menu:", teams_disponibili)
+        
+        st.markdown('<hr class="vintage-divider">', unsafe_allow_html=True)
+
+        # Filtraggio dataset principale
+        df_team_storico = df_storico[df_storico['Team'] == team_selezionato].copy()
+        df_team_storico['Rank_Num'] = pd.to_numeric(df_team_storico['Rank'], errors='coerce')
+
+        # Preparazione dati Palmarès (Merge tappe anticipato per usarlo nei grafici sopra)
+        df_merge_tappe = pd.merge(
+            df_stage_h, 
+            df_storico[['Year', 'Rider', 'Team']].drop_duplicates(), 
+            left_on=['Year', 'Winner of stage'], right_on=['Year', 'Rider'], how='inner'
+        )
+        df_tappe_team = df_merge_tappe[df_merge_tappe['Team'] == team_selezionato]
+
+        # --- 4. FUNZIONE HELP PER GRAFICI PLOTLY (Testo Bianco Puro) ---
+        def applica_tema_vintage(fig):
+            fig.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(family="Georgia, serif", color="#FFFFFF"), 
+                title_font_color="#FFFFFF",
+                title_font_size=18,
+                margin=dict(l=40, r=40, t=60, b=40)
+            )
+            fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(255,255,255,0.15)', title_font=dict(color="#FFFFFF"), tickfont=dict(color="#FFFFFF"))
+            fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(255,255,255,0.15)', title_font=dict(color="#FFFFFF"), tickfont=dict(color="#FFFFFF"))
+            return fig
+
+        # --- 5. SEZIONE 1: KPI GENERALI DEL TEAM ---
+        vittorie_df = df_team_storico[(df_team_storico['Rank_Num'] == 1) & (~df_team_storico['Year'].isin(anni_revocati))]
+        vittorie_totali = len(vittorie_df)
+        
+        miglior_piazzamento = int(df_team_storico['Rank_Num'].min()) if not df_team_storico['Rank_Num'].isna().all() else "N/A"
+        partecipazioni = df_team_storico['Year'].nunique()
+
+        html_kpi = f"""
+        <div class="vintage-card-container" style="display: flex; gap: 20px; justify-content: space-between; margin-bottom: 20px;">
+            <div class="vintage-card" style="flex: 1; padding: 20px; text-align: center; border: 1px solid #ccc; background-color: #f9f7f1;">
+                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Vittorie Classifica Generale</h4>
+                <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 28px; font-weight: bold;">{vittorie_totali}</h2>
+            </div>
+            <div class="vintage-card" style="flex: 1; padding: 20px; text-align: center; border: 1px solid #ccc; background-color: #f9f7f1;">
+                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Miglior Piazzamento</h4>
+                <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 28px; font-weight: bold;">{miglior_piazzamento}</h2>
+            </div>
+            <div class="vintage-card" style="flex: 1; padding: 20px; text-align: center; border: 1px solid #ccc; background-color: #f9f7f1;">
+                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Edizioni Partecipate</h4>
+                <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 28px; font-weight: bold;">{partecipazioni}</h2>
+            </div>
+        </div>
+        """
+        st.markdown(html_kpi, unsafe_allow_html=True)
+        st.markdown('<hr class="vintage-divider">', unsafe_allow_html=True)
+
+        # --- 6. SEZIONE 2: COMPOSIZIONE E STRUTTURA DEL TEAM CORRIDORI ---
+        st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">I Protagonisti del Team</h3>', unsafe_allow_html=True)
+        
+        if not df_team_storico.empty:
+            col_comp1, col_comp2 = st.columns(2)
+
+            with col_comp1:
+                # [SOSTITUITO SPIDERGRAM] Grafico: Chi ha vinto più tappe singole per questo team
+                if not df_tappe_team.empty:
+                    vincitori_tappe = df_tappe_team['Winner of stage'].value_counts().head(5).reset_index()
+                    vincitori_tappe.columns = ['Corridore', 'Tappe Vinte']
+                    
+                    fig_vincitori = px.bar(
+                        vincitori_tappe, x='Tappe Vinte', y='Corridore', orientation='h',
+                        title="I plurivincitori di tappe nel Team",
+                        labels={'Corridore': '', 'Tappe Vinte': 'Numero di tappe'}
+                    )
+                    fig_vincitori.update_traces(marker_color='#ff6666') # Rosso vintage coerente
+                    fig_vincitori.update_layout(yaxis={'categoryorder':'total ascending'})
+                    fig_vincitori = applica_tema_vintage(fig_vincitori)
+                    st.plotly_chart(fig_vincitori, use_container_width=True)
+                else:
+                    st.markdown('<p style="color: #000000; font-style: italic; text-align: center; padding-top: 30px;">Nessun corridore di questo team ha vinto tappe nei dati storici.</p>', unsafe_allow_html=True)
+
+            with col_comp2:
+                # Grafico delle bandiere / presenze storiche del team (I Fedelissimi)
+                fedelissimi = df_team_storico['Rider'].value_counts().head(5).reset_index()
+                fedelissimi.columns = ['Corridore', 'Partecipazioni']
+                
+                fig_fedeli = px.bar(
+                    fedelissimi, x='Partecipazioni', y='Corridore', orientation='h',
+                    title="I 'Fedelissimi' del Team (Presenze)",
+                    labels={'Corridore': '', 'Partecipazioni': 'Tour disputati'}
+                )
+                fig_fedeli.update_traces(marker_color='#d2b48c') 
+                fig_fedeli.update_layout(yaxis={'categoryorder':'total ascending'})
+                fig_fedeli = applica_tema_vintage(fig_fedeli)
+                st.plotly_chart(fig_fedeli, use_container_width=True)
+
+        st.markdown('<hr class="vintage-divider">', unsafe_allow_html=True)
+
+        # --- 7. SEZIONE 3: PERFORMANCE STORICHE, SELEZIONE ANNO E STRIP PLOT ---
+        st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">Performance Storiche</h3>', unsafe_allow_html=True)
+        if not df_team_storico.empty:
+            col_grafico1, col_grafico2 = st.columns(2)
+            
+            # --- MENU A TENDINA UNICO (Sopra entrambe le colonne o nella colonna sinistra) ---
+            with col_grafico1:
+                anni_disponibili_team = sorted(df_team_storico['Year'].unique(), reverse=True)
+                anno_selezionato = st.selectbox("Seleziona l'edizione del Tour:", anni_disponibili_team)
+                
+                # TABELLA (Aggiornata in base all'anno)
+                roster_anno = df_team_storico[df_team_storico['Year'] == anno_selezionato][['Rider', 'Rank_Num']].sort_values(by='Rank_Num')
+                roster_anno['Rank_Num'] = roster_anno['Rank_Num'].apply(lambda x: int(x) if pd.notna(x) else "Ritirato")
+                roster_anno.columns = ['Corridore', 'Piazzamento Finale']
+                
+                st.markdown(f'<p style="color: #000000; font-family: Georgia, serif; margin-top: 10px;"><strong>Formazione e Risultati nel {anno_selezionato}:</strong></p>', unsafe_allow_html=True)
+                st.dataframe(roster_anno, use_container_width=True, hide_index=True)
+                
+            with col_grafico2:
+                # GRAFICO A PALLINI (Evidenzia l'anno selezionato)
+                df_scatter = df_team_storico.dropna(subset=['Rank_Num']).copy()
+                
+                # Creiamo una colonna logica: True se l'anno è quello selezionato, False altrimenti
+                df_scatter['Evidenziato'] = df_scatter['Year'] == anno_selezionato
+                
+                fig_roster = px.strip(
+                    df_scatter, x='Year', y='Rank_Num',
+                    hover_name='Rider',
+                    color='Evidenziato', # Plotly userà questa colonna per colorare i pallini
+                    # Mappa dei colori: Rosso brillante per l'anno selezionato, Verde sbiadito/trasparente per gli altri
+                    color_discrete_map={True: '#ff4b4b', False: 'rgba(143, 188, 143, 0.25)'},
+                    title="Piazzamenti dell'intero Roster nella Storia",
+                    labels={'Rank_Num': 'Posizione in Classifica', 'Year': 'Anno'}
+                )
+                
+                fig_roster.update_yaxes(autorange="reversed")
+                # Impostiamo il contorno bianco e la grandezza dei pallini
+                fig_roster.update_traces(
+                    marker=dict(size=10, line=dict(width=1, color='rgba(255,255,255,0.8)')),
+                    jitter=0.2
+                )
+                
+                # Nascondiamo la legenda laterale (True/False non è bella da vedere)
+                fig_roster.update_layout(showlegend=False)
+                
+                fig_roster = applica_tema_vintage(fig_roster)
+                st.plotly_chart(fig_roster, use_container_width=True)
+
+        # --- 8. SEZIONE 4: PALMARÈS MAGLIE E VITTORIE TAPPE ---
+        st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">Palmarès: Tappe e Maglie</h3>', unsafe_allow_html=True)
+        
+        corridori_team = df_team_storico[['Year', 'Rider']].drop_duplicates()
+        maglia_gialla = pd.merge(df_stage_h, corridori_team, left_on=['Year', 'Yellow Jersey'], right_on=['Year', 'Rider'], how='inner')
+        maglia_verde = pd.merge(df_stage_h, corridori_team, left_on=['Year', 'Green jersey'], right_on=['Year', 'Rider'], how='inner')
+        maglia_pois = pd.merge(df_stage_h, corridori_team, left_on=['Year', 'Polka-dot jersey'], right_on=['Year', 'Rider'], how='inner')
+        
+        html_maglie = f"""
+        <div class="vintage-card-container" style="display: flex; gap: 20px; justify-content: center; margin-bottom: 20px;">
+            <div class="vintage-card" style="flex: 1; padding: 15px; text-align: center; border: 2px solid #FFD700; background-color: #fffacd;">
+                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Giorni in Giallo</h4>
+                <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 24px; font-weight: bold;">{len(maglia_gialla)}</h2>
+            </div>
+            <div class="vintage-card" style="flex: 1; padding: 15px; text-align: center; border: 2px solid #228B22; background-color: #f0fff0;">
+                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Giorni in Verde</h4>
+                <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 24px; font-weight: bold;">{len(maglia_verde)}</h2>
+            </div>
+            <div class="vintage-card" style="flex: 1; padding: 15px; text-align: center; border: 2px solid #ff0000; background-image: radial-gradient(#ff0000 15%, transparent 16%), radial-gradient(#ff0000 15%, transparent 16%); background-size: 20px 20px; background-position: 0 0, 10px 10px; background-color: white;">
+                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; background-color: rgba(255,255,255,0.85); padding: 5px; font-size: 14px;">Giorni a Pois</h4>
+                <h2 style="margin: 10px 0 0 0; color: #000000; background-color: rgba(255,255,255,0.85); padding: 5px; display: inline-block; font-size: 24px; font-weight: bold;">{len(maglia_pois)}</h2>
+            </div>
+        </div>
+        """
+        st.markdown(html_maglie, unsafe_allow_html=True)
+        
+        if not df_tappe_team.empty:
+            vittorie_per_anno = df_tappe_team.groupby('Year').size().reset_index(name='Vittorie')
+            fig_tappe = px.bar(
+                vittorie_per_anno, x='Year', y='Vittorie',
+                title="Numero di tappe vinte per edizione",
+                labels={'Vittorie': 'Tappe Vinte', 'Year': 'Anno'}
+            )
+            fig_tappe.update_traces(marker_color='#a0a0a0')
+            fig_tappe = applica_tema_vintage(fig_tappe)
+            st.plotly_chart(fig_tappe, use_container_width=True)
+        else:
+            st.markdown('<p class="journal-text" style="color: #000000; font-style: italic; text-align: center;">Nessuna vittoria di tappa trovata per questa squadra nei dati a disposizione.</p>', unsafe_allow_html=True) 
+
+#sistemare grafico protagonisti del team perchè non funziona
+#sistemare utlima parte delle maglie perchè non funzionano
+
+
+#============================================
 # 6. MENU LATERALE (SIDEBAR)
 # ==========================================
 #with st.sidebar:
