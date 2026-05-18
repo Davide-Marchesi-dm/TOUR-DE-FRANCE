@@ -1356,13 +1356,46 @@ elif st.session_state.pagina_corrente == "teams":
         df_team_storico = df_storico[df_storico['Team'] == team_selezionato].copy()
         df_team_storico['Rank_Num'] = pd.to_numeric(df_team_storico['Rank'], errors='coerce')
 
-        # Preparazione dati Palmarès (Merge tappe anticipato per usarlo nei grafici sopra)
-        df_merge_tappe = pd.merge(
-            df_stage_h, 
-            df_storico[['Year', 'Rider', 'Team']].drop_duplicates(), 
-            left_on=['Year', 'Winner of stage'], right_on=['Year', 'Rider'], how='inner'
+        # --- [SUPER CLEANING REGEX] PER RISOLVERE IL BUG DEI NOMI ---
+        import unicodedata
+        import re
+
+        def pulisci_e_ordina_nome(nome):
+            if pd.isna(nome): return ""
+            s = str(nome)
+            s = re.sub(r'\(.*?\)', '', s) # Rimuove tutto tra parentesi es. (SLO)
+            s = re.sub(r'[^a-zA-Z\s]', '', s) # Rimuove asterischi, numeri, punteggiatura
+            s = s.lower().strip()
+            s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+            parole = sorted(s.split())
+            return " ".join(parole)
+
+        # Puliamo i dataset per il merge
+        df_stage_h_clean = df_stage_h.copy()
+        df_stage_h_clean['Winner_Clean'] = df_stage_h_clean['Winner of stage'].apply(pulisci_e_ordina_nome)
+        df_stage_h_clean['Yellow_Clean'] = df_stage_h_clean['Yellow Jersey'].apply(pulisci_e_ordina_nome)
+        df_stage_h_clean['Green_Clean'] = df_stage_h_clean['Green jersey'].apply(pulisci_e_ordina_nome)
+        df_stage_h_clean['Pois_Clean'] = df_stage_h_clean['Polka-dot jersey'].apply(pulisci_e_ordina_nome)
+
+        df_storico_clean_all = df_storico[['Year', 'Rider', 'Team']].drop_duplicates().copy()
+        df_storico_clean_all['Rider_Clean'] = df_storico_clean_all['Rider'].apply(pulisci_e_ordina_nome)
+        
+        df_team_storico['Rider_Clean'] = df_team_storico['Rider'].apply(pulisci_e_ordina_nome)
+
+        # Merge tappe vinte individualmente dai corridori
+        df_merge_tappe_individuali = pd.merge(
+            df_stage_h_clean, 
+            df_storico_clean_all, 
+            left_on=['Year', 'Winner_Clean'], right_on=['Year', 'Rider_Clean'], how='inner'
         )
-        df_tappe_team = df_merge_tappe[df_merge_tappe['Team'] == team_selezionato]
+        df_tappe_team_individuali = df_merge_tappe_individuali[df_merge_tappe_individuali['Team'] == team_selezionato]
+
+        # Recuperiamo anche le Cronosquadre (TTT) vinte direttamente dal Team
+        df_tappe_ttt = df_stage_h_clean[df_stage_h_clean['Winner of stage'].str.contains(str(team_selezionato), case=False, na=False)].copy()
+        df_tappe_ttt['Team'] = team_selezionato
+        
+        # Uniamo le vittorie individuali con quelle di squadra
+        df_tappe_team = pd.concat([df_tappe_team_individuali, df_tappe_ttt], ignore_index=True)
 
         # --- 4. FUNZIONE HELP PER GRAFICI PLOTLY (Testo Bianco Puro) ---
         def applica_tema_vintage(fig):
@@ -1411,25 +1444,25 @@ elif st.session_state.pagina_corrente == "teams":
             col_comp1, col_comp2 = st.columns(2)
 
             with col_comp1:
-                # [SOSTITUITO SPIDERGRAM] Grafico: Chi ha vinto più tappe singole per questo team
+                # Grafico dei plurivincitori di tappe 
                 if not df_tappe_team.empty:
-                    vincitori_tappe = df_tappe_team['Winner of stage'].value_counts().head(5).reset_index()
-                    vincitori_tappe.columns = ['Corridore', 'Tappe Vinte']
+                    vincitori_tappe = df_tappe_team.groupby('Winner of stage').size().reset_index(name='Tappe Vinte')
+                    vincitori_tappe = vincitori_tappe.rename(columns={'Winner of stage': 'Corridore'})
+                    vincitori_tappe = vincitori_tappe.sort_values(by='Tappe Vinte', ascending=False).head(5)
                     
                     fig_vincitori = px.bar(
                         vincitori_tappe, x='Tappe Vinte', y='Corridore', orientation='h',
                         title="I plurivincitori di tappe nel Team",
                         labels={'Corridore': '', 'Tappe Vinte': 'Numero di tappe'}
                     )
-                    fig_vincitori.update_traces(marker_color='#ff6666') # Rosso vintage coerente
+                    fig_vincitori.update_traces(marker_color='#ff6666') 
                     fig_vincitori.update_layout(yaxis={'categoryorder':'total ascending'})
                     fig_vincitori = applica_tema_vintage(fig_vincitori)
                     st.plotly_chart(fig_vincitori, use_container_width=True)
                 else:
-                    st.markdown('<p style="color: #000000; font-style: italic; text-align: center; padding-top: 30px;">Nessun corridore di questo team ha vinto tappe nei dati storici.</p>', unsafe_allow_html=True)
-
+                    st.markdown('<p style="color:white ; font-style: italic; text-align: center; padding-top: 30px;">Nessun corridore di questa formazione ha mai conquistato una vittoria di tappa al Tour.</p>', unsafe_allow_html=True)
             with col_comp2:
-                # Grafico delle bandiere / presenze storiche del team (I Fedelissimi)
+                # Grafico delle presenze storiche del team (I Fedelissimi)
                 fedelissimi = df_team_storico['Rider'].value_counts().head(5).reset_index()
                 fedelissimi.columns = ['Corridore', 'Partecipazioni']
                 
@@ -1445,17 +1478,15 @@ elif st.session_state.pagina_corrente == "teams":
 
         st.markdown('<hr class="vintage-divider">', unsafe_allow_html=True)
 
-        # --- 7. SEZIONE 3: PERFORMANCE STORICHE, SELEZIONE ANNO E STRIP PLOT ---
+        # --- 7. SEZIONE 3: PERFORMANCE STORICHE, SELEZIONE ANNO UNICA E STRIP PLOT ---
         st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">Performance Storiche</h3>', unsafe_allow_html=True)
         if not df_team_storico.empty:
             col_grafico1, col_grafico2 = st.columns(2)
             
-            # --- MENU A TENDINA UNICO (Sopra entrambe le colonne o nella colonna sinistra) ---
             with col_grafico1:
                 anni_disponibili_team = sorted(df_team_storico['Year'].unique(), reverse=True)
                 anno_selezionato = st.selectbox("Seleziona l'edizione del Tour:", anni_disponibili_team)
                 
-                # TABELLA (Aggiornata in base all'anno)
                 roster_anno = df_team_storico[df_team_storico['Year'] == anno_selezionato][['Rider', 'Rank_Num']].sort_values(by='Rank_Num')
                 roster_anno['Rank_Num'] = roster_anno['Rank_Num'].apply(lambda x: int(x) if pd.notna(x) else "Ritirato")
                 roster_anno.columns = ['Corridore', 'Piazzamento Finale']
@@ -1464,42 +1495,34 @@ elif st.session_state.pagina_corrente == "teams":
                 st.dataframe(roster_anno, use_container_width=True, hide_index=True)
                 
             with col_grafico2:
-                # GRAFICO A PALLINI (Evidenzia l'anno selezionato)
                 df_scatter = df_team_storico.dropna(subset=['Rank_Num']).copy()
-                
-                # Creiamo una colonna logica: True se l'anno è quello selezionato, False altrimenti
                 df_scatter['Evidenziato'] = df_scatter['Year'] == anno_selezionato
                 
                 fig_roster = px.strip(
                     df_scatter, x='Year', y='Rank_Num',
                     hover_name='Rider',
-                    color='Evidenziato', # Plotly userà questa colonna per colorare i pallini
-                    # Mappa dei colori: Rosso brillante per l'anno selezionato, Verde sbiadito/trasparente per gli altri
+                    color='Evidenziato', 
                     color_discrete_map={True: '#ff4b4b', False: 'rgba(143, 188, 143, 0.25)'},
                     title="Piazzamenti dell'intero Roster nella Storia",
                     labels={'Rank_Num': 'Posizione in Classifica', 'Year': 'Anno'}
                 )
-                
                 fig_roster.update_yaxes(autorange="reversed")
-                # Impostiamo il contorno bianco e la grandezza dei pallini
                 fig_roster.update_traces(
                     marker=dict(size=10, line=dict(width=1, color='rgba(255,255,255,0.8)')),
                     jitter=0.2
                 )
-                
-                # Nascondiamo la legenda laterale (True/False non è bella da vedere)
                 fig_roster.update_layout(showlegend=False)
-                
                 fig_roster = applica_tema_vintage(fig_roster)
                 st.plotly_chart(fig_roster, use_container_width=True)
 
         # --- 8. SEZIONE 4: PALMARÈS MAGLIE E VITTORIE TAPPE ---
         st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">Palmarès: Tappe e Maglie</h3>', unsafe_allow_html=True)
         
-        corridori_team = df_team_storico[['Year', 'Rider']].drop_duplicates()
-        maglia_gialla = pd.merge(df_stage_h, corridori_team, left_on=['Year', 'Yellow Jersey'], right_on=['Year', 'Rider'], how='inner')
-        maglia_verde = pd.merge(df_stage_h, corridori_team, left_on=['Year', 'Green jersey'], right_on=['Year', 'Rider'], how='inner')
-        maglia_pois = pd.merge(df_stage_h, corridori_team, left_on=['Year', 'Polka-dot jersey'], right_on=['Year', 'Rider'], how='inner')
+        # Calcolo maglie protetto
+        corridori_team_clean = df_team_storico[['Year', 'Rider_Clean']].drop_duplicates()
+        maglia_gialla = pd.merge(df_stage_h_clean, corridori_team_clean, left_on=['Year', 'Yellow_Clean'], right_on=['Year', 'Rider_Clean'], how='inner')
+        maglia_verde = pd.merge(df_stage_h_clean, corridori_team_clean, left_on=['Year', 'Green_Clean'], right_on=['Year', 'Rider_Clean'], how='inner')
+        maglia_pois = pd.merge(df_stage_h_clean, corridori_team_clean, left_on=['Year', 'Pois_Clean'], right_on=['Year', 'Rider_Clean'], how='inner')
         
         html_maglie = f"""
         <div class="vintage-card-container" style="display: flex; gap: 20px; justify-content: center; margin-bottom: 20px;">
@@ -1526,12 +1549,28 @@ elif st.session_state.pagina_corrente == "teams":
                 title="Numero di tappe vinte per edizione",
                 labels={'Vittorie': 'Tappe Vinte', 'Year': 'Anno'}
             )
-            fig_tappe.update_traces(marker_color='#a0a0a0')
+            
+            # 1. Applichiamo il Giallo Tour de France alle barre
+            fig_tappe.update_traces(marker_color='#FFCC00')
+            
+            # 2. Applichiamo il font di base vintage
             fig_tappe = applica_tema_vintage(fig_tappe)
+            
+            # 3. Sovrascriviamo lo sfondo trasparente forzando il Nero assoluto per questo specifico grafico
+            fig_tappe.update_layout(
+                paper_bgcolor='#000000', 
+                plot_bgcolor='#000000',
+                title_font_color="#FFFFFF",
+                font=dict(color="#FFFFFF")
+            )
+            
+            # 4. Assicuriamoci che anche griglie, assi e numerini siano perfettamente bianchi e visibili sul nero
+            fig_tappe.update_xaxes(gridcolor='rgba(255,255,255,0.2)', title_font=dict(color="#FFFFFF"), tickfont=dict(color="#FFFFFF"))
+            fig_tappe.update_yaxes(gridcolor='rgba(255,255,255,0.2)', title_font=dict(color="#FFFFFF"), tickfont=dict(color="#FFFFFF"))
+            
             st.plotly_chart(fig_tappe, use_container_width=True)
         else:
-            st.markdown('<p class="journal-text" style="color: #000000; font-style: italic; text-align: center;">Nessuna vittoria di tappa trovata per questa squadra nei dati a disposizione.</p>', unsafe_allow_html=True) 
-
+            st.markdown('<p class="journal-text" style="color: #000000; font-style: italic; text-align: center;">Nessuna vittoria di tappa trovata per questa squadra nei dati a disposizione.</p>', unsafe_allow_html=True)
 #sistemare grafico protagonisti del team perchè non funziona
 #sistemare utlima parte delle maglie perchè non funzionano
 
