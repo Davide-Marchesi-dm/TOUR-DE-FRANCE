@@ -375,33 +375,105 @@ elif st.session_state.pagina_corrente == "classifica":
 
         df_anno = df_storico[df_storico['Year'] == anno_selezionato].reset_index(drop=True)
         
-        # ==========================================
+       # ==========================================
         # 3. IL PODIO
         # ==========================================
-        st.markdown(f"<h3 style='color: #000000; margin-bottom: 20px;'>Il Podio dell'edizione {int(anno_selezionato)}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='color: #000000; margin-bottom: 20px; font-family: Georgia, serif;'>Il Podio dell'edizione {int(anno_selezionato)}</h3>", unsafe_allow_html=True)
         
-        col1, col2, col3 = st.columns(3)
         try:
-            with col1:
-                st.metric(label="🥇 1° Classificato", 
-                          value=df_anno.iloc[0].get("Rider", "N/D"), 
-                          delta=df_anno.iloc[0].get("Time", "N/D"), 
-                          delta_color="off")
-            with col2:
-                st.metric(label="🥈 2° Classificato", 
-                          value=df_anno.iloc[1].get("Rider", "N/D"), 
-                          delta=f"+ {df_anno.iloc[1].get('Gap', 'N/D')}", 
-                          delta_color="inverse")
-            with col3:
-                st.metric(label="🥉 3° Classificato", 
-                          value=df_anno.iloc[2].get("Rider", "N/D"), 
-                          delta=f"+ {df_anno.iloc[2].get('Gap', 'N/D')}", 
-                          delta_color="inverse")
+            # Estrazione sicura dei dati
+            rider_1 = df_anno.iloc[0].get("Rider", "N/D")
+            tempo_1 = df_anno.iloc[0].get("Time", "N/D")
+            
+            rider_2 = df_anno.iloc[1].get("Rider", "N/D")
+            gap_2 = df_anno.iloc[1].get("Gap", "N/D")
+            
+            rider_3 = df_anno.iloc[2].get("Rider", "N/D")
+            gap_3 = df_anno.iloc[2].get("Gap", "N/D")
+
+            # Stringa HTML/CSS appiattita a sinistra: crea i cilindri 3D SENZA riflesso
+            html_podio = f"""
+<style>
+.podium-stage {{ display: flex; justify-content: center; align-items: flex-end; gap: 0px; margin-top: 60px; margin-bottom: 40px; }}
+.podium-col {{ display: flex; flex-direction: column; align-items: center; width: 140px; }}
+.rider-info {{ text-align: center; margin-bottom: 40px; color: #000000; font-family: 'Georgia', serif; z-index: 10; }}
+.rider-name {{ font-size: 17px; font-weight: bold; line-height: 1.2; text-transform: uppercase; }}
+.rider-time {{ font-size: 14px; color: #555; font-style: italic; margin-top: 5px; }}
+
+/* Il corpo del cilindro nero lucido (senza riflesso) */
+.cylinder {{
+    position: relative;
+    width: 140px;
+    /* Gradiente per dare l'effetto di luce/cilindro curvo */
+    background: linear-gradient(to right, #1a1a1a 0%, #666666 25%, #1a1a1a 60%, #000000 100%);
+    /* Arrotonda la base inferiore */
+    border-radius: 0 0 50% 50% / 0 0 25px 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}}
+
+/* La cima del cilindro (l'ovale colorato) */
+.cylinder::before {{
+    content: ""; 
+    position: absolute; 
+    top: -25px; 
+    left: 0; 
+    width: 100%; 
+    height: 50px; 
+    border-radius: 50%; 
+    z-index: 2;
+}}
+
+/* Altezze dei gradini */
+.c-1 {{ height: 200px; z-index: 3; box-shadow: 0px 10px 15px -5px rgba(0,0,0,0.5); }}
+.c-2 {{ height: 140px; z-index: 2; box-shadow: 0px 10px 15px -5px rgba(0,0,0,0.5); }}
+.c-3 {{ height: 110px; z-index: 1; box-shadow: 0px 10px 15px -5px rgba(0,0,0,0.5); }}
+
+/* Colori delle cime: Oro, Argento, Bronzo */
+.c-1::before {{ background: radial-gradient(ellipse at top left, #ffdf00, #b8860b); }}
+.c-2::before {{ background: radial-gradient(ellipse at top left, #f0f0f0, #999999); }}
+.c-3::before {{ background: radial-gradient(ellipse at top left, #ffa07a, #8b4513); }}
+
+/* I numeri sul fronte del cilindro */
+.pos-number {{ font-size: 55px; font-weight: bold; font-family: 'Arial', sans-serif; z-index: 4; margin-top: 15px; opacity: 0.9; }}
+.n-1 {{ color: #ffd700; text-shadow: 2px 2px 4px #000; }}
+.n-2 {{ color: #e0e0e0; text-shadow: 2px 2px 4px #000; }}
+.n-3 {{ color: #cd7f32; text-shadow: 2px 2px 4px #000; }}
+</style>
+
+<div class="podium-stage">
+<div class="podium-col">
+<div class="rider-info">
+<div class="rider-name">{rider_2}</div>
+<div class="rider-time">{gap_2}</div>
+</div>
+<div class="cylinder c-2"><div class="pos-number n-2">2</div></div>
+</div>
+
+<div class="podium-col" style="margin-top: -30px;">
+<div class="rider-info">
+<div class="rider-name" style="font-size: 21px;">{rider_1}</div>
+<div class="rider-time">{tempo_1}</div>
+</div>
+<div class="cylinder c-1"><div class="pos-number n-1">1</div></div>
+</div>
+
+<div class="podium-col">
+<div class="rider-info">
+<div class="rider-name">{rider_3}</div>
+<div class="rider-time">{gap_3}</div>
+</div>
+<div class="cylinder c-3"><div class="pos-number n-3">3</div></div>
+</div>
+</div>
+"""
+            st.markdown(html_podio, unsafe_allow_html=True)
+
         except Exception as e:
             st.warning("Dati del podio incompleti per questa edizione.")
 
         st.markdown("<br><hr style='border: 1px dashed #ccc; margin-top: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
-
         # ==========================================
         # 4. GRAFICI E METRICHE
         # ==========================================
@@ -1022,7 +1094,7 @@ elif st.session_state.pagina_corrente == "tappe":
     # Sostituita la linea gialla con una linea grigia neutra per staccare le sezioni
     st.markdown("<hr style='border: 1px solid #CCCCCC; margin-top: 30px; margin-bottom: 30px;'>", unsafe_allow_html=True)
     # ==========================================
-    # FINE SEZIONE STORICA (FUORI DAL BOX NERO)
+    # FINE SEZIONE STORICA 
     # ==========================================
     
     st.markdown("<hr style='border: 1px solid #FFCC00; margin-top: 30px; margin-bottom: 30px;'>", unsafe_allow_html=True)
@@ -1356,7 +1428,7 @@ elif st.session_state.pagina_corrente == "teams":
         df_team_storico = df_storico[df_storico['Team'] == team_selezionato].copy()
         df_team_storico['Rank_Num'] = pd.to_numeric(df_team_storico['Rank'], errors='coerce')
 
-        # --- [SUPER CLEANING REGEX] PER RISOLVERE IL BUG DEI NOMI ---
+        
         import unicodedata
         import re
 
@@ -1411,32 +1483,93 @@ elif st.session_state.pagina_corrente == "teams":
             fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(255,255,255,0.15)', title_font=dict(color="#FFFFFF"), tickfont=dict(color="#FFFFFF"))
             return fig
 
-        # --- 5. SEZIONE 1: KPI GENERALI DEL TEAM ---
+        # --- 5. SEZIONE 1: KPI GENERALI DEL TEAM (Versione Sfondo Nero) ---
         vittorie_df = df_team_storico[(df_team_storico['Rank_Num'] == 1) & (~df_team_storico['Year'].isin(anni_revocati))]
         vittorie_totali = len(vittorie_df)
         
         miglior_piazzamento = int(df_team_storico['Rank_Num'].min()) if not df_team_storico['Rank_Num'].isna().all() else "N/A"
         partecipazioni = df_team_storico['Year'].nunique()
 
-        html_kpi = f"""
-        <div class="vintage-card-container" style="display: flex; gap: 20px; justify-content: space-between; margin-bottom: 20px;">
-            <div class="vintage-card" style="flex: 1; padding: 20px; text-align: center; border: 1px solid #ccc; background-color: #f9f7f1;">
-                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Vittorie Classifica Generale</h4>
-                <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 28px; font-weight: bold;">{vittorie_totali}</h2>
-            </div>
-            <div class="vintage-card" style="flex: 1; padding: 20px; text-align: center; border: 1px solid #ccc; background-color: #f9f7f1;">
-                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Miglior Piazzamento</h4>
-                <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 28px; font-weight: bold;">{miglior_piazzamento}</h2>
-            </div>
-            <div class="vintage-card" style="flex: 1; padding: 20px; text-align: center; border: 1px solid #ccc; background-color: #f9f7f1;">
-                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Edizioni Partecipate</h4>
-                <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 28px; font-weight: bold;">{partecipazioni}</h2>
+        # Nuova iniezione CSS specifica per i KPI Neri
+        css_vintage_kpis = """
+        <style>
+            .vintage-kpi-block-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+                margin-bottom: 25px;
+            }
+            .vintage-kpi-block-title {
+                color: #FFFFFF; 
+                font-family: 'Georgia', serif !important;
+                font-size: 22px;
+                font-weight: bold;
+                text-align: center;
+                text-transform: uppercase;
+                margin: 0;
+            }
+            .vintage-card-container-uniform {
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+                width: 100%;
+            }
+            .vintage-card-uniform {
+                flex: 1;
+                padding: 15px;
+                text-align: center;
+                /* Background Nero Puro */
+                background-color: #000000 !important; 
+                /* Bordo Nero */
+                border: 2px solid #000000 !important; 
+                border-radius: 4px !important;
+                /* Ombra leggera per staccarlo dallo sfondo generale (se non è nero) */
+                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            }
+            .vintage-card-uniform h4 {
+                margin: 0;
+                /* Testo Bianco per i titoli interni */
+                color: #FFFFFF !important;
+                font-family: 'Georgia', serif !important;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            .vintage-card-uniform h2 {
+                margin: 10px 0 0 0;
+                /* Testo Bianco Puro per i numeri */
+                color: #FFFFFF !important;
+                font-family: 'Georgia', serif !important;
+                font-size: 34px;
+                font-weight: bold;
+            }
+        </style>
+        """
+        st.markdown(css_vintage_kpis, unsafe_allow_html=True)
+
+        # Nuovo HTML dei KPI strutturato e uniformato
+        html_kpi_uniformed = f"""
+        <div class="vintage-kpi-block-container">
+            <h3 class="vintage-kpi-block-title">Panoramica Squadra</h3>
+            <div class="vintage-card-container-uniform">
+                <div class="vintage-card-uniform">
+                    <h4>Vittorie Classifica Generale</h4>
+                    <h2>{vittorie_totali}</h2>
+                </div>
+                <div class="vintage-card-uniform">
+                    <h4>Miglior Piazzamento</h4>
+                    <h2>{miglior_piazzamento}</h2>
+                </div>
+                <div class="vintage-card-uniform">
+                    <h4>Edizioni Partecipate</h4>
+                    <h2>{partecipazioni}</h2>
+                </div>
             </div>
         </div>
         """
-        st.markdown(html_kpi, unsafe_allow_html=True)
+        st.markdown(html_kpi_uniformed, unsafe_allow_html=True)
         st.markdown('<hr class="vintage-divider">', unsafe_allow_html=True)
-
         # --- 6. SEZIONE 2: COMPOSIZIONE E STRUTTURA DEL TEAM CORRIDORI ---
         st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">I Protagonisti del Team</h3>', unsafe_allow_html=True)
         
