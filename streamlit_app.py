@@ -1704,8 +1704,6 @@ elif st.session_state.pagina_corrente == "teams":
             st.plotly_chart(fig_tappe, use_container_width=True)
         else:
             st.markdown('<p class="journal-text" style="color: #000000; font-style: italic; text-align: center;">Nessuna vittoria di tappa trovata per questa squadra nei dati a disposizione.</p>', unsafe_allow_html=True)
-#sistemare grafico protagonisti del team perchè non funziona
-#sistemare utlima parte delle maglie perchè non funzionano
 
 
 #============================================
