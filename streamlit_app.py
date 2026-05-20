@@ -641,96 +641,50 @@ elif st.session_state.pagina_corrente == "classifica":
 
 
 elif st.session_state.pagina_corrente == "corridori":
-    # ==========================================
-    # 1. CSS PER LA TENDINA NERA (COERENZA UI)
-    # ==========================================
     st.markdown("""
         <style>
-        div[data-baseweb="select"] > div {
-            background-color: #111111 !important; 
-            color: #FFFFFF !important; 
-            border-radius: 5px !important;
-        }
-        div[data-baseweb="popover"],
-        div[data-baseweb="popover"] > div,
-        div[data-baseweb="popover"] > div > div,
-        div[data-baseweb="popover"] ul,
-        ul[data-baseweb="menu"],
-        ul[role="listbox"] {
-            background-color: #111111 !important;
-        }
-        div[data-baseweb="popover"] li,
-        div[data-baseweb="popover"] li span,
-        ul[data-baseweb="menu"] li {
-            color: #FFFFFF !important;
-            background-color: transparent !important;
-        }
-        div[data-baseweb="popover"] li:hover,
-        ul[data-baseweb="menu"] li:hover {
-            background-color: #333333 !important;
-        }
-        .stSelectbox label {
-            color: #000000 !important;
-            font-weight: bold !important;
-        }
+        div[data-baseweb="select"] > div { background-color: #111111 !important; color: #FFFFFF !important; border-radius: 5px !important; }
+        div[data-baseweb="popover"], div[data-baseweb="popover"] > div, div[data-baseweb="popover"] > div > div, div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111111 !important; }
+        div[data-baseweb="popover"] li, div[data-baseweb="popover"] li span, ul[data-baseweb="menu"] li { color: #FFFFFF !important; background-color: transparent !important; }
+        div[data-baseweb="popover"] li:hover, ul[data-baseweb="menu"] li:hover { background-color: #333333 !important; }
+        .stSelectbox label { color: #000000 !important; font-weight: bold !important; }
         </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("<h2 style='text-align: center; color: #000000; margin-bottom: 30px;'>🏆 I Campioni della Grande Boucle</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #000000; margin-bottom: 30px;'>🏆 Riders of the Grande Boucle</h2>", unsafe_allow_html=True)
 
-    # ==========================================
-    # 2. SELEZIONE ATLETA DA DF_TOUR_W
-    # ==========================================
     if not df_tour_w.empty:
-        # Creiamo la lista dalla colonna Winner
         lista_campioni = sorted(df_tour_w['Winner'].dropna().unique())
         
         col_sel, _ = st.columns([1.5, 2])
         with col_sel:
-            vincitore_scelto = st.selectbox("Seleziona un vincitore:", lista_campioni)
+            vincitore_scelto = st.selectbox("Select a rider:", lista_campioni)
         
         st.markdown("<hr style='border: 1px solid #ccc; margin-top: 10px; margin-bottom: 30px;'>", unsafe_allow_html=True)
 
-        # ==========================================
-        # 3. FILTRAGGIO DATI VITTORIE
-        # ==========================================
-        # Filtriamo TUTTE le righe del vincitore per contare gli anni
         storico_vittorie = df_tour_w[df_tour_w['Winner'] == vincitore_scelto].sort_values('Year')
-        
         numero_vittorie = len(storico_vittorie)
         anni_vittoria = ", ".join(storico_vittorie['Year'].astype(str).tolist())
-        
-        # Per i dati biometrici prendiamo l'ultima riga (la vittoria più recente)
         dati_vincitore = storico_vittorie.iloc[-1]
 
-        # ==========================================
-        # 4. VISUALIZZAZIONE DATI TECNICI (COLONNE)
-        # ==========================================
         col_bio, col_pps = st.columns([1.2, 2], gap="large")
 
         with col_bio:
-            # Box Carta d'Identità (ora include il numero di vittorie e gli anni)
             st.markdown(f"""
-                <div style="background-color: #000000; padding: 20px; border-radius: 10px; border-left: 8px solid #FFCC00;">
-                    <h3 style="color: #FFCC00; margin-bottom: 5px;">{vincitore_scelto}</h3>
-                    <p style="color: #ffffff; font-size: 1.1rem; margin-bottom: 2px;"><b>Paese:</b> {dati_vincitore.get('Country', 'N/D')}</p>
-                    <p style="color: #ffffff; font-size: 0.9rem; font-style: italic;">{dati_vincitore.get('Team', 'Team N/D')}</p>
-                    
-                </div>
-            """, unsafe_allow_html=True)
+<div style="background-color: #000000; padding: 20px; border-radius: 10px; border-left: 8px solid #FFCC00;">
+<h3 style="color: #FFCC00; margin-bottom: 5px;">{vincitore_scelto}</h3>
+<p style="color: #ffffff; font-size: 1.1rem; margin-bottom: 2px;"><b>Country:</b> {dati_vincitore.get('Country', 'N/D')}</p>
+<p style="color: #ffffff; font-size: 0.9rem; font-style: italic;">{dati_vincitore.get('Team', 'Team N/D')}</p>
+</div>
+""", unsafe_allow_html=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
-            
-            # --- PARAMETRI BIOMETRICI ---
-            st.markdown("<h4 style='color: #000;'>Dati Antropometrici</h4>", unsafe_allow_html=True)
+            st.markdown("<h4 style='color: #000;'>Antropometric Data</h4>", unsafe_allow_html=True)
             c1, c2 = st.columns(2)
 
-            # 1. Gestione Altezza (Correzione virgola e precisione a 2 decimali)
             raw_h = str(dati_vincitore.get('height_(m)', '0')).replace(',', '.')
-
             try:
                 val_h = float(raw_h)
-                
                 if val_h > 10: 
                     s_h = str(int(val_h))
                     txt_altezza = f"{s_h[0]}.{s_h[1:3]} m" 
@@ -739,23 +693,20 @@ elif st.session_state.pagina_corrente == "corridori":
             except:
                 txt_altezza = "N/D"
 
-            # 2. Gestione Peso
             try:
                 val_peso = float(str(dati_vincitore.get('weight_(Kg)', '0')).replace(',', '.'))
                 txt_peso = f"{val_peso:.1f} kg" 
             except:
                 txt_peso = "N/D"
 
-            # Visualizzazione nelle colonne
-            c1.metric("Altezza", txt_altezza)
-            c1.metric("Peso", txt_peso)
+            c1.metric("Height", txt_altezza)
+            c1.metric("Weight", txt_peso)
 
-            # 3. Età e BMI
             try:
                 eta = int(dati_vincitore.get('age', 0))
-                c2.metric("Età", f"{eta} anni")
+                c2.metric("Age", f"{eta}")
             except:
-                c2.metric("Età", "N/D")
+                c2.metric("Age", "N/D")
 
             try:
                 bmi_val = float(str(dati_vincitore.get('BMI', 0)).replace(',', '.'))
@@ -764,7 +715,6 @@ elif st.session_state.pagina_corrente == "corridori":
                 c2.metric("BMI", "N/D")
                     
         with col_pps:
-            # --- PROFILO DI POTENZA (PPS) ---
             st.markdown("<h4 style='color: #000;'>Analisi Tecnica (PPS)</h4>", unsafe_allow_html=True)
             tipo_pps = dati_vincitore.get('rider_type_(PPS)', 'N/D')
             simile_pps = dati_vincitore.get('close_rider_type_(PPS)', 'N/D')
@@ -775,101 +725,64 @@ elif st.session_state.pagina_corrente == "corridori":
                     <p style="margin-bottom: 0;"><b>Close Rider Type:</b><br><span>{simile_pps}</span></p>
                 </div>
             """, unsafe_allow_html=True)
-            
             st.markdown("<br>", unsafe_allow_html=True)
         
-        # ==========================================
-        # 5. CARRIERA COMPLETA E CONFRONTO (Grafico Interattivo)
-        # ==========================================
         st.markdown("<hr style='border: 1px dashed #ccc; margin-top: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='color: #000; font-weight: bold;'>Analisi Comparativa della Carriera</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #000; font-weight: bold;'>Comparative Career Analysis</h4>", unsafe_allow_html=True)
         
-        # 1. Normalizziamo il nome del ciclista principale
         nome_principale = str(vincitore_scelto).strip().upper()
-        
-        # 2. Creiamo una lista pulita di tutti i corridori per il menu a tendina
         df_storico['Rider_Norm'] = df_storico['Rider'].astype(str).str.strip().str.upper()
         tutti_i_corridori = sorted(df_storico['Rider'].astype(str).str.strip().unique())
         
-        # 3. Selezione sfidanti (Multi-selezione)
         st.markdown("""
             <style>
-            div[data-testid="stMultiSelect"] label p {
-                color: #000000 !important;
-                font-weight: bold !important;
-                font-size: 1.1rem !important;
-            }
+            div[data-testid="stMultiSelect"] label p { color: #000000 !important; font-weight: bold !important; font-size: 1.1rem !important; }
             </style>
         """, unsafe_allow_html=True)
         
         sfidanti = st.multiselect(
-            "Aggiungi altri ciclisti al grafico per un confronto testa a testa:", 
+            "Add other riders to the chart for a head-to-head comparison:", 
             options=[c for c in tutti_i_corridori if str(c).strip().upper() != nome_principale],
             help="Seleziona uno o più nomi dall'archivio storico"
         )
         
-        # 4. Prepariamo la lista di tutti i nomi da cercare (Principale + Sfidanti)
         nomi_da_cercare = [nome_principale] + [str(s).strip().upper() for s in sfidanti]
         
-        # 5. Funzione di ricerca elastica per più nomi contemporaneamente
         def match_multiplo(nome_db):
             for nome in nomi_da_cercare:
-                if nome in nome_db or nome_db in nome:
-                    return True
+                if nome in nome_db or nome_db in nome: return True
             return False
             
-        # Filtriamo il database storico
         maschera_ricerca = df_storico['Rider_Norm'].apply(match_multiplo)
         df_plot = df_storico[maschera_ricerca].copy()
         
         if not df_plot.empty:
-            # Convertiamo il Rank in formato numerico (fondamentale per l'asse Y)
-            # errors='coerce' trasforma eventuali testi come "DNF" (Ritirato) in NaN
             df_plot['Rank_Num'] = pd.to_numeric(df_plot['Rank'], errors='coerce')
-            
-            # Filtriamo le righe valide per il grafico
             df_grafico = df_plot.dropna(subset=['Rank_Num'])
             
-            # --- CREAZIONE GRAFICO ALTAIR NERO ---
             grafico_carriera = alt.Chart(df_grafico).mark_line(
-                point=alt.OverlayMarkDef(size=80, opacity=1, filled=True), 
-                strokeWidth=3
+                point=alt.OverlayMarkDef(size=80, opacity=1, filled=True), strokeWidth=3
             ).encode(
                 x=alt.X('Year:O', title='Anno', axis=alt.Axis(labelAngle=-45)),
-                y=alt.Y('Rank_Num:Q', title='Posizione Finale', scale=alt.Scale(reverse=True, domainMin=1)),
-                color=alt.Color('Rider:N', title='Atleta', scale=alt.Scale(scheme='set1')),
-                # Il Tooltip genera la finestra riassuntiva al passaggio del mouse
+                y=alt.Y('Rank_Num:Q', title='Final Position', scale=alt.Scale(reverse=True, domainMin=1)),
+                color=alt.Color('Rider:N', title='Athletes', scale=alt.Scale(scheme='set1')),
                 tooltip=[
                     alt.Tooltip('Rider:N', title='Ciclista'),
                     alt.Tooltip('Year:O', title='Anno'),
                     alt.Tooltip('Rank:N', title='Classifica Generale'),
                     alt.Tooltip('Team:N', title='Squadra'),
-                    alt.Tooltip('Times:N', title='Tempo') # Se la tua colonna si chiama 'Times', correggi qui
+                    alt.Tooltip('Times:N', title='Tempo')
                 ]
-            ).properties(
-                height=450
-            ).interactive().configure(
-                background='black', # Sfondo generale nero
-                view=alt.ViewConfig(stroke='transparent'), # Rimuove il bordo quadrato grigio
-                axis=alt.AxisConfig(
-                    labelColor='white', # Testo dei numeri (es. anni e posizioni) in bianco
-                    titleColor='white', # Titolo degli assi in bianco
-                    gridColor='#333333', # Griglia grigio scuro
-                    domainColor='#333333', # Linea base degli assi grigio scuro
-                    tickColor='white' # Tacchette bianche
-                ),
-                legend=alt.LegendConfig(
-                    labelColor='white', # Nomi degli atleti in legenda bianchi
-                    titleColor='white' # Titolo della legenda bianco
-                )
+            ).properties(height=450).interactive().configure(
+                background='black', view=alt.ViewConfig(stroke='transparent'),
+                axis=alt.AxisConfig(labelColor='white', titleColor='white', gridColor='#333333', domainColor='#333333', tickColor='white'),
+                legend=alt.LegendConfig(labelColor='white', titleColor='white')
             )
-            
-            # Mostriamo il grafico usando theme=None per bloccare il tema chiaro di Streamlit
             st.altair_chart(grafico_carriera, use_container_width=True, theme=None)
-            
             
     else:
         st.warning("Caricamento del dataset vincitori non riuscito.")
+
 
 
 elif st.session_state.pagina_corrente == "tappe":
@@ -914,6 +827,7 @@ elif st.session_state.pagina_corrente == "tappe":
         }
         </style>
     """, unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #000000; margin-bottom: 30px;'>🗺️ Routes and Historical Stages</h2>", unsafe_allow_html=True)
     # --- PREPARAZIONE DATI ---
     df_stage_h['Year'] = df_stage_h['Year'].fillna(0).astype(int)
 
@@ -930,7 +844,7 @@ elif st.session_state.pagina_corrente == "tappe":
         st.markdown(
             """
             <p style='color: white; text-align: center; font-size: 0.9rem; margin-top: -10px; font-family: sans-serif;'>
-                La fitta rete di tutte le tappe corse nella storia del Tour de France: un viaggio attraverso oltre un secolo di ciclismo.
+                The intricate network of all routes in the history of the Tour de France: a journey through over a century of cycling
             </p>
             """, 
             unsafe_allow_html=True
@@ -965,14 +879,14 @@ elif st.session_state.pagina_corrente == "tappe":
     )
 
     # 2. Il tuo markdown: ho cambiato 'color: black' in 'color: white'
-    st.markdown("<p style='font-weight: bold; color: black; font-family: sans-serif; font-size: 1.2rem;'>Esplora i Dati Storici</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-weight: bold; color: black; font-family: sans-serif; font-size: 1.2rem;'>Explore the Historical Data</p>", unsafe_allow_html=True)
 
     # 3. La tua logica per i dati storici (invariata)
     anno_min_assoluto = int(df_stage_h[df_stage_h['Year'] > 0]['Year'].min())
     anno_max_assoluto = int(df_stage_h['Year'].max())
 
     anno_min, anno_max = st.slider(
-        "Seleziona il periodo storico da visualizzare nei grafici sottostanti:",
+        "Select the historical period to display in the charts below:",
         min_value=anno_min_assoluto,
         max_value=anno_max_assoluto,
         value=(anno_min_assoluto, anno_max_assoluto), 
@@ -992,18 +906,18 @@ elif st.session_state.pagina_corrente == "tappe":
         df_distanza = df_distanza.set_index('Year').reindex(range(anno_min, anno_max + 1)).reset_index()
         
         fig_dist = px.line(df_distanza, x='Year', y='TotalTDFDistance', 
-                           labels={'TotalTDFDistance': '', 'Year': 'Anno'}, markers=True)
+                           labels={'TotalTDFDistance': '', 'Year': 'Year'}, markers=True)
         fig_dist.update_traces(line_color='#FFCC00', line_width=3, marker=dict(size=4, color='white'), connectgaps=False)
         
         fig_dist.add_vrect(x0=1914.5, x1=1918.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                           annotation_text="I Guerra Mondiale", annotation_position="inside bottom left",
+                           annotation_text="WW1", annotation_position="inside bottom left",
                            annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
         fig_dist.add_vrect(x0=1939.5, x1=1946.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                           annotation_text="II Guerra Mondiale", annotation_position="inside bottom left",
+                           annotation_text="WW2", annotation_position="inside bottom left",
                            annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
 
         fig_dist.update_layout(
-            title=dict(text="<b>Distanza Totale (km)</b>", font=dict(color="white", size=18, family="sans-serif")),
+            title=dict(text="<b>Total Distance (km)</b>", font=dict(color="white", size=18, family="sans-serif")),
             plot_bgcolor="black", 
             paper_bgcolor="black", 
             font=dict(color="white", family="sans-serif"),
@@ -1018,18 +932,18 @@ elif st.session_state.pagina_corrente == "tappe":
         df_dist_avg = df_dist_avg.set_index('Year').reindex(range(anno_min, anno_max + 1)).reset_index()
         
         fig_avg_dist = px.area(df_dist_avg, x='Year', y='Distanza_Media_Tappa',
-                               labels={'Distanza_Media_Tappa': '', 'Year': 'Anno'})
+                               labels={'Distanza_Media_Tappa': '', 'Year': 'Year'})
         fig_avg_dist.update_traces(line_color='#FF6666', fillcolor='rgba(255, 102, 102, 0.3)', connectgaps=False)
         
         fig_avg_dist.add_vrect(x0=1914.5, x1=1918.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                               annotation_text="I Guerra Mondiale", annotation_position="inside bottom left",
+                               annotation_text="WW1", annotation_position="inside bottom left",
                                annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
         fig_avg_dist.add_vrect(x0=1939.5, x1=1946.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                               annotation_text="II Guerra Mondiale", annotation_position="inside bottom left",
+                               annotation_text="WW2", annotation_position="inside bottom left",
                                annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
 
         fig_avg_dist.update_layout(
-            title=dict(text="<b>Intensità: Km Medi per Tappa</b>", font=dict(color="white", size=18, family="sans-serif")),
+            title=dict(text="<b>Average Stage Distance (Km)</b>", font=dict(color="white", size=18, family="sans-serif")),
             plot_bgcolor="black", 
             paper_bgcolor="black", 
             font=dict(color="white", family="sans-serif"),
@@ -1052,14 +966,14 @@ elif st.session_state.pagina_corrente == "tappe":
     df_vincitori_chart = df_vincitori_filtered[['Year', 'Velocità Media (km/h)']].set_index('Year').reindex(range(anno_min, anno_max + 1)).reset_index()
 
     fig_vel = px.line(df_vincitori_chart, x='Year', y='Velocità Media (km/h)', 
-                      labels={'Velocità Media (km/h)': 'Velocità Media (km/h)', 'Year': 'Anno'}, markers=True)
+                      labels={'Velocità Media (km/h)': 'Avarage Velocity (km/h)', 'Year': 'Year'}, markers=True)
     fig_vel.update_traces(line_color='#FFCC00', line_width=3, marker=dict(size=5, color='white'), connectgaps=False)
     
     fig_vel.add_vrect(x0=1914.5, x1=1918.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                      annotation_text="I Guerra Mondiale", annotation_position="inside bottom left",
+                      annotation_text="WW1", annotation_position="inside bottom left",
                       annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
     fig_vel.add_vrect(x0=1939.5, x1=1946.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                      annotation_text="II Guerra Mondiale", annotation_position="inside bottom left",
+                      annotation_text="WW2", annotation_position="inside bottom left",
                       annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
 
     try:
@@ -1077,13 +991,13 @@ elif st.session_state.pagina_corrente == "tappe":
                             hoverinfo='text', hovertext=testo_hover, showlegend=False)
         
         fig_vel.add_vrect(x0=1998.5, x1=2006, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                          annotation_text="Titoli Revocati", annotation_position="inside bottom left",
+                          annotation_text="Stripped Titles (Doping)", annotation_position="inside bottom left",
                           annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
     except Exception as e:
         pass 
 
     fig_vel.update_layout(
-        title=dict(text="<b>L'evoluzione della Velocità Media</b>", font=dict(color="white", size=20, family="sans-serif")),
+        title=dict(text="<b>Avarage Velocity Evolution</b>", font=dict(color="white", size=20, family="sans-serif")),
         plot_bgcolor="black", 
         paper_bgcolor="black", 
         font=dict(color="white", family="sans-serif"),
@@ -1101,11 +1015,11 @@ elif st.session_state.pagina_corrente == "tappe":
     st.markdown("<hr style='border: 1px solid #FFCC00; margin-top: 30px; margin-bottom: 30px;'>", unsafe_allow_html=True)
     
     # I titoletti da qui in giù sono NERI per risaltare sullo sfondo chiaro generale
-    st.markdown("<p style='font-weight: bold; color: black; font-family: sans-serif; font-size: 1.2rem;'>Dettaglio Percorso e Leaderboard</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-weight: bold; color: black; font-family: sans-serif; font-size: 1.2rem;'>Stage Details and Standings</p>", unsafe_allow_html=True)
 
     lista_anni = sorted(df_stage_h['Year'].unique(), reverse=True)
     lista_anni = [anno for anno in lista_anni if anno > 0]
-    anno_scelto = st.selectbox("Seleziona un'edizione per vedere i dettagli:", lista_anni)
+    anno_scelto = st.selectbox("Select an edition for details:", lista_anni)
 
     df_anno = df_stage_h[df_stage_h['Year'] == anno_scelto].sort_values('Stages').copy()
 
@@ -1135,38 +1049,38 @@ elif st.session_state.pagina_corrente == "tappe":
                 cambi_maglia = max(0, cambi_maglia)
 
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Distanza Totale", f"{distanza_tot} km")
-        m2.metric("Vincitore Finale", vincitore_finale)
-        m3.metric("Cannibale (Vittorie)", top_rider, f"{n_vittorie} tappe")
-        m4.metric("Cambi Maglia Gialla", cambi_maglia)
+        m1.metric("Total Distance", f"{distanza_tot} km")
+        m2.metric("Final Winner", vincitore_finale)
+        m3.metric("The Cannibal (Victories)", top_rider, f"{n_vittorie} Stages")
+        m4.metric("Changes in Yellow Jersey", cambi_maglia)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        st.markdown(f"<h3 style='color: black;'>Evoluzione della Leadership nel {anno_scelto}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='color: black;'>Leadership Evolution in {anno_scelto}</h3>", unsafe_allow_html=True)
         
         maglie_config = {
-            "Gialla": {
+            "Yellow": {
                 "col": "Yellow Jersey", 
                 "color": "#FFCC00", 
                 "img": "https://www.bobshop.com/media/92/7a/02/1776411535/11346-1_1.png?ts=1776411535",
                 "anno_intro": 1919,
                 "storia": "La Maglia Gialla è stata introdotta nel 1919. Prima di allora, il leader veniva identificato solo da un bracciale verde."
             },
-            "Verde": {
+            "Green": {
                 "col": "Green jersey", 
                 "color": "#009900", 
                 "img": "https://lh3.googleusercontent.com/d/1d1GLPgO6NHqt4bguSBdXjs8NowirbXAu",
                 "anno_intro": 1953,
                 "storia": "La Maglia Verde (classifica a punti) è stata creata nel 1953 per celebrare il 50º anniversario del Tour de France."
             },
-            "A Pois": {
+            "Polka dot": {
                 "col": "Polka-dot jersey", 
                 "color": "#FF0000", 
                 "img": "https://lh3.googleusercontent.com/d/1sOEebeyDAuhP0Mt6I5L4poKbahfv3xky",
                 "anno_intro": 1975,
                 "storia": "Sebbene il Gran Premio della Montagna esista dal 1933, la celebre Maglia a Pois bianchi e rossi è nata ufficialmente solo nel 1975!"
             },
-            "Bianca": {
+            "White": {
                 "col": "White jersey", 
                 "color": "#CCCCCC", 
                 "img": "https://lh3.googleusercontent.com/d/1DAYUL8bk7eYxd83opOKJCkYT_afuKWdp",
@@ -1176,7 +1090,7 @@ elif st.session_state.pagina_corrente == "tappe":
         }
 
         scelta_maglia = st.radio(
-            "Seleziona la maglia:", 
+            "Select the Jersey:", 
             list(maglie_config.keys()), 
             horizontal=True
         )
@@ -1227,7 +1141,7 @@ elif st.session_state.pagina_corrente == "tappe":
                     showgrid=True, gridwidth=1, gridcolor='#333333'
                 ), 
                 xaxis=dict(
-                    title="Tappa", tickmode='linear', dtick=1,
+                    title="Stage", tickmode='linear', dtick=1,
                     range=[min_tappa, max_tappa],
                     showgrid=True, gridwidth=1, gridcolor='#333333'
                 ),
@@ -1269,7 +1183,7 @@ elif st.session_state.pagina_corrente == "tappe":
             df_top10 = df_top10[df_top10['Atleta'] != 'N/D'].head(8) 
             
             fig_vittorie = px.bar(df_top10, y='Atleta', x='Vittorie', orientation='h', color_discrete_sequence=['#FFCC00'])
-            fig_vittorie.update_layout(yaxis={'categoryorder':'total ascending', 'title':''}, xaxis={'title': 'Vittorie'},
+            fig_vittorie.update_layout(yaxis={'categoryorder':'total ascending', 'title':''}, xaxis={'title': 'Number of Victory'},
                                        height=350, margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
             st.plotly_chart(fig_vittorie, use_container_width=True)
 
@@ -1306,7 +1220,7 @@ elif st.session_state.pagina_corrente == "tappe":
         # MAPPA INTERATTIVA
         # ==========================================
         st.markdown("<hr style='border: 1px solid #FFCC00; margin-top: 30px; margin-bottom: 30px;'>", unsafe_allow_html=True)
-        st.markdown(f"<h3 style='color: black;'>Mappa del Percorso: {anno_scelto}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='color: black;'>Route Map: {anno_scelto}</h3>", unsafe_allow_html=True)
 
         if not df_coords.empty:
             df_coords_anno = df_coords[df_coords['Year'] == anno_scelto].copy()
@@ -1412,16 +1326,17 @@ elif st.session_state.pagina_corrente == "teams":
         </style>
         """
         st.markdown(css_selectbox_scuro, unsafe_allow_html=True)
-
+        st.markdown("<h2 style='text-align: center; color: #000000; margin-bottom: 30px;'>🚴‍♂️ World Tour Teams and Lineups</h2>", unsafe_allow_html=True)
+        
         # --- 2. HEADER DELLA PAGINA (Testo Nero) ---
-        st.markdown('<h1 class="vintage-title" style="color: #000000;">Analisi Team</h1>', unsafe_allow_html=True)
-        st.markdown('<p class="journal-subtitle" style="color: #000000;">Esplora le performance storiche, la composizione e il palmarès delle squadre.</p>', unsafe_allow_html=True)
+        st.markdown('<h1 class="vintage-title" style="color: #000000;">Team Analysis</h1>', unsafe_allow_html=True)
+        st.markdown('<p class="journal-subtitle" style="color: #000000;">Explore the historical performance, roster composition, and palmarès of the teams.</p>', unsafe_allow_html=True)
 
         # --- 3. GESTIONE DATI STORICI E FILTRI ANOMALIE ---
         anni_revocati = [1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006]
         
         teams_disponibili = sorted(df_storico['Team'].dropna().unique())
-        team_selezionato = st.selectbox("Seleziona una squadra dal menu:", teams_disponibili)
+        team_selezionato = st.selectbox("Select a team:", teams_disponibili)
         
         st.markdown('<hr class="vintage-divider">', unsafe_allow_html=True)
 
@@ -1552,18 +1467,18 @@ elif st.session_state.pagina_corrente == "teams":
         # Nuovo HTML dei KPI strutturato e uniformato
         html_kpi_uniformed = f"""
         <div class="vintage-kpi-block-container">
-            <h3 class="vintage-kpi-block-title">Panoramica Squadra</h3>
+            <h3 class="vintage-kpi-block-title">Team Overview</h3>
             <div class="vintage-card-container-uniform">
                 <div class="vintage-card-uniform">
-                    <h4>Vittorie Classifica Generale</h4>
+                    <h4>GC Wins</h4>
                     <h2>{vittorie_totali}</h2>
                 </div>
                 <div class="vintage-card-uniform">
-                    <h4>Miglior Piazzamento</h4>
+                    <h4>Best Result</h4>
                     <h2>{miglior_piazzamento}</h2>
                 </div>
                 <div class="vintage-card-uniform">
-                    <h4>Edizioni Partecipate</h4>
+                    <h4>Total Participations</h4>
                     <h2>{partecipazioni}</h2>
                 </div>
             </div>
@@ -1572,7 +1487,7 @@ elif st.session_state.pagina_corrente == "teams":
         st.markdown(html_kpi_uniformed, unsafe_allow_html=True)
         st.markdown('<hr class="vintage-divider">', unsafe_allow_html=True)
         # --- 6. SEZIONE 2: COMPOSIZIONE E STRUTTURA DEL TEAM CORRIDORI ---
-        st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">I Protagonisti del Team</h3>', unsafe_allow_html=True)
+        st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">Team Roster</h3>', unsafe_allow_html=True)
         
         if not df_team_storico.empty:
             col_comp1, col_comp2 = st.columns(2)
@@ -1586,15 +1501,15 @@ elif st.session_state.pagina_corrente == "teams":
                     
                     fig_vincitori = px.bar(
                         vincitori_tappe, x='Tappe Vinte', y='Corridore', orientation='h',
-                        title="I plurivincitori di tappe nel Team",
-                        labels={'Corridore': '', 'Tappe Vinte': 'Numero di tappe'}
+                        title="Multiple Stage Winners in the Team",
+                        labels={'Corridore': 'Rider', 'Tappe Vinte': 'Number of Stages'}
                     )
                     fig_vincitori.update_traces(marker_color='#ff6666') 
                     fig_vincitori.update_layout(yaxis={'categoryorder':'total ascending'})
                     fig_vincitori = applica_tema_vintage(fig_vincitori)
                     st.plotly_chart(fig_vincitori, use_container_width=True)
                 else:
-                    st.markdown('<p style="color:white ; font-style: italic; text-align: center; padding-top: 30px;">Nessun corridore di questa formazione ha mai conquistato una vittoria di tappa al Tour.</p>', unsafe_allow_html=True)
+                    st.markdown('<p style="color:white ; font-style: italic; text-align: center; padding-top: 30px;">No rider from this lineup has ever won a stage at TDF</p>', unsafe_allow_html=True)
             with col_comp2:
                 # Grafico delle presenze storiche del team (I Fedelissimi)
                 fedelissimi = df_team_storico['Rider'].value_counts().head(5).reset_index()
@@ -1602,8 +1517,8 @@ elif st.session_state.pagina_corrente == "teams":
                 
                 fig_fedeli = px.bar(
                     fedelissimi, x='Partecipazioni', y='Corridore', orientation='h',
-                    title="I 'Fedelissimi' del Team (Presenze)",
-                    labels={'Corridore': '', 'Partecipazioni': 'Tour disputati'}
+                    title="The Team 'Loyals' (Appearances)",
+                    labels={'Corridore': '', 'Partecipazioni': 'Tour Appearances'}
                 )
                 fig_fedeli.update_traces(marker_color='#d2b48c') 
                 fig_fedeli.update_layout(yaxis={'categoryorder':'total ascending'})
@@ -1613,7 +1528,7 @@ elif st.session_state.pagina_corrente == "teams":
         st.markdown('<hr class="vintage-divider">', unsafe_allow_html=True)
 
         # --- 7. SEZIONE 3: PERFORMANCE STORICHE, SELEZIONE ANNO UNICA E STRIP PLOT ---
-        st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">Performance Storiche</h3>', unsafe_allow_html=True)
+        st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">Historical Performance</h3>', unsafe_allow_html=True)
         if not df_team_storico.empty:
             col_grafico1, col_grafico2 = st.columns(2)
             
@@ -1637,8 +1552,8 @@ elif st.session_state.pagina_corrente == "teams":
                     hover_name='Rider',
                     color='Evidenziato', 
                     color_discrete_map={True: '#ff4b4b', False: 'rgba(143, 188, 143, 0.25)'},
-                    title="Piazzamenti dell'intero Roster nella Storia",
-                    labels={'Rank_Num': 'Posizione in Classifica', 'Year': 'Anno'}
+                    title="All-Time Roster Placements",
+                    labels={'Rank_Num': 'Ranking', 'Year': 'Year'}
                 )
                 fig_roster.update_yaxes(autorange="reversed")
                 fig_roster.update_traces(
@@ -1650,7 +1565,7 @@ elif st.session_state.pagina_corrente == "teams":
                 st.plotly_chart(fig_roster, use_container_width=True)
 
         # --- 8. SEZIONE 4: PALMARÈS MAGLIE E VITTORIE TAPPE ---
-        st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">Palmarès: Tappe e Maglie</h3>', unsafe_allow_html=True)
+        st.markdown('<h3 class="vintage-section-title" style="color: #000000; font-family: Georgia, serif;">Palmarès: Stages and Jersey</h3>', unsafe_allow_html=True)
         
         # Calcolo maglie protetto
         corridori_team_clean = df_team_storico[['Year', 'Rider_Clean']].drop_duplicates()
@@ -1661,15 +1576,15 @@ elif st.session_state.pagina_corrente == "teams":
         html_maglie = f"""
         <div class="vintage-card-container" style="display: flex; gap: 20px; justify-content: center; margin-bottom: 20px;">
             <div class="vintage-card" style="flex: 1; padding: 15px; text-align: center; border: 2px solid #FFD700; background-color: #fffacd;">
-                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Giorni in Giallo</h4>
+                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Days in Yellow</h4>
                 <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 24px; font-weight: bold;">{len(maglia_gialla)}</h2>
             </div>
             <div class="vintage-card" style="flex: 1; padding: 15px; text-align: center; border: 2px solid #228B22; background-color: #f0fff0;">
-                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Giorni in Verde</h4>
+                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Days in Green</h4>
                 <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 24px; font-weight: bold;">{len(maglia_verde)}</h2>
             </div>
             <div class="vintage-card" style="flex: 1; padding: 15px; text-align: center; border: 2px solid #ff0000; background-image: radial-gradient(#ff0000 15%, transparent 16%), radial-gradient(#ff0000 15%, transparent 16%); background-size: 20px 20px; background-position: 0 0, 10px 10px; background-color: white;">
-                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; background-color: rgba(255,255,255,0.85); padding: 5px; font-size: 14px;">Giorni a Pois</h4>
+                <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; background-color: rgba(255,255,255,0.85); padding: 5px; font-size: 14px;">Days in Polka dot</h4>
                 <h2 style="margin: 10px 0 0 0; color: #000000; background-color: rgba(255,255,255,0.85); padding: 5px; display: inline-block; font-size: 24px; font-weight: bold;">{len(maglia_pois)}</h2>
             </div>
         </div>
@@ -1704,7 +1619,7 @@ elif st.session_state.pagina_corrente == "teams":
             
             st.plotly_chart(fig_tappe, use_container_width=True)
         else:
-            st.markdown('<p class="journal-text" style="color: #000000; font-style: italic; text-align: center;">Nessuna vittoria di tappa trovata per questa squadra nei dati a disposizione.</p>', unsafe_allow_html=True)
+            st.markdown('<p class="journal-text" style="color: #000000; font-style: italic; text-align: center;">No stage wins found for this team in the current dataset.</p>', unsafe_allow_html=True)
 
 
 #============================================
