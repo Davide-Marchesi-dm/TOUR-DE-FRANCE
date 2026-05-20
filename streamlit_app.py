@@ -172,11 +172,11 @@ st.markdown("""
 col1, col2, col3, col4, col5 = st.columns([1.5, 1.5, 2, 1.5, 1.5], vertical_alignment="center")
 
 with col1:
-    # Se clicchi, lo stato cambia in "2025"
-    if st.button("CLASSIFICA", use_container_width=True):
+    # Se clicchi, lo stato cambia in "classifica"
+    if st.button("STANDINGS", use_container_width=True):
         st.session_state.pagina_corrente = "classifica"
 with col2:
-    if st.button("CORRIDORI", use_container_width=True):
+    if st.button("RIDERS", use_container_width=True):
         st.session_state.pagina_corrente = "corridori"
 
 with col3:
@@ -185,7 +185,7 @@ with col3:
     st.markdown(
         f"""
         <div style="display: flex; justify-content: center; align-items: center; margin: 0; padding: 0; transform: translateY(-8px);">
-            <a href="?nav=home" target="_self" title="Torna alla Home">
+            <a href="?nav=home" target="_self" title="Back to Home">
                 <img src="{url_logo}" 
                      style="width: 100%; max-width: 140px; background-color: white; padding: 2px 8px; border-radius: 8px; cursor: pointer;">
             </a>
@@ -195,13 +195,12 @@ with col3:
     )
 
 with col4:
-    if st.button("TAPPE", use_container_width=True):
+    if st.button("STAGES", use_container_width=True):
         st.session_state.pagina_corrente = "tappe"
 
 with col5:
     if st.button("TEAMS", use_container_width=True):
         st.session_state.pagina_corrente = "teams"
-
 
 # ==========================================
 # 5. CONTENUTO DELLE PAGINE
@@ -217,7 +216,7 @@ if st.session_state.pagina_corrente == "home":
             Le Tour de France
         </h1>
         <h3 style='text-align: center; font-style: italic; color: #000000; margin-bottom: 40px;'>
-            Tutti i numeri, i segreti e i protagonisti della Grande Boucle
+            The ultimate hub for cycling fans: all the numbers, secrets, and protagonists of the Grande Boucle
         </h3>
     """, unsafe_allow_html=True)
 
@@ -227,22 +226,22 @@ if st.session_state.pagina_corrente == "home":
     with col_sx:
         # Testo dell'articolo introduttivo
         st.markdown("""
-        **PARIGI** — Il Tour de France non è semplicemente una corsa ciclistica; è un monumento nazionale itinerante, una prova di resistenza sovrumana e il palcoscenico dove, da oltre un secolo, si forgiano le leggende dello sport. 
+        **PARIS** — The Tour de France is not merely a bicycle race; it is a traveling national monument, a test of superhuman endurance, and the stage where sports legends have been forged for over a century. 
         
-        Sulle strade di Francia, i giganti del pedale si sfidano attraverso pianure spazzate dal vento, colline insidiose e le vette massacranti di Alpi e Pirenei. Questo portale nasce per dissezionare ogni singolo aspetto della corsa a tappe più famosa del mondo.
+        On the roads of France, the giants of the pedal challenge each other across wind-swept plains, treacherous hills, and the grueling peaks of the Alps and Pyrenees. This portal was created to dissect every single aspect of the world's most famous stage race.
         
-        **Esplora i dati:** Usa la barra di navigazione superiore per immergerti nelle statistiche. Dalle planimetrie dettagliate di ogni singola tappa, fino ai profili biometrici dei ciclisti e alle squadre World Tour.
+        **Explore the data:** Use the top navigation bar to dive into the statistics. From detailed layouts of each individual stage to the biometric profiles of the cyclists and the World Tour teams.
         """)
         
         # Una linea di separazione
         st.markdown("<hr style='border: 1px solid #555; margin-top: 30px; margin-bottom: 30px;'>", unsafe_allow_html=True)
         
         # ---> LE STATISTICHE
-        st.markdown("<h3 style='margin-top: 20px; margin-bottom: 15px; color: #FFFFFF;'>I Numeri della Corsa</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='margin-top: 20px; margin-bottom: 15px; color: #FFFFFF;'>Race Numbers</h3>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
-        c1.metric("Edizioni", "111")
-        c2.metric("Chilometri", "~3.500")
-        c3.metric("Tappe", "21")
+        c1.metric("Editions", "112")
+        c2.metric("Kilometers", "~3,500")
+        c3.metric("Stages", "21")
         
         # Un po' di spazio
         st.markdown("<br>", unsafe_allow_html=True)
@@ -250,11 +249,11 @@ if st.session_state.pagina_corrente == "home":
         # ---> BOX CURIOSITÀ SPOSTATO SOTTO <---
         st.markdown("""
             <div style='background-color: #E6E1CF; color: #000000; padding: 15px; border-left: 5px solid #FFCC00; margin-top: 15px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);'>
-            <h4 style='margin-top: 0; margin-bottom: 10px; font-style: italic; border-bottom: 1px solid #999; padding-bottom: 5px; color: #000000;'>📰 Dietro le quinte del Tour</h4>
+            <h4 style='margin-top: 0; margin-bottom: 10px; font-style: italic; border-bottom: 1px solid #999; padding-bottom: 5px; color: #000000;'>📰 Behind the Scenes of the Tour</h4>
                 
-            <p style='font-size: 0.95rem; margin-top: 10px;'><strong>Le origini commerciali:</strong> Il Tour fu fondato nel 1903 da Henri Desgrange, direttore del giornale sportivo francese <em>L'Auto</em> (il predecessore de L'Équipe), con un obiettivo molto pratico: sbaragliare la concorrenza e vendere più copie del suo quotidiano.</p>
+            <p style='font-size: 0.95rem; margin-top: 10px;'><strong>Commercial origins:</strong> The Tour was founded in 1903 by Henri Desgrange, editor of the French sports newspaper <em>L'Auto</em> (the predecessor of L'Équipe), with a very practical goal: to outperform the competition and sell more copies of his daily paper.</p>
                 
-            <p style='font-size: 0.95rem; margin-bottom: 0;'><strong>Il segreto del Giallo:</strong> La celebre maglia gialla, introdotta nel 1919 per rendere il leader della corsa facilmente riconoscibile in gruppo, deve il suo colore proprio alla carta su cui veniva stampato il giornale <em>L'Auto</em>.</p>
+            <p style='font-size: 0.95rem; margin-bottom: 0;'><strong>The secret of the Yellow:</strong> The famous yellow jersey, introduced in 1919 to make the race leader easily recognizable in the peloton, owes its color precisely to the yellow paper on which the newspaper <em>L'Auto</em> was printed.</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -266,7 +265,7 @@ if st.session_state.pagina_corrente == "home":
         # Didascalia della foto in piccolo (Margine sistemato per l'HTML)
         st.markdown("""
             <p style='font-size: 0.85rem; text-align: right; font-style: italic; color: #FFFFFF; margin-top: 5px;'>
-                Guy Lapébie il vincitore dell'edizione del 1937. (Foto: Archivi Storici)
+                Guy Lapébie, the winner of the 1937 edition. (Photo: Historical Archives)
             </p>
         """, unsafe_allow_html=True)
     
@@ -275,7 +274,7 @@ if st.session_state.pagina_corrente == "home":
     st.markdown("<hr style='border: 1px solid #555; margin-top: 50px; margin-bottom: 30px;'>", unsafe_allow_html=True)
     
     # Titolo della sezione citazioni
-    st.markdown("<h3 style='text-align: center; font-style: italic; color: #333; margin-bottom: 40px;'> Voci dalla Grande Boucle</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; font-style: italic; color: #333; margin-bottom: 40px;'> Voices from the Grande Boucle</h3>", unsafe_allow_html=True)
 
     # Creiamo tre colonne per affiancare le tue tre citazioni
     cit1, cit2, cit3 = st.columns(3, gap="large")
@@ -287,10 +286,10 @@ if st.session_state.pagina_corrente == "home":
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBrNDQ34YGwB6cNLr1TaGGmkzQtqPAjpaB8g&s" 
                  style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 15px; filter: grayscale(100%);">
             <p style='font-size: 1.05rem; font-style: italic; margin-bottom: 15px; line-height: 1.4; color: #FFFFFF;'>
-                «Il Tour de France ideale sarebbe quello in cui un solo corridore riuscisse ad arrivare a Parigi.»
+                «The ideal Tour de France would be one in which only a single rider managed to make it to Paris.»
             </p>
             <p style='font-size: 0.9rem; margin: 0;'><strong>— Henri Desgrange</strong></p>
-            <p style='font-size: 0.8rem; color: #FFFFFF; line-height: 1.3; margin-top: 5px;'>Fondatore del Tour.</p>
+            <p style='font-size: 0.8rem; color: #FFFFFF; line-height: 1.3; margin-top: 5px;'>Founder of the Tour.</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -301,7 +300,7 @@ if st.session_state.pagina_corrente == "home":
             <img src="https://cdn.mos.cms.futurecdn.net/WAu4qwBuYVmi4qtQ6W8F4K.jpg" 
                  style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 15px; filter: grayscale(100%);">
             <p style='font-size: 1.05rem; font-style: italic; margin-bottom: 15px; line-height: 1.4; color: #FFFFFF;'>
-                «Il Tour non è solo una gara di ciclismo, nient'affatto. È una prova. Ti prova fisicamente, ti prova mentalmente e ti prova persino moralmente.»
+                «The Tour is not just a bike race, not at all. It’s a test. It tests you physically, it tests you mentally, and it even tests you morally.»
             </p>
             <p style='font-size: 0.9rem; margin: 0;'><strong>— Lance Armstrong</strong></p>
             </div>
@@ -314,7 +313,7 @@ if st.session_state.pagina_corrente == "home":
             <img src="https://imgresizer.eurosport.com/unsafe/1200x0/filters:format(jpeg)/origin-imgresizer.eurosport.com/2021/06/29/3163795-64831628-2560-1440.jpg" 
                  style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 15px; filter: grayscale(100%);">
             <p style='font-size: 1.05rem; font-style: italic; margin-bottom: 15px; line-height: 1.4; color: #FFFFFF;'>
-                «Il ciclismo non è un gioco, è uno sport in cui si soffre. Ma il Tour de France è un livello di sofferenza completamente diverso.»
+                «Cycling isn't a game, it's a sport where you suffer. But the Tour de France is a completely different level of suffering.»
             </p>
             <p style='font-size: 0.9rem; margin: 0;'><strong>— Mark Cavendish</strong></p>
         </div>
@@ -323,7 +322,7 @@ if st.session_state.pagina_corrente == "home":
         
 elif st.session_state.pagina_corrente == "classifica":
     
-    st.markdown("<h2 style='text-align: center; color: #000000; margin-bottom: 30px;'>🏆 Classifica e Albo d'Oro</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #000000; margin-bottom: 30px;'>🏆 Standings and Roll of Honor</h2>", unsafe_allow_html=True)
     
     if not df_storico.empty:
         
@@ -369,7 +368,7 @@ elif st.session_state.pagina_corrente == "classifica":
         
         col_filtro, _ = st.columns([1, 3])
         with col_filtro:
-            anno_selezionato = st.selectbox("Seleziona l'edizione:", anni_disponibili)
+            anno_selezionato = st.selectbox("Select the edition:", anni_disponibili)
             
         st.markdown("<hr style='border: 1px solid #ccc; margin-top: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
 
@@ -378,18 +377,22 @@ elif st.session_state.pagina_corrente == "classifica":
        # ==========================================
         # 3. IL PODIO
         # ==========================================
-        st.markdown(f"<h3 style='color: #000000; margin-bottom: 20px; font-family: Georgia, serif;'>Il Podio dell'edizione {int(anno_selezionato)}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='color: #000000; margin-bottom: 20px; font-family: Georgia, serif;'>The Podium of the {int(anno_selezionato)} Edition</h3>", unsafe_allow_html=True)
         
         try:
             # Estrazione sicura dei dati
-            rider_1 = df_anno.iloc[0].get("Rider", "N/D")
-            tempo_1 = df_anno.iloc[0].get("Time", "N/D")
+            rider_1 = df_anno.iloc[0].get("Rider", "N/A")
+            tempo_1 = "+00h 00' 00&quot;"
             
-            rider_2 = df_anno.iloc[1].get("Rider", "N/D")
-            gap_2 = df_anno.iloc[1].get("Gap", "N/D")
+            rider_2 = df_anno.iloc[1].get("Rider", "N/A")
+            gap_2 = df_anno.iloc[1].get("Gap", "N/A")
+            if pd.isna(gap_2) or gap_2 == "N/D":
+                gap_2 = "N/A"
             
-            rider_3 = df_anno.iloc[2].get("Rider", "N/D")
-            gap_3 = df_anno.iloc[2].get("Gap", "N/D")
+            rider_3 = df_anno.iloc[2].get("Rider", "N/A")
+            gap_3 = df_anno.iloc[2].get("Gap", "N/A")
+            if pd.isna(gap_3) or gap_3 == "N/D":
+                gap_3 = "N/A"
 
             # Stringa HTML/CSS appiattita a sinistra: crea i cilindri 3D SENZA riflesso
             html_podio = f"""
@@ -471,13 +474,13 @@ elif st.session_state.pagina_corrente == "classifica":
             st.markdown(html_podio, unsafe_allow_html=True)
 
         except Exception as e:
-            st.warning("Dati del podio incompleti per questa edizione.")
+            st.warning("Incomplete podium data for this edition.")
 
         st.markdown("<br><hr style='border: 1px dashed #ccc; margin-top: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
         # ==========================================
         # 4. GRAFICI E METRICHE
         # ==========================================
-        st.markdown("<h4 style='color: #000000;'>Dinamiche e Performance</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #000000;'>Dynamics and Performance</h4>", unsafe_allow_html=True)
         col_stat1, col_stat2 = st.columns(2, gap="large")
         
         vincitore_anno = df_anno.iloc[0]
@@ -486,16 +489,15 @@ elif st.session_state.pagina_corrente == "classifica":
         
         with col_stat1:
             # Titolo impostato su bianco (#FFFFFF)
-            st.markdown("<p style='font-weight: bold; color: #FFFFFF;'>I distacchi della Top 10 (in minuti)</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-weight: bold; color: #FFFFFF;'>Top 10 Time Gaps (in minutes)</p>", unsafe_allow_html=True)
             
             if tempi_validi:
                 df_top10 = df_anno.head(10).copy()
                 
                 # --- CONVERSIONE IN MINUTI ---
-                df_top10['Gap (Minuti)'] = df_top10['GapSeconds'] / 60
+                df_top10['Gap (Minutes)'] = df_top10['GapSeconds'] / 60
                 
                 # --- TRUCCO PER L'ORDINAMENTO ---
-                # 1. Ci assicuriamo che il Rank sia un numero intero pulito
                 df_top10['Rank_Int'] = pd.to_numeric(df_top10['Rank'], errors='coerce').fillna(0).astype(int)
                 
                 # 2. Creiamo una nuova etichetta combinando Posizione (con zfill a 2 cifre) e Nome
@@ -508,7 +510,7 @@ elif st.session_state.pagina_corrente == "classifica":
                 df_bar_chart = df_top10.reset_index()
                 grafico_barre = alt.Chart(df_bar_chart).mark_bar(color="#FFCC00").encode(
                     x=alt.X('Rider_Label:N', sort=None, title='', axis=alt.Axis(labelAngle=-45)),
-                    y=alt.Y('Gap (Minuti):Q', title='Gap (Minuti)')
+                    y=alt.Y('Gap (Minutes):Q', title='Gap (Minutes)')
                 ).configure(
                     background='black',
                     view=alt.ViewConfig(stroke='transparent'),
@@ -522,13 +524,12 @@ elif st.session_state.pagina_corrente == "classifica":
                 )
                 st.altair_chart(grafico_barre, use_container_width=True, theme=None)
             else:
-                st.info("ℹ️ I dati sui distacchi cronometrici non sono disponibili per questa edizione.")
+                st.info("ℹ️ Time gap data is not available for this edition.")
         with col_stat2:
             # 1. Titolo bianco (#FFFFFF)
-            st.markdown("<p style='font-weight: bold; color: #FFFFFF;'>Storico del distacco tra 1° e 10° Classificato</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-weight: bold; color: #FFFFFF;'>Historical Time Gap Between 1st and 10th Place</p>", unsafe_allow_html=True)
             
             # --- CSS PER LO SLIDER GIALLO ---
-            # Andiamo a "colorare" la barra e i pallini dello slider
             st.markdown("""
                 <style>
                 /* Colore del pallino dello slider */
@@ -549,16 +550,16 @@ elif st.session_state.pagina_corrente == "classifica":
             
             df_decimi = df_decimi[df_decimi['GapSeconds'].notna()]
             df_decimi = df_decimi[df_decimi['GapSeconds'] > 0]
-            df_decimi['Gap (Minuti)'] = df_decimi['GapSeconds'] / 60
+            df_decimi['Gap (Minutes)'] = df_decimi['GapSeconds'] / 60
             
-            df_chart = df_decimi[['Year', 'Gap (Minuti)']].dropna()
+            df_chart = df_decimi[['Year', 'Gap (Minutes)']].dropna()
             
             # SLIDER PER IL RANGE DI ANNI
             min_year_disp = int(df_chart['Year'].min())
             max_year_disp = int(df_chart['Year'].max())
             
             range_anni = st.slider(
-                "Seleziona il periodo storico da visualizzare:",
+                "Select the historical period to display:",
                 min_value=min_year_disp,
                 max_value=max_year_disp,
                 value=(min_year_disp, max_year_disp) 
@@ -570,19 +571,19 @@ elif st.session_state.pagina_corrente == "classifica":
             # 4. Creiamo il grafico base con Altair (Linea GIALLA: #FFCC00)
             linea_storico = alt.Chart(df_chart_filtered).mark_line(color='#FFCC00', strokeWidth=2).encode(
                 x=alt.X('Year:Q', 
-                        title='Anno', 
+                        title='Year', 
                         axis=alt.Axis(format='d'), 
                         scale=alt.Scale(domain=[range_anni[0], range_anni[1]])),
-                y=alt.Y('Gap (Minuti):Q', title='Gap (Minuti)')
+                y=alt.Y('Gap (Minutes):Q', title='Gap (Minutes)')
             )
             
             # 4.1 Punti interattivi su tutta la linea (Punti GIALLI: #FFCC00)
             punti_storico = alt.Chart(df_chart_filtered).mark_circle(color='#FFCC00', size=50).encode(
                 x=alt.X('Year:Q', scale=alt.Scale(domain=[range_anni[0], range_anni[1]])),
-                y=alt.Y('Gap (Minuti):Q'),
+                y=alt.Y('Gap (Minutes):Q'),
                 tooltip=[
-                    alt.Tooltip('Year:Q', title='Anno', format='d'),
-                    alt.Tooltip('Gap (Minuti):Q', title='Distacco (min)', format='.1f')
+                    alt.Tooltip('Year:Q', title='Year', format='d'),
+                    alt.Tooltip('Gap (Minutes):Q', title='Gap (min)', format='.1f')
                 ]
             )
             
@@ -591,10 +592,10 @@ elif st.session_state.pagina_corrente == "classifica":
             
             punto_rosso = alt.Chart(df_anno_sel).mark_circle(color='red', size=120, opacity=1).encode(
                 x='Year:Q',
-                y='Gap (Minuti):Q',
+                y='Gap (Minutes):Q',
                 tooltip=[
-                    alt.Tooltip('Year:Q', title='Anno Selezionato', format='d'),
-                    alt.Tooltip('Gap (Minuti):Q', title='Distacco (min)', format='.1f')
+                    alt.Tooltip('Year:Q', title='Selected Year', format='d'),
+                    alt.Tooltip('Gap (Minutes):Q', title='Gap (min)', format='.1f')
                 ]
             )
             
@@ -620,23 +621,23 @@ elif st.session_state.pagina_corrente == "classifica":
         st.markdown("<hr style='border: 1px dashed #ccc; margin-top: 10px; margin-bottom: 20px;'>", unsafe_allow_html=True)
         
         c_met1, c_met2, c_met3 = st.columns(3)
-        c_met1.metric("Distanza Totale", f"{vincitore_anno.get('Distance (km)', 'N/D')} km")
-        c_met2.metric("Numero di Tappe", vincitore_anno.get('Number of stages', 'N/D'))
+        c_met1.metric("Total Distance", f"{vincitore_anno.get('Distance (km)', 'N/A')} km")
+        c_met2.metric("Number of Stages", vincitore_anno.get('Number of stages', 'N/A'))
         
         if tempi_validi:
             ore_totali = vincitore_anno['TotalSeconds'] / 3600
             vel_media = vincitore_anno['Distance (km)'] / ore_totali
-            c_met3.metric("Velocità Media Vincitore", f"{vel_media:.1f} km/h")
+            c_met3.metric("Winner's Average Speed", f"{vel_media:.1f} km/h")
         else:
-            c_met3.metric("Velocità Media Vincitore", "N/D")
+            c_met3.metric("Winner's Average Speed", "N/A")
         # ==========================================
         # 5. TABELLA DATI COMPLETI
         # ==========================================
-        st.markdown("<h4 style='color: #000000; margin-top: 30px;'>Dati Completi dell'Edizione</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #000000; margin-top: 30px;'>Complete Edition Data</h4>", unsafe_allow_html=True)
         st.dataframe(df_anno, use_container_width=True, hide_index=True)
 
     else:
-        st.warning("Impossibile caricare i dati. Assicurati che il link sia corretto e il file accessibile.")
+        st.warning("Unable to load data. Make sure the link is correct and the file is accessible.")
 
 
 elif st.session_state.pagina_corrente == "corridori":
