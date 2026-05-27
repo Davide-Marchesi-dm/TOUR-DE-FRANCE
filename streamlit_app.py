@@ -376,34 +376,7 @@ elif st.session_state.pagina_corrente == "classifica":
                 border-radius: 4px !important;
             }
 
-/* Menu a tendina aperto */
-div[data-baseweb="popover"],
-div[data-baseweb="popover"] > div,
-div[data-baseweb="popover"] > div > div,
-ul[data-baseweb="menu"],
-ul[role="listbox"] {
-    background-color: #111111 !important;
-    border: 1px solid #444444 !important;
-}
-div[data-baseweb="popover"] li,
-div[data-baseweb="popover"] li span,
-div[data-baseweb="popover"] li div,
-ul[data-baseweb="menu"] li,
-ul[role="listbox"] li {
-    color: #FFFFFF !important;
-    background-color: #111111 !important;
-}
-div[data-baseweb="popover"] li:hover,
-ul[data-baseweb="menu"] li:hover,
-ul[role="listbox"] li:hover {
-    background-color: #333333 !important;
-    color: #FFFFFF !important;
-}
-/* Voce selezionata attualmente */
-ul[role="listbox"] li[aria-selected="true"] {
-    background-color: #222222 !important;
-    color: #FFCC00 !important;
-}
+
             </style>
         """, unsafe_allow_html=True)
 
@@ -719,12 +692,84 @@ elif st.session_state.pagina_corrente == "corridori":
     if not df_tour_w.empty:
         lista_campioni = sorted(df_tour_w['Winner'].dropna().unique())
         
-        col_sel, _ = st.columns([1.5, 2])
-        with col_sel:
-            vincitore_scelto = st.selectbox("Select a rider:", lista_campioni)
-        
-        st.markdown("<hr style='border: 1px solid #ccc; margin-top: 10px; margin-bottom: 30px;'>", unsafe_allow_html=True)
+        st.markdown("""
+            <style>
+            /* Sticky bar per la selectbox riders */
+            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) {
+                position: sticky;
+                top: 0px;
+                z-index: 999;
 
+                width: 100vw !important;
+                left: 0 !important;
+                right: 0 !important;
+                margin-left: calc(-50vw + 50%) !important;
+
+                background-color: #111111 !important;
+                padding: 12px 24px !important;
+                border-bottom: 2px solid #333333;
+            }
+
+            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) > div {
+                width: 100% !important;
+                max-width: 100% !important;
+                background-color: #111111 !important;
+            }
+
+            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+            }
+
+            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox label {
+                color: #FFFFFF !important;
+                font-weight: bold !important;
+                font-size: 14px !important;
+            }
+
+            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) div[data-baseweb="select"] > div {
+                background-color: #111111 !important;
+                color: #FFFFFF !important;
+                border: 1px solid #555555 !important;
+                border-radius: 4px !important;
+            }
+
+            /* Menu a tendina aperto */
+            div[data-baseweb="popover"],
+            div[data-baseweb="popover"] > div,
+            div[data-baseweb="popover"] > div > div,
+            ul[data-baseweb="menu"],
+            ul[role="listbox"] {
+                background-color: #111111 !important;
+                border: 1px solid #444444 !important;
+            }
+            div[data-baseweb="popover"] li,
+            div[data-baseweb="popover"] li span,
+            div[data-baseweb="popover"] li div,
+            ul[data-baseweb="menu"] li,
+            ul[role="listbox"] li {
+                color: #FFFFFF !important;
+                background-color: #111111 !important;
+            }
+            div[data-baseweb="popover"] li:hover,
+            ul[data-baseweb="menu"] li:hover,
+            ul[role="listbox"] li:hover {
+                background-color: #333333 !important;
+                color: #FFFFFF !important;
+            }
+            ul[role="listbox"] li[aria-selected="true"] {
+                background-color: #222222 !important;
+                color: #FFCC00 !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+        vincitore_scelto = st.selectbox("🚴  Select a rider:", lista_campioni)
+
+        st.markdown("<hr style='border: 1px solid #ccc; margin-top: 20px; margin-bottom: 30px;'>", unsafe_allow_html=True)git add .
+git commit -m "fix: sticky selectbox rider sezione corridori"
+git push
         storico_vittorie = df_tour_w[df_tour_w['Winner'] == vincitore_scelto].sort_values('Year')
         numero_vittorie = len(storico_vittorie)
         anni_vittoria = ", ".join(storico_vittorie['Year'].astype(str).tolist())
