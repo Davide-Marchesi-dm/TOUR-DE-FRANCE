@@ -325,51 +325,94 @@ elif st.session_state.pagina_corrente == "classifica":
     st.markdown("<h2 style='text-align: center; color: #000000; margin-bottom: 30px;'>🏆 Standings and Roll of Honor</h2>", unsafe_allow_html=True)
     
     if not df_storico.empty:
-        
+
         # ==========================================
-        # 1. CSS PER LA TENDINA NERA
+        # 1. CSS STICKY BAR A TUTTO SCHERMO
         # ==========================================
         st.markdown("""
             <style>
-            div[data-baseweb="select"] > div {
-                background-color: #111111 !important; 
-                color: #FFFFFF !important; 
-                border-radius: 5px !important;
+            /* Individua il blocco che contiene la selectbox e lo rende sticky */
+            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) {
+                position: sticky;
+                top: 0px;
+                z-index: 999;
+
+                width: 100vw !important;
+                left: 0 !important;
+                right: 0 !important;
+                margin-left: calc(-50vw + 50%) !important;
+
+                background-color: #111111 !important;
+                padding: 12px 24px !important;
+                border-bottom: 2px solid #333333;
             }
-            div[data-baseweb="popover"],
-            div[data-baseweb="popover"] > div,
-            div[data-baseweb="popover"] > div > div,
-            div[data-baseweb="popover"] ul,
-            ul[data-baseweb="menu"],
-            ul[role="listbox"] {
+
+            /* Azzera i blocchi intermedi */
+            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) > div {
+                width: 100% !important;
+                max-width: 100% !important;
                 background-color: #111111 !important;
             }
-            div[data-baseweb="popover"] li,
-            div[data-baseweb="popover"] li span,
-            ul[data-baseweb="menu"] li {
+
+            /* La selectbox occupa quasi tutta la larghezza */
+            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+            }
+
+            /* Label bianca */
+            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox label {
                 color: #FFFFFF !important;
-                background-color: transparent !important;
-            }
-            div[data-baseweb="popover"] li:hover,
-            ul[data-baseweb="menu"] li:hover {
-                background-color: #333333 !important;
-            }
-            .stSelectbox label {
-                color: #000000 !important;
                 font-weight: bold !important;
+                font-size: 14px !important;
             }
+
+            /* Box interno della selectbox scuro */
+            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) div[data-baseweb="select"] > div {
+                background-color: #111111 !important;
+                color: #FFFFFF !important;
+                border: 1px solid #555555 !important;
+                border-radius: 4px !important;
+            }
+
+/* Menu a tendina aperto */
+div[data-baseweb="popover"],
+div[data-baseweb="popover"] > div,
+div[data-baseweb="popover"] > div > div,
+ul[data-baseweb="menu"],
+ul[role="listbox"] {
+    background-color: #111111 !important;
+    border: 1px solid #444444 !important;
+}
+div[data-baseweb="popover"] li,
+div[data-baseweb="popover"] li span,
+div[data-baseweb="popover"] li div,
+ul[data-baseweb="menu"] li,
+ul[role="listbox"] li {
+    color: #FFFFFF !important;
+    background-color: #111111 !important;
+}
+div[data-baseweb="popover"] li:hover,
+ul[data-baseweb="menu"] li:hover,
+ul[role="listbox"] li:hover {
+    background-color: #333333 !important;
+    color: #FFFFFF !important;
+}
+/* Voce selezionata attualmente */
+ul[role="listbox"] li[aria-selected="true"] {
+    background-color: #222222 !important;
+    color: #FFCC00 !important;
+}
             </style>
         """, unsafe_allow_html=True)
 
         # ==========================================
-        # 2. FILTRO ANNO E DATI
+        # 2. FILTRO ANNO STICKY (full width)
         # ==========================================
         anni_disponibili = sorted(df_storico['Year'].dropna().unique(), reverse=True)
-        
-        col_filtro, _ = st.columns([1, 3])
-        with col_filtro:
-            anno_selezionato = st.selectbox("Select the edition:", anni_disponibili)
-            
+        anno_selezionato = st.selectbox("📅  Select the edition:", anni_disponibili)
+
         st.markdown("<hr style='border: 1px solid #ccc; margin-top: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
 
         df_anno = df_storico[df_storico['Year'] == anno_selezionato].reset_index(drop=True)
@@ -634,8 +677,28 @@ elif st.session_state.pagina_corrente == "classifica":
         # 5. TABELLA DATI COMPLETI
         # ==========================================
         st.markdown("<h4 style='color: #000000; margin-top: 30px;'>Complete Edition Data</h4>", unsafe_allow_html=True)
-        st.dataframe(df_anno, use_container_width=True, hide_index=True)
 
+        # 1. Rinomina le colonne criptiche B e P
+        df_anno_pulito = df_anno.rename(columns={'B': 'Bonus', 'P': 'Penalty'})
+
+        # 2. Converti in modo sicuro e correggi gli apici convertendo esplicitamente OGNI valore in stringa prima del controllo
+        for col in ['Bonus', 'Penalty']:
+            df_anno_pulito[col] = df_anno_pulito[col].apply(
+                lambda x: str(x).rstrip("'") + "''" if (pd.notna(x) and str(x) != 'None' and str(x).endswith("'") and not str(x).endswith("''")) else x
+            )
+        
+        df_anno_pulito['Penalty'] = df_anno_pulito['Penalty'].apply(
+            lambda x: str(x).replace("00 ", "").replace("00' ", "") if (pd.notna(x) and ("00 " in str(x) or "00' " in str(x))) else x
+        )
+        # 3. Definisci solo le colonne utili che vuoi mostrare
+        colonne_da_mostrare = ['Rank', 'Rider', 'Rider No.', 'Team', 'Times', 'Gap', 'Bonus', 'Penalty']
+
+        # 4. Mostra il dataframe pulito e formattato correttamente
+        st.dataframe(
+            df_anno_pulito[colonne_da_mostrare], 
+            use_container_width=True, 
+            hide_index=True
+            )
     else:
         st.warning("Unable to load data. Make sure the link is correct and the file is accessible.")
 
