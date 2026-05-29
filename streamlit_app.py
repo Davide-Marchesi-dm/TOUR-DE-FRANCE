@@ -160,9 +160,12 @@ st.markdown("""
     }
     
     /* Margini per il contenuto delle pagine sotto la barra */
-    .contenuto-pagina {
-        padding: 2rem 4rem;
-    }
+    /* Margini globali per il contenuto di tutte le pagine sotto la barra nera */
+.contenuto-pagina {
+    padding: 2rem 7% !important; /* Aumenta il rientro laterale al 7% della larghezza dello schermo */
+    max-width: 1400px;           /* Evita che il testo si allarghi troppo su schermi giganti */
+    margin: 0 auto;              /* Centra perfettamente tutto il blocco nella pagina */
+}
     </style>
 """, unsafe_allow_html=True)
 
