@@ -7,6 +7,7 @@ from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 import time
 import pydeck as pdk
+import streamlit.components.v1 as components
 
 # 1. Configurazione della pagina
 st.set_page_config(layout="wide", page_title="App Tour de France")
@@ -212,117 +213,322 @@ st.markdown('<div class="contenuto-pagina">', unsafe_allow_html=True)
 
 
 if st.session_state.pagina_corrente == "home":
-    
-    # 1. IL "TITOLONE" DA PRIMA PAGINA
-    st.markdown("""
-        <h1 style='text-align: center; font-size: 3.5rem; text-transform: uppercase; border-bottom: 3px solid black; padding-bottom: 10px; margin-bottom: 10px; color: #000000;'>
-            Le Tour de France
-        </h1>
-        <h3 style='text-align: center; font-style: italic; color: #000000; margin-bottom: 40px;'>
-            The ultimate hub for cycling fans: all the numbers, secrets, and protagonists of the Grande Boucle
-        </h3>
-    """, unsafe_allow_html=True)
 
-    # 2. LAYOUT A COLONNE (Stile articolo)
-    col_sx, col_dx = st.columns([1.5, 1], gap="large")
-    
-    with col_sx:
-        # Testo dell'articolo introduttivo
-        st.markdown("""
-        **PARIS** — The Tour de France is not merely a bicycle race; it is a traveling national monument, a test of superhuman endurance, and the stage where sports legends have been forged for over a century. 
-        
-        On the roads of France, the giants of the pedal challenge each other across wind-swept plains, treacherous hills, and the grueling peaks of the Alps and Pyrenees. This portal was created to dissect every single aspect of the world's most famous stage race.
-        
-        **Explore the data:** Use the top navigation bar to dive into the statistics. From detailed layouts of each individual stage to the biometric profiles of the cyclists and the World Tour teams.
-        """)
-        
-        # Una linea di separazione
-        st.markdown("<hr style='border: 1px solid #555; margin-top: 30px; margin-bottom: 30px;'>", unsafe_allow_html=True)
-        
-        # ---> LE STATISTICHE
-        st.markdown("<h3 style='margin-top: 20px; margin-bottom: 15px; color: #FFFFFF;'>Race Numbers</h3>", unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Editions", "112")
-        c2.metric("Kilometers", "~3,500")
-        c3.metric("Stages", "21")
-        
-        # Un po' di spazio
-        st.markdown("<br>", unsafe_allow_html=True)
+    URL_HERO      = "https://cdn.artphotolimited.com/images/5c2e191bd96b2e012e7a7fc5/1000x1000/tour-de-france-1937.jpg"
+    URL_CAV       = "https://imgresizer.eurosport.com/unsafe/1200x0/filters:format(jpeg)/origin-imgresizer.eurosport.com/2021/06/29/3163795-64831628-2560-1440.jpg"
+    URL_POIS      = "https://lh3.googleusercontent.com/d/1sOEebeyDAuhP0Mt6I5L4poKbahfv3xky"
+    URL_ALPE      = "https://static.independent.co.uk/2022/07/13/21/GettyImages-51103079.jpg"
+    URL_DESGRANGE = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Henri_Desgrange_1914.jpg/960px-Henri_Desgrange_1914.jpg"
+    FULL_HTML = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset="utf-8">
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&display=swap');
 
-        # ---> BOX CURIOSITÀ SPOSTATO SOTTO <---
-        st.markdown("""
-            <div style='background-color: #E6E1CF; color: #000000; padding: 15px; border-left: 5px solid #FFCC00; margin-top: 15px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);'>
-            <h4 style='margin-top: 0; margin-bottom: 10px; font-style: italic; border-bottom: 1px solid #999; padding-bottom: 5px; color: #000000;'>📰 Behind the Scenes of the Tour</h4>
-                
-            <p style='font-size: 0.95rem; margin-top: 10px;'><strong>Commercial origins:</strong> The Tour was founded in 1903 by Henri Desgrange, editor of the French sports newspaper <em>L'Auto</em> (the predecessor of L'Équipe), with a very practical goal: to outperform the competition and sell more copies of his daily paper.</p>
-                
-            <p style='font-size: 0.95rem; margin-bottom: 0;'><strong>The secret of the Yellow:</strong> The famous yellow jersey, introduced in 1919 to make the race leader easily recognizable in the peloton, owes its color precisely to the yellow paper on which the newspaper <em>L'Auto</em> was printed.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-    with col_dx:
-        # Foto "in prima pagina" (Senza icona espandi schermo)
-        foto_hero = "https://cdn.artphotolimited.com/images/5c2e191bd96b2e012e7a7fc5/1000x1000/tour-de-france-1937.jpg"
-        st.markdown(f"<img src='{foto_hero}' style='width: 100%; border-radius: 3px;'>", unsafe_allow_html=True)
-        
-        # Didascalia della foto in piccolo (Margine sistemato per l'HTML)
-        st.markdown("""
-            <p style='font-size: 0.85rem; text-align: right; font-style: italic; color: #FFFFFF; margin-top: 5px;'>
-                Guy Lapébie, the winner of the 1937 edition. (Photo: Historical Archives)
-            </p>
-        """, unsafe_allow_html=True)
-    
-    # ---> SEZIONE CITAZIONI CELEBRI (3 Colonne) <---
-    # Una linea per separare la parte alta della pagina
-    st.markdown("<hr style='border: 1px solid #555; margin-top: 50px; margin-bottom: 30px;'>", unsafe_allow_html=True)
-    
-    # Titolo della sezione citazioni
-    st.markdown("<h3 style='text-align: center; font-style: italic; color: #333; margin-bottom: 40px;'> Voices from the Grande Boucle</h3>", unsafe_allow_html=True)
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #F4F1EA;
+    }
+    .np {
+      font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
+      color: #111;
+      background: #F4F1EA;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 0 60px 0;
+    }
+    .np-masthead { border-top: 6px solid #111; border-bottom: 3px solid #111; padding: 12px 16px 8px; text-align: center; }
+    .np-date { font-size: 11px; letter-spacing: 2px; color: #666; text-transform: uppercase; margin-bottom: 4px; font-family: Arial, sans-serif; }
+    .np-logo { font-size: 58px; font-weight: 900; font-style: italic; line-height: 1; color: #111; letter-spacing: -2px; }
+    .np-tagline { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #666; font-family: Arial, sans-serif; border-top: 1px solid #bbb; margin-top: 6px; padding-top: 5px; }
+    .np-ribbon { background: #111; color: #F4F1EA; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; text-align: center; padding: 5px 0; font-family: Arial, sans-serif; margin-bottom: 14px; }
+    .np-kpi { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 2px solid #111; border-bottom: 1px solid #bbb; margin: 0 16px 16px; }
+    .np-kpi-cell { text-align: center; padding: 10px 8px; border-right: 1px solid #bbb; }
+    .np-kpi-cell:last-child { border-right: none; }
+    .np-kpi-num { font-size: 30px; font-weight: 900; color: #111; line-height: 1; }
+    .np-kpi-lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #777; font-family: Arial, sans-serif; margin-top: 2px; }
+    .np-main { display: grid; grid-template-columns: 2fr 1fr; gap: 0; padding: 0 16px 16px; border-bottom: 2px solid #111; margin-bottom: 16px; }
+    .np-lead { padding-right: 20px; border-right: 1px solid #bbb; }
+    .np-sidebar { padding-left: 16px; display: flex; flex-direction: column; gap: 14px; }
+    .np-section-tag { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; font-family: Arial, sans-serif; color: #111; font-weight: 700; display: block; margin-bottom: 4px; }
+    .np-rule { border: none; border-top: 2px solid #111; margin: 4px 0 8px; }
+    .np-rule-thin { border: none; border-top: 1px solid #bbb; margin: 10px 0; }
+    .np-headline-xl { font-size: 34px; font-weight: 900; line-height: 1.05; color: #111; margin-bottom: 8px; }
+    .np-deck { font-size: 14px; font-style: italic; color: #333; border-left: 3px solid #111; padding-left: 10px; margin-bottom: 10px; line-height: 1.45; }
+    .np-body { font-size: 12.5px; line-height: 1.7; color: #222; column-count: 2; column-gap: 16px; }
+    .np-body p { margin-bottom: 8px; }
+    .np-drop::first-letter { font-size: 50px; font-weight: 900; float: left; line-height: 0.8; margin: 6px 6px 0 0; color: #111; }
+    .np-photo { 
+      width: 100%; 
+      height: 240px; /* Alziamo un po' la foto per dare più respiro all'immagine */
+      object-fit: cover; 
+      object-position: center 85%; /* 🪄 IL TRUCCO: sposta il ritaglio verso il basso, inquadrando le bici! */
+      filter: grayscale(100%) contrast(1.1); 
+      margin-bottom: 4px; 
+      display: block; 
+    }
+    .np-photo-sm { 
+      width: 100%; 
+      height: 120px; 
+      object-fit: cover; 
+      object-position: center 15%; /* Per le foto piccole (es. Cavendish) salva la parte alta con i visi */
+      filter: grayscale(100%) contrast(1.1); 
+      margin-bottom: 4px; 
+      display: block; 
+    }
+    .np-modal-img { 
+      width: auto !important;
+      max-width: 100%; 
+      height: auto !important;             
+      max-height: 380px;        /* Dà respiro al ritratto senza uscire dallo schermo */
+      object-fit: contain !important;      
+      object-position: center;  
+      filter: grayscale(100%) contrast(1.1); 
+      margin: 0 auto 15px auto; 
+      display: block; 
+    }
+    .np-caption { font-size: 10px; color: #666; font-style: italic; text-align: right; font-family: Arial, sans-serif; margin-bottom: 8px; }
+    .np-side-art { cursor: pointer; padding: 4px 2px; transition: background 0.15s; }
+    .np-side-art:hover { background: rgba(0,0,0,0.04); }
+    .np-side-tag { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-family: Arial, sans-serif; color: #888; display: block; margin-bottom: 2px; }
+    .np-side-hl { font-size: 14px; font-weight: 700; line-height: 1.2; color: #111; margin-bottom: 4px; }
+    .np-side-body { font-size: 11px; line-height: 1.55; color: #555; }
+    .np-read-more { font-size: 9.5px; color: #111; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; text-decoration: underline; cursor: pointer; margin-top: 3px; display: inline-block; }
+    .np-pullquote { border-top: 2px solid #111; border-bottom: 2px solid #111; padding: 10px 4px; text-align: center; font-size: 14px; font-style: italic; line-height: 1.35; color: #111; margin-top: 4px; }
+    .np-pullquote-attr { font-size: 10px; margin-top: 6px; color: #666; font-style: normal; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+    .np-bottom { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; padding: 0 16px; margin-bottom: 20px; }
+    .np-bot-art { padding: 0 16px 0 0; border-right: 1px solid #bbb; cursor: pointer; transition: background 0.15s; }
+    .np-bot-art:hover { background: rgba(0,0,0,0.03); }
+    .np-bot-art:last-child { border-right: none; padding-right: 0; padding-left: 16px; }
+    .np-bot-art:nth-child(2) { padding-left: 16px; }
+    .np-bot-hl { font-size: 16px; font-weight: 900; line-height: 1.15; color: #111; margin-bottom: 6px; }
+    .np-bot-body { font-size: 11px; line-height: 1.6; color: #444; }
+    .np-bot-byline { font-size: 9px; color: #888; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; }
+    .np-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.58); z-index: 9999; align-items: flex-start; justify-content: center; padding-top: 5vh; }
+    .np-overlay.open { display: flex; }
+    .np-modal { background: #F4F1EA; border-top: 6px solid #111; max-width: 600px; width: 92%; padding: 28px 30px; position: relative; max-height: 82vh; overflow-y: auto; font-family: 'Merriweather', Georgia, serif; }
+    .np-modal-close { position: absolute; top: 12px; right: 16px; font-size: 24px; cursor: pointer; color: #111; background: none; border: none; font-family: Georgia, serif; line-height: 1; }
+    .np-modal-tag { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; font-family: Arial, sans-serif; color: #888; display: block; margin-bottom: 6px; }
+    .np-modal-title { font-size: 26px; font-weight: 900; line-height: 1.1; color: #111; margin-bottom: 10px; }
+    .np-modal-deck { font-style: italic; font-size: 14px; color: #333; border-left: 3px solid #111; padding-left: 10px; margin-bottom: 14px; line-height: 1.45; }
+    .np-modal-img { width: 100%; height: 200px; object-fit: cover; filter: grayscale(100%) contrast(1.1); margin-bottom: 6px; display: block; }
+    .np-modal-caption { font-size: 10px; color: #666; font-style: italic; text-align: right; font-family: Arial, sans-serif; margin-bottom: 12px; }
+    .np-modal-body { font-size: 13px; line-height: 1.75; color: #222; }
+    .np-modal-body p { margin-bottom: 12px; }
+    </style>
+    </head>
+    <body>
+    <div class="np" id="np-root">
 
-    # Creiamo tre colonne per affiancare le tue tre citazioni
-    cit1, cit2, cit3 = st.columns(3, gap="large")
+      <div class="np-masthead">
+        <div class="np-date">Édition Spéciale  ·  From 1903 to Today  ·  112 Editions</div>
+        <div class="np-logo">Le Tour de France</div>
+        <div class="np-tagline">The complete historical archive of the Grande Boucle for Fans ·  All the data, all the riders, all the stages</div>
+      </div>
 
-    with cit1:
-        # Henri Desgrange
-        st.markdown("""
-        <div style='text-align: center; padding: 10px;'>
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBrNDQ34YGwB6cNLr1TaGGmkzQtqPAjpaB8g&s" 
-                 style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 15px; filter: grayscale(100%);">
-            <p style='font-size: 1.05rem; font-style: italic; margin-bottom: 15px; line-height: 1.4; color: #FFFFFF;'>
-                «The ideal Tour de France would be one in which only a single rider managed to make it to Paris.»
-            </p>
-            <p style='font-size: 0.9rem; margin: 0;'><strong>— Henri Desgrange</strong></p>
-            <p style='font-size: 0.8rem; color: #FFFFFF; line-height: 1.3; margin-top: 5px;'>Founder of the Tour.</p>
+      <div class="np-ribbon">Breaking Peloton  ·  Daily Dispatch  ·  Alpe d'Huez Edition</div>
+
+      <div class="np-kpi">
+        <div class="np-kpi-cell">
+          <div class="np-kpi-num">112</div>
+          <div class="np-kpi-lbl">Editions Held</div>
         </div>
-        """, unsafe_allow_html=True)
-
-    with cit2:
-        # Lance Armstrong
-        st.markdown("""
-        <div style='text-align: center; padding: 10px;'>
-            <img src="https://cdn.mos.cms.futurecdn.net/WAu4qwBuYVmi4qtQ6W8F4K.jpg" 
-                 style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 15px; filter: grayscale(100%);">
-            <p style='font-size: 1.05rem; font-style: italic; margin-bottom: 15px; line-height: 1.4; color: #FFFFFF;'>
-                «The Tour is not just a bike race, not at all. It’s a test. It tests you physically, it tests you mentally, and it even tests you morally.»
-            </p>
-            <p style='font-size: 0.9rem; margin: 0;'><strong>— Lance Armstrong</strong></p>
-            </div>
-            """, unsafe_allow_html=True)
-
-    with cit3:
-        # Mark Cavendish
-        st.markdown("""
-        <div style='text-align: center; padding: 10px;'>
-            <img src="https://imgresizer.eurosport.com/unsafe/1200x0/filters:format(jpeg)/origin-imgresizer.eurosport.com/2021/06/29/3163795-64831628-2560-1440.jpg" 
-                 style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 15px; filter: grayscale(100%);">
-            <p style='font-size: 1.05rem; font-style: italic; margin-bottom: 15px; line-height: 1.4; color: #FFFFFF;'>
-                «Cycling isn't a game, it's a sport where you suffer. But the Tour de France is a completely different level of suffering.»
-            </p>
-            <p style='font-size: 0.9rem; margin: 0;'><strong>— Mark Cavendish</strong></p>
+        <div class="np-kpi-cell">
+          <div class="np-kpi-num">~3,500</div>
+          <div class="np-kpi-lbl">Km per Edition</div>
         </div>
-        """, unsafe_allow_html=True)
+        <div class="np-kpi-cell">
+          <div class="np-kpi-num">21</div>
+          <div class="np-kpi-lbl">Stages</div>
+        </div>
+      </div>
 
-        
+      <div class="np-main">
+        <div class="np-lead">
+          <span class="np-section-tag">Front Page · History</span>
+          <hr class="np-rule">
+          <div class="np-headline-xl">Over a Century of Dust, Pain, and the Yellow Jersey</div>
+          <div class="np-deck">Since 1903, the Tour rewrites the limits of human endurance every summer. A journey through the numbers, secrets, and legends of the Grande Boucle.</div>
+          <img class="np-photo" src="HERO_URL" alt="Tour de France 1937">
+          <div class="np-caption">Guy Lapébie, winner of the 1937 edition. ©Historical Archives</div>
+          <div class="np-body np-drop">
+            <p>The Tour de France is not merely a bicycle race. It is a traveling monument, forged on the asphalt of France every July since 1903. Born from the imagination of journalist Henri Desgrange — who wanted to sell more copies of his newspaper L'Auto — it has become the greatest annual sports spectacle on the planet.</p>
+            <p>The numbers speak for themselves: over 112 editions, more than 3,500 kilometers of racing, 21 stages that cross plains, climb legendary passes, and decide destinies. The Alps and Pyrenees have seen giants break and unknown champions crowned.</p>
+            <p>This portal was created to analyze every aspect of the race. Explore the standings, discover the riders who made history, analyze every stage, and dive into the data of a century of cycling.</p>
+          </div>
+        </div>
+
+        <div class="np-sidebar">
+          <div>
+            <span class="np-section-tag">Curiosities</span>
+            <hr class="np-rule">
+          </div>
+
+          <div class="np-side-art" onclick="npOpen('yellow')">
+            <span class="np-side-tag">The Yellow Jersey</span>
+            <div class="np-side-hl">Why is the leader's jersey yellow?</div>
+            <div class="np-side-body">The answer lies in a newspaper and a happy accident in 1919…</div>
+            <span class="np-read-more">Read more →</span>
+            <hr class="np-rule-thin">
+          </div>
+
+          <div class="np-side-art" onclick="npOpen('desgrange')">
+            <span class="np-side-tag">The Founder</span>
+            <div class="np-side-hl">Desgrange: the tyrant who invented the Tour</div>
+            <div class="np-side-body">He wanted only a single rider to reach Paris. His obsession forged a legend.</div>
+            <span class="np-read-more">Read more →</span>
+            <hr class="np-rule-thin">
+          </div>
+
+          <div class="np-side-art" onclick="npOpen('doping')">
+            <span class="np-side-tag">Dark Side</span>
+            <div class="np-side-hl">The ghost years: seven titles erased from history</div>
+            <div class="np-side-body">From 1999 to 2005, no winner was officially proclaimed.</div>
+            <span class="np-read-more">Read more →</span>
+          </div>
+
+          <div class="np-pullquote">
+            «The ideal Tour would be one in which only a single rider managed to reach Paris.»
+            <div class="np-pullquote-attr">— Henri Desgrange, founder</div>
+          </div>
+        </div>
+      </div>
+
+<div class="np-bottom">
+        <div class="np-bot-art" onclick="npOpen('cavendish')">
+          <span class="np-section-tag">Sprint</span>
+          <hr class="np-rule">
+          <img class="np-photo-sm" src="CAV_URL" alt="Mark Cavendish" style="object-position: center 10%;">
+          <div class="np-caption">Cavendish celebrates at the finish line. ©Eurosport/Getty</div>
+          <div class="np-bot-hl">Cavendish and the seemingly impossible record</div>
+          <div class="np-bot-body">35 stage wins. A number no one believed could be surpassed — until July 2024 in Saint-Vulbas.</div>
+          <div class="np-bot-byline">Stage Wins · Points Classification</div>
+        </div>
+
+        <div class="np-bot-art" onclick="npOpen('polkadot')">
+          <span class="np-section-tag">The Mountains</span>
+          <hr class="np-rule">
+          <img class="np-photo-sm" src="POIS_URL" alt="Polka-dot jersey" style="object-fit: contain; object-position: center;">
+          <div class="np-caption">The red and white polka-dot jersey. ©TDF Archive</div>
+          <div class="np-bot-hl">The polka-dot jersey: a king born in 1975</div>
+          <div class="np-bot-body">The KOM classification has existed since 1933, but its iconic jersey only appeared 42 years later.</div>
+          <div class="np-bot-byline">Mountains Classification · Jerseys</div>
+        </div>
+
+        <div class="np-bot-art" onclick="npOpen('alpe')">
+          <span class="np-section-tag">Mythical Climbs</span>
+          <hr class="np-rule">
+          <img class="np-photo-sm" src="ALPE_URL" alt="Alpe d'Huez" style="object-position: center 70%;">
+          <div class="np-caption">The 21 hairpins of Alpe d'Huez. ©Getty Images</div>
+          <div class="np-bot-hl">Alpe d'Huez: 21 hairpins, infinite legends</div>
+          <div class="np-bot-body">Since its first appearance in 1952, this Alpine giant has been the stage for the Tour's most dramatic battles.</div>
+          <div class="np-bot-byline">Climbs · Alpine Stages</div>
+        </div>
+      </div>
+    <div class="np-overlay" id="np-overlay" onclick="npCloseOnBg(event)">
+      <div class="np-modal" id="np-modal">
+        <button class="np-modal-close" onclick="npClose()">✕</button>
+        <span class="np-modal-tag"     id="np-m-tag"></span>
+        <div  class="np-modal-title"   id="np-m-title"></div>
+        <div  class="np-modal-deck"    id="np-m-deck"></div>
+        <img  class="np-modal-img"     id="np-m-img" src="" alt="" style="display:none">
+        <div  class="np-modal-caption" id="np-m-caption"></div>
+        <div  class="np-modal-body"    id="np-m-body"></div>
+      </div>
+    </div>
+
+    <script>
+    var NP_ARTICLES = {
+      yellow: {
+        tag:     "Trivia - The Yellow Jersey",
+        title:   "Why is the leader's jersey yellow?",
+        deck:     "A color that became a symbol, born almost by chance in 1919.",
+        img:     "",
+        caption: "",
+        body:     "<p>In 1919, Tour director Henri Desgrange decided to make the leader easily identifiable in the peloton. The solution was simple: a jersey of an unmistakable color.</p><p>The chosen color was yellow, and it was no coincidence. L'Auto, the sports newspaper organizing the Tour, was printed on yellow paper to stand out from its rival Le Velo, printed on green paper. The yellow jersey was, literally, a walking advertisement.</p><p>Eugene Christophe was the first rider to wear it in the 1919 edition. From that day on, the maillot jaune became the most coveted garment in cycling: a symbol of prestige, suffering, and glory.</p>"
+      },
+      desgrange: {
+        tag:     "History - The Founder",
+        title:   "Desgrange: the visionary tyrant who invented the Tour",
+        deck:     "He imagined a race so brutal that only one rider would survive.",
+        img:     "DESGRANGE_URL",
+        caption: "Henri Desgrange, founder and director of the Tour.",
+        body:     "<p>Henri Desgrange was a former cyclist, a journalist, and above all an iron-fisted visionary. In 1903, as director of L'Auto, he launched a challenge that seemed insane: a bicycle race around the whole of France, for nearly 2,500 kilometers.</p><p>His philosophy was brutal. He wanted a race that pushed men to the limit, where suffering was a virtue and withdrawing was a disgrace.</p><p>His commercial goal was clear: beat Le Velo and sell more copies. The Tour fulfilled this mission far beyond expectations. L'Auto's circulation exploded and the race became a national institution. Desgrange directed the Tour until 1936.</p>"
+      },
+      doping: {
+        tag:     "Dark Chapter - Doping Era",
+        title:   "The ghost years: seven titles erased from history",
+        deck:     "From 1999 to 2005, no winner was officially proclaimed.",
+        img:     "",
+        caption: "",
+        body:     "<p>For seven consecutive years, Lance Armstrong crossed the finish line on the Champs-Elysees with his arms raised. It was the story of the decade: a cancer survivor who conquered the hardest race in the world seven times in a row.</p><p>In 2012, USADA published its investigation: Armstrong had orchestrated the most sophisticated doping program in the history of the sport. All seven titles were revoked. The UCI chose not to reassign the victories to the runners-up, leaving seven editions without an official champion.</p><p>Floyd Landis' 2006 title was also revoked for doping.</p>"
+      },
+      cavendish: {
+        tag:     "Sprint - Record",
+        title:   "Cavendish and the stage wins record",
+        deck:     "35 wins: a number that rewrote what was thought possible.",
+        img:     "CAV_URL",
+        caption: "Mark Cavendish celebrates at the 2021 Tour.",
+        body:     "<p>For decades, Eddy Merckx's record of 34 stage wins seemed untouchable. Then came Mark Cavendish from the Isle of Man, with his explosive sprint and hunger for victories.</p><p>In 2021 he equaled the record. In 2024, at 39 years old, he surpassed it. Stage 5 to Saint-Vulbas: Cavendish crossed the finish line first and entered history with his 35th victory, becoming the rider with the most stage wins in Tour history.</p><p>His is also a story of resilience: he had almost left cycling due to health issues and painful crashes, before returning to make history.</p>"
+      },
+      polkadot: {
+        tag:     "Jerseys - Mountains",
+        title:   "The polka-dot jersey: a king born in 1975",
+        deck:     "The most recognizable jersey in cycling has a surprisingly recent origin.",
+        img:     "POIS_URL",
+        caption: "The red and white polka-dot jersey.",
+        body:     "<p>The Mountains Classification at the Tour de France dates back to 1933, rewarding the best climbers on the high-altitude passes. For over 40 years, however, the winner was identified only by points: no distinctive jersey.</p><p>It was only in 1975 that the iconic red and white polka-dot jersey officially appeared, introduced by the chocolate manufacturer Chocolat Poulain, whose packaging had a similar pattern.</p><p>Today the maillot a pois is one of the most recognizable garments in world sports. The battles for the King of the Mountains are among the most spectacular in the entire Tour.</p>"
+      },
+      alpe: {
+        tag:     "Climbs - Legend",
+        title:   "Alpe d'Huez: 21 hairpins, infinite legends",
+        deck:     "The most mythical mountain in the history of the Tour de France.",
+        img:     "ALPE_URL",
+        caption: "The 21 hairpins of Alpe d'Huez.",
+        body:     "<p>Alpe d'Huez made its Tour de France debut in 1952, when Fausto Coppi climbed it first on his way to victory. Since then, its 21 numbered hairpins, each bearing the name of a stage winner, have become a place of pilgrimage for cycling fans worldwide.</p><p>The climb rises 1,071 meters over 13.8 kilometers, with an average gradient of 7.9%. On race day, hundreds of thousands of fans crowd the roadside.</p><p>The most legendary ascent remains that of Marco Pantani in 1997: he climbed it in 37 minutes and 35 seconds, a record that still stands today.</p>"
+      }
+    };
+
+    function npOpen(key) {
+      var a = NP_ARTICLES[key];
+      document.getElementById('np-m-tag').textContent   = a.tag;
+      document.getElementById('np-m-title').textContent = a.title;
+      document.getElementById('np-m-deck').textContent  = a.deck;
+      document.getElementById('np-m-body').innerHTML    = a.body;
+      var imgEl = document.getElementById('np-m-img');
+      var capEl = document.getElementById('np-m-caption');
+      if (a.img && !a.img.includes("_URL")) {
+        imgEl.src           = a.img;
+        imgEl.alt           = a.title;
+        imgEl.style.display = 'block';
+        capEl.textContent   = a.caption;
+      } else {
+        imgEl.style.display = 'none';
+        capEl.textContent   = '';
+      }
+      document.getElementById('np-overlay').classList.add('open');
+    }
+    function npClose() {
+      document.getElementById('np-overlay').classList.remove('open');
+    }
+    function npCloseOnBg(e) {
+      if (e.target === document.getElementById('np-overlay')) npClose();
+    }
+    </script>
+    </body>
+    </html>
+    """
+
+    FULL_HTML = FULL_HTML.replace("HERO_URL",      URL_HERO)
+    FULL_HTML = FULL_HTML.replace("DESGRANGE_URL", URL_DESGRANGE)
+    FULL_HTML = FULL_HTML.replace("CAV_URL",       URL_CAV)
+    FULL_HTML = FULL_HTML.replace("POIS_URL",      URL_POIS)
+    FULL_HTML = FULL_HTML.replace("ALPE_URL",      URL_ALPE)
+
+    components.html(FULL_HTML, height=1300, scrolling=True)
 elif st.session_state.pagina_corrente == "classifica":
     
     st.markdown("<h2 style='text-align: center; color: #000000; margin-bottom: 30px;'>🏆 Standings and Roll of Honor</h2>", unsafe_allow_html=True)
