@@ -9,6 +9,7 @@ import time
 import pydeck as pdk
 import streamlit.components.v1 as components
 
+
 # 1. Configurazione della pagina
 st.set_page_config(layout="wide", page_title="App Tour de France")
 
@@ -529,360 +530,909 @@ if st.session_state.pagina_corrente == "home":
     FULL_HTML = FULL_HTML.replace("ALPE_URL",      URL_ALPE)
 
     components.html(FULL_HTML, height=1300, scrolling=True)
+
 elif st.session_state.pagina_corrente == "classifica":
-    
-    st.markdown("<h2 style='text-align: center; color: #000000; margin-bottom: 30px;'>🏆 Standings and Roll of Honor</h2>", unsafe_allow_html=True)
-    
+
+    # ----------------------------------------------------------
+    # 0. CSS GLOBALE DELLA SEZIONE
+    # ----------------------------------------------------------
+    st.markdown("""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
+
+        /* ── Selectbox scura ── */
+        div[data-testid="stSelectbox"] label p { color: #1a1a1a !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important; }
+        div[data-baseweb="select"] > div { background-color: #111 !important; color: #fff !important; border: 1px solid #444 !important; border-radius: 3px !important; }
+        div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111 !important; }
+        div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li { color: #fff !important; background-color: #111 !important; }
+        div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover { background-color: #2a2a2a !important; }
+        ul[role="listbox"] li[aria-selected="true"] { color: #FFCC00 !important; }
+
+        /* ── Sticky nav bar ── */
+        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) {
+            position: sticky; top: 0; z-index: 999;
+            width: 100vw !important; left: 0 !important; right: 0 !important;
+            margin-left: calc(-50vw + 50%) !important;
+            background-color: #0d0d0d !important;
+            padding: 10px 24px !important;
+            border-bottom: 2px solid #FFCC00;
+        }
+        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) > div { background-color: #0d0d0d !important; }
+        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox label { color: #FFCC00 !important; font-size: 13px !important; letter-spacing: 1px; text-transform: uppercase; }
+        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) div[data-baseweb="select"] > div { background-color: #1a1a1a !important; border: 1px solid #FFCC00 !important; }
+
+        /* ── Metric cards ── */
+        [data-testid="stMetric"] { background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 4px; padding: 14px 18px !important; }
+        [data-testid="stMetricLabel"] p { color: #888 !important; font-family: 'Merriweather', serif !important; font-size: 11px !important; text-transform: uppercase; letter-spacing: 1.5px; }
+        [data-testid="stMetricValue"] { color: #FFCC00 !important; font-family: 'Merriweather', serif !important; }
+
+        /* ── Sezione testata stile giornale ── */
+        .st-standings-header {
+            font-family: 'Merriweather', Georgia, serif;
+            border-top: 5px solid #1a1a1a;
+            border-bottom: 2px solid #1a1a1a;
+            padding: 12px 0 8px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .st-section-rule { border: none; border-top: 1px solid #c8bfad; margin: 22px 0; }
+        .st-section-label {
+            font-family: 'Merriweather', serif;
+            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+            color: #666; display: block; margin-bottom: 4px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # ----------------------------------------------------------
+    # 1. TESTATA GIORNALISTICA
+    # ----------------------------------------------------------
+    st.markdown("""
+        <div class="st-standings-header">
+            <span style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;font-family:Arial,sans-serif;">
+                General Classification · Full Historical Archive
+            </span>
+            <h1 style="font-family:'Merriweather',Georgia,serif;font-size:42px;font-weight:900;
+                       color:#1a1a1a;margin:4px 0 2px;letter-spacing:-1px;">
+                Standings & Roll of Honour
+            </h1>
+            <div style="font-size:10px;letter-spacing:2px;color:#888;font-family:Arial,sans-serif;
+                        border-top:1px solid #c8bfad;padding-top:6px;margin-top:6px;">
+                From 1903 to today · Every edition · Every rider · Every gap
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
     if not df_storico.empty:
 
-        # ==========================================
-        # 1. CSS STICKY BAR A TUTTO SCHERMO
-        # ==========================================
-        st.markdown("""
-            <style>
-            /* Individua il blocco che contiene la selectbox e lo rende sticky */
-            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) {
-                position: sticky;
-                top: 0px;
-                z-index: 999;
-
-                width: 100vw !important;
-                left: 0 !important;
-                right: 0 !important;
-                margin-left: calc(-50vw + 50%) !important;
-
-                background-color: #111111 !important;
-                padding: 12px 24px !important;
-                border-bottom: 2px solid #333333;
-            }
-
-            /* Azzera i blocchi intermedi */
-            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) > div {
-                width: 100% !important;
-                max-width: 100% !important;
-                background-color: #111111 !important;
-            }
-
-            /* La selectbox occupa quasi tutta la larghezza */
-            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 !important;
-            }
-
-            /* Label bianca */
-            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox label {
-                color: #FFFFFF !important;
-                font-weight: bold !important;
-                font-size: 14px !important;
-            }
-
-            /* Box interno della selectbox scuro */
-            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) div[data-baseweb="select"] > div {
-                background-color: #111111 !important;
-                color: #FFFFFF !important;
-                border: 1px solid #555555 !important;
-                border-radius: 4px !important;
-            }
-
-
-            </style>
-        """, unsafe_allow_html=True)
-
-        # ==========================================
-        # 2. FILTRO ANNO STICKY (full width)
-        # ==========================================
+        # ----------------------------------------------------------
+        # 2. SELECTBOX EDIZIONE (sticky)
+        # ----------------------------------------------------------
         anni_disponibili = sorted(df_storico['Year'].dropna().unique(), reverse=True)
-        anno_selezionato = st.selectbox("📅  Select the edition:", anni_disponibili)
-
-        st.markdown("<hr style='border: 1px solid #ccc; margin-top: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
+        anno_selezionato = st.selectbox("📅  Select an edition:", anni_disponibili)
 
         df_anno = df_storico[df_storico['Year'] == anno_selezionato].reset_index(drop=True)
-        
-       # ==========================================
-        # 3. IL PODIO
-        # ==========================================
-        st.markdown(f"<h3 style='color: #000000; margin-bottom: 20px; font-family: Georgia, serif;'>The Podium of the {int(anno_selezionato)} Edition</h3>", unsafe_allow_html=True)
-        
-        try:
-            # Estrazione sicura dei dati
-            rider_1 = df_anno.iloc[0].get("Rider", "N/A")
-            tempo_1 = "+00h 00' 00&quot;"
-            
-            rider_2 = df_anno.iloc[1].get("Rider", "N/A")
-            gap_2 = df_anno.iloc[1].get("Gap", "N/A")
-            if pd.isna(gap_2) or gap_2 == "N/D":
-                gap_2 = "N/A"
-            
-            rider_3 = df_anno.iloc[2].get("Rider", "N/A")
-            gap_3 = df_anno.iloc[2].get("Gap", "N/A")
-            if pd.isna(gap_3) or gap_3 == "N/D":
-                gap_3 = "N/A"
+        df_anno['Rank_Num'] = pd.to_numeric(df_anno['Rank'], errors='coerce')
+        anni_revocati = list(range(1999, 2006)) + [2006]
+        titolo_revocato = int(anno_selezionato) in anni_revocati
 
-            # Stringa HTML/CSS appiattita a sinistra: crea i cilindri 3D SENZA riflesso
-            html_podio = f"""
-<style>
-.podium-stage {{ display: flex; justify-content: center; align-items: flex-end; gap: 0px; margin-top: 60px; margin-bottom: 40px; }}
-.podium-col {{ display: flex; flex-direction: column; align-items: center; width: 140px; }}
-.rider-info {{ text-align: center; margin-bottom: 40px; color: #000000; font-family: 'Georgia', serif; z-index: 10; }}
-.rider-name {{ font-size: 17px; font-weight: bold; line-height: 1.2; text-transform: uppercase; }}
-.rider-time {{ font-size: 14px; color: #555; font-style: italic; margin-top: 5px; }}
-
-/* Il corpo del cilindro nero lucido (senza riflesso) */
-.cylinder {{
-    position: relative;
-    width: 140px;
-    /* Gradiente per dare l'effetto di luce/cilindro curvo */
-    background: linear-gradient(to right, #1a1a1a 0%, #666666 25%, #1a1a1a 60%, #000000 100%);
-    /* Arrotonda la base inferiore */
-    border-radius: 0 0 50% 50% / 0 0 25px 25px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}}
-
-/* La cima del cilindro (l'ovale colorato) */
-.cylinder::before {{
-    content: ""; 
-    position: absolute; 
-    top: -25px; 
-    left: 0; 
-    width: 100%; 
-    height: 50px; 
-    border-radius: 50%; 
-    z-index: 2;
-}}
-
-/* Altezze dei gradini */
-.c-1 {{ height: 200px; z-index: 3; box-shadow: 0px 10px 15px -5px rgba(0,0,0,0.5); }}
-.c-2 {{ height: 140px; z-index: 2; box-shadow: 0px 10px 15px -5px rgba(0,0,0,0.5); }}
-.c-3 {{ height: 110px; z-index: 1; box-shadow: 0px 10px 15px -5px rgba(0,0,0,0.5); }}
-
-/* Colori delle cime: Oro, Argento, Bronzo */
-.c-1::before {{ background: radial-gradient(ellipse at top left, #ffdf00, #b8860b); }}
-.c-2::before {{ background: radial-gradient(ellipse at top left, #f0f0f0, #999999); }}
-.c-3::before {{ background: radial-gradient(ellipse at top left, #ffa07a, #8b4513); }}
-
-/* I numeri sul fronte del cilindro */
-.pos-number {{ font-size: 55px; font-weight: bold; font-family: 'Arial', sans-serif; z-index: 4; margin-top: 15px; opacity: 0.9; }}
-.n-1 {{ color: #ffd700; text-shadow: 2px 2px 4px #000; }}
-.n-2 {{ color: #e0e0e0; text-shadow: 2px 2px 4px #000; }}
-.n-3 {{ color: #cd7f32; text-shadow: 2px 2px 4px #000; }}
-</style>
-
-<div class="podium-stage">
-<div class="podium-col">
-<div class="rider-info">
-<div class="rider-name">{rider_2}</div>
-<div class="rider-time">{gap_2}</div>
-</div>
-<div class="cylinder c-2"><div class="pos-number n-2">2</div></div>
-</div>
-
-<div class="podium-col" style="margin-top: -30px;">
-<div class="rider-info">
-<div class="rider-name" style="font-size: 21px;">{rider_1}</div>
-<div class="rider-time">{tempo_1}</div>
-</div>
-<div class="cylinder c-1"><div class="pos-number n-1">1</div></div>
-</div>
-
-<div class="podium-col">
-<div class="rider-info">
-<div class="rider-name">{rider_3}</div>
-<div class="rider-time">{gap_3}</div>
-</div>
-<div class="cylinder c-3"><div class="pos-number n-3">3</div></div>
-</div>
-</div>
-"""
-            st.markdown(html_podio, unsafe_allow_html=True)
-
-        except Exception as e:
-            st.warning("Incomplete podium data for this edition.")
-
-        st.markdown("<br><hr style='border: 1px dashed #ccc; margin-top: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
-        # ==========================================
-        # 4. GRAFICI E METRICHE
-        # ==========================================
-        st.markdown("<h4 style='color: #000000;'>Dynamics and Performance</h4>", unsafe_allow_html=True)
-        col_stat1, col_stat2 = st.columns(2, gap="large")
-        
-        vincitore_anno = df_anno.iloc[0]
-        # Check di sicurezza sui tempi
-        tempi_validi = pd.notna(vincitore_anno.get('TotalSeconds')) and vincitore_anno.get('TotalSeconds', 0) > 0
-        
-        with col_stat1:
-            # Titolo impostato su bianco (#FFFFFF)
-            st.markdown("<p style='font-weight: bold; color: #FFFFFF;'>Top 10 Time Gaps (in minutes)</p>", unsafe_allow_html=True)
-            
-            if tempi_validi:
-                df_top10 = df_anno.head(10).copy()
-                
-                # --- CONVERSIONE IN MINUTI ---
-                df_top10['Gap (Minutes)'] = df_top10['GapSeconds'] / 60
-                
-                # --- TRUCCO PER L'ORDINAMENTO ---
-                df_top10['Rank_Int'] = pd.to_numeric(df_top10['Rank'], errors='coerce').fillna(0).astype(int)
-                
-                # 2. Creiamo una nuova etichetta combinando Posizione (con zfill a 2 cifre) e Nome
-                df_top10['Rider_Label'] = df_top10['Rank_Int'].astype(str).str.zfill(2) + "° " + df_top10['Rider']
-                
-                # 3. Impostiamo questa nuova colonna come indice per il grafico
-                df_top10.set_index('Rider_Label', inplace=True)
-                
-                # Convertiamo in Altair per forzare lo sfondo nero e i testi bianchi
-                df_bar_chart = df_top10.reset_index()
-                grafico_barre = alt.Chart(df_bar_chart).mark_bar(color="#FFCC00").encode(
-                    x=alt.X('Rider_Label:N', sort=None, title='', axis=alt.Axis(labelAngle=-45)),
-                    y=alt.Y('Gap (Minutes):Q', title='Gap (Minutes)')
-                ).configure(
-                    background='black',
-                    view=alt.ViewConfig(stroke='transparent'),
-                    axis=alt.AxisConfig(
-                        labelColor='white', 
-                        titleColor='white', 
-                        gridColor='#333333', 
-                        domainColor='#333333', 
-                        tickColor='white'
-                    )
-                )
-                st.altair_chart(grafico_barre, use_container_width=True, theme=None)
-            else:
-                st.info("ℹ️ Time gap data is not available for this edition.")
-        with col_stat2:
-            # 1. Titolo bianco (#FFFFFF)
-            st.markdown("<p style='font-weight: bold; color: #FFFFFF;'>Historical Time Gap Between 1st and 10th Place</p>", unsafe_allow_html=True)
-            
-            # --- CSS PER LO SLIDER GIALLO ---
+        # ----------------------------------------------------------
+        # 3. BANNER TITOLO REVOCATO
+        # ----------------------------------------------------------
+        if titolo_revocato:
             st.markdown("""
-                <style>
-                /* Colore del pallino dello slider */
-                .stSlider [data-baseweb="slider"] [role="slider"] {
-                    background-color: #FFCC00 !important;
-                }
-                /* Colore della barra riempita */
-                .stSlider [data-baseweb="slider"] div[data-testid="stTickBar"] > div > div > div {
-                    background-color: #FFCC00 !important;
-                }
-                </style>
+                <div style="background:#1a0000;border:1px solid #cc0000;border-left:5px solid #cc0000;
+                            padding:12px 18px;border-radius:3px;margin:16px 0;font-family:'Merriweather',serif;">
+                    <span style="color:#cc0000;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:1px;">
+                        ⚠ Doping Era
+                    </span>
+                    <p style="color:#e8c8c8;margin:4px 0 0;font-size:12px;line-height:1.5;">
+                        The official winner of this edition was subsequently stripped of the title following 
+                        doping violations. The UCI chose not to reassign the victory. This record reflects 
+                        the rider who crossed the finish line first.
+                    </p>
+                </div>
             """, unsafe_allow_html=True)
 
-            # Preparazione dei dati base
-            df_gap_storico = df_storico.copy()
-            df_gap_storico['Rank_Int'] = pd.to_numeric(df_gap_storico['Rank'], errors='coerce')
-            df_decimi = df_gap_storico[df_gap_storico['Rank_Int'] == 10].copy()
-            
-            df_decimi = df_decimi[df_decimi['GapSeconds'].notna()]
-            df_decimi = df_decimi[df_decimi['GapSeconds'] > 0]
-            df_decimi['Gap (Minutes)'] = df_decimi['GapSeconds'] / 60
-            
-            df_chart = df_decimi[['Year', 'Gap (Minutes)']].dropna()
-            
-            # SLIDER PER IL RANGE DI ANNI
-            min_year_disp = int(df_chart['Year'].min())
-            max_year_disp = int(df_chart['Year'].max())
-            
-            range_anni = st.slider(
-                "Select the historical period to display:",
-                min_value=min_year_disp,
-                max_value=max_year_disp,
-                value=(min_year_disp, max_year_disp) 
-            )
-            
-            # Filtriamo il dataframe in base agli anni scelti con lo slider
-            df_chart_filtered = df_chart[(df_chart['Year'] >= range_anni[0]) & (df_chart['Year'] <= range_anni[1])]
-            
-            # 4. Creiamo il grafico base con Altair (Linea GIALLA: #FFCC00)
-            linea_storico = alt.Chart(df_chart_filtered).mark_line(color='#FFCC00', strokeWidth=2).encode(
-                x=alt.X('Year:Q', 
-                        title='Year', 
-                        axis=alt.Axis(format='d'), 
-                        scale=alt.Scale(domain=[range_anni[0], range_anni[1]])),
-                y=alt.Y('Gap (Minutes):Q', title='Gap (Minutes)')
-            )
-            
-            # 4.1 Punti interattivi su tutta la linea (Punti GIALLI: #FFCC00)
-            punti_storico = alt.Chart(df_chart_filtered).mark_circle(color='#FFCC00', size=50).encode(
-                x=alt.X('Year:Q', scale=alt.Scale(domain=[range_anni[0], range_anni[1]])),
-                y=alt.Y('Gap (Minutes):Q'),
-                tooltip=[
-                    alt.Tooltip('Year:Q', title='Year', format='d'),
-                    alt.Tooltip('Gap (Minutes):Q', title='Gap (min)', format='.1f')
-                ]
-            )
-            
-            # 5. Punto rosso e linea tratteggiata per l'anno selezionato
-            df_anno_sel = df_chart[df_chart['Year'] == int(anno_selezionato)]
-            
-            punto_rosso = alt.Chart(df_anno_sel).mark_circle(color='red', size=120, opacity=1).encode(
-                x='Year:Q',
-                y='Gap (Minutes):Q',
-                tooltip=[
-                    alt.Tooltip('Year:Q', title='Selected Year', format='d'),
-                    alt.Tooltip('Gap (Minutes):Q', title='Gap (min)', format='.1f')
-                ]
-            )
-            
-            linea_vert_rossa = alt.Chart(df_anno_sel).mark_rule(color='red', strokeDash=[5, 5]).encode(
-                x='Year:Q'
-            )
-            
-            # 6. Sovrapposizione finale con aggiunta del tema nero
-            grafico_completo = alt.layer(linea_storico, punti_storico, linea_vert_rossa, punto_rosso).configure(
-                background='black', 
-                view=alt.ViewConfig(stroke='transparent'), 
-                axis=alt.AxisConfig(
-                    labelColor='white', 
-                    titleColor='white', 
-                    gridColor='#333333', 
-                    domainColor='#333333', 
-                    tickColor='white' 
-                )
-            )
-            
-            # Mostriamo il grafico usando theme=None per bloccare il tema chiaro di Streamlit
-            st.altair_chart(grafico_completo, use_container_width=True, theme=None)
-        st.markdown("<hr style='border: 1px dashed #ccc; margin-top: 10px; margin-bottom: 20px;'>", unsafe_allow_html=True)
-        
-        c_met1, c_met2, c_met3 = st.columns(3)
-        c_met1.metric("Total Distance", f"{vincitore_anno.get('Distance (km)', 'N/A')} km")
-        c_met2.metric("Number of Stages", vincitore_anno.get('Number of stages', 'N/A'))
-        
+        # ----------------------------------------------------------
+        # 4. PODIO — stile giornale copertina
+        # ----------------------------------------------------------
+        st.markdown('<span class="st-section-label">· Front Page ·</span>', unsafe_allow_html=True)
+        st.markdown(f"""
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
+                       color:#1a1a1a;margin:0 0 20px;">
+                The Podium of the {int(anno_selezionato)} Edition
+            </h3>
+        """, unsafe_allow_html=True)
+
+        try:
+            def safe_get(row_idx, col, default="N/A"):
+                if row_idx >= len(df_anno): return default
+                val = df_anno.iloc[row_idx].get(col, default)
+                return default if pd.isna(val) else str(val)
+
+            r1 = safe_get(0, "Rider")
+            t1 = safe_get(0, "Team")
+            r2 = safe_get(1, "Rider"); g2 = safe_get(1, "Gap")
+            r3 = safe_get(2, "Rider"); g3 = safe_get(2, "Gap")
+
+            flag_map = {
+                "France": "🇫🇷", "Italy": "🇮🇹", "Belgium": "🇧🇪", "Spain": "🇪🇸",
+                "Netherlands": "🇳🇱", "Luxembourg": "🇱🇺", "Switzerland": "🇨🇭",
+                "Ireland": "🇮🇪", "Germany": "🇩🇪", "USA": "🇺🇸", "United States": "🇺🇸",
+                "Denmark": "🇩🇰", "Colombia": "🇨🇴", "Slovenia": "🇸🇮",
+                "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Dnmark": "🇩🇰",
+            }
+
+            # Cerchiamo la nazione del vincitore nel dataset Tour_Winners
+            winner_row = df_tour_w[df_tour_w['Year'] == anno_selezionato] if not df_tour_w.empty else pd.DataFrame()
+            nazione_vincitore = ""
+            if not winner_row.empty:
+                naz = winner_row.iloc[0].get('Country', '')
+                nazione_vincitore = flag_map.get(str(naz).strip(), "")
+
+            doping_marker = ' <span style="font-size:11px;color:#cc0000;vertical-align:middle;">✕</span>' if titolo_revocato else ""
+
+            html_podio = f"""
+            <style>
+            .podium-wrap {{ display:flex; justify-content:center; align-items:flex-end; gap:0; margin:30px 0 40px; font-family:'Merriweather',Georgia,serif; }}
+            .podium-col {{ display:flex; flex-direction:column; align-items:center; width:200px; }}
+            .podium-rider {{ text-align:center; margin-bottom:18px; }}
+            .podium-pos {{ font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#888;font-family:Arial,sans-serif; }}
+            .podium-name {{ font-size:15px;font-weight:900;color:#1a1a1a;line-height:1.2;margin:4px 0; }}
+            .podium-gap  {{ font-size:12px;font-style:italic;color:#666; }}
+            .podium-team {{ font-size:10px;color:#999;letter-spacing:.5px;margin-top:3px; }}
+            .podium-block {{
+                width:100%; display:flex; justify-content:center; align-items:center;
+                background:linear-gradient(to right,#1a1a1a 0%,#555 30%,#1a1a1a 70%,#111 100%);
+                border-radius:0 0 40% 40%/0 0 20px 20px;
+                position:relative;
+            }}
+            .podium-block::before {{
+                content:""; position:absolute; top:-20px; left:0; width:100%;
+                height:40px; border-radius:50%; z-index:2;
+            }}
+            .pb-1 {{ height:180px; }} .pb-2 {{ height:120px; }} .pb-3 {{ height:90px; }}
+            .pb-1::before {{ background:radial-gradient(ellipse at 30% 30%,#FFE566,#b8860b); }}
+            .pb-2::before {{ background:radial-gradient(ellipse at 30% 30%,#f0f0f0,#888); }}
+            .pb-3::before {{ background:radial-gradient(ellipse at 30% 30%,#e8a07a,#7a3a10); }}
+            .podium-num {{ font-size:52px;font-weight:900;font-family:Arial,sans-serif;z-index:4;margin-top:12px;opacity:.85; }}
+            .pn-1 {{ color:#FFD700;text-shadow:2px 2px 6px #000; }}
+            .pn-2 {{ color:#e8e8e8;text-shadow:2px 2px 6px #000; }}
+            .pn-3 {{ color:#cd7f32;text-shadow:2px 2px 6px #000; }}
+            .podium-rule {{ width:80%;border:none;border-top:2px solid #1a1a1a;margin:0 0 14px; }}
+            </style>
+
+            <div class="podium-wrap">
+              <!-- 2nd -->
+              <div class="podium-col">
+                <div class="podium-rider">
+                  <div class="podium-pos">Runner-up</div>
+                  <div class="podium-name">{r2}</div>
+                  <div class="podium-gap">{g2}</div>
+                </div>
+                <hr class="podium-rule">
+                <div class="podium-block pb-2"><div class="podium-num pn-2">2</div></div>
+              </div>
+              <!-- 1st -->
+              <div class="podium-col" style="margin-bottom:0; z-index:3;">
+                <div class="podium-rider">
+                  <div class="podium-pos">Champion {nazione_vincitore}</div>
+                  <div class="podium-name" style="font-size:19px;">{r1}{doping_marker}</div>
+                  <div class="podium-gap">+00h 00' 00"</div>
+                  <div class="podium-team">{t1}</div>
+                </div>
+                <hr class="podium-rule" style="border-color:#FFCC00;">
+                <div class="podium-block pb-1"><div class="podium-num pn-1">1</div></div>
+              </div>
+              <!-- 3rd -->
+              <div class="podium-col">
+                <div class="podium-rider">
+                  <div class="podium-pos">Third Place</div>
+                  <div class="podium-name">{r3}</div>
+                  <div class="podium-gap">{g3}</div>
+                </div>
+                <hr class="podium-rule">
+                <div class="podium-block pb-3"><div class="podium-num pn-3">3</div></div>
+              </div>
+            </div>
+            """
+            st.markdown(html_podio, unsafe_allow_html=True)
+        except Exception:
+            st.warning("Podium data incomplete for this edition.")
+
+        # ----------------------------------------------------------
+        # 5. METRICHE EDIZIONE
+        # ----------------------------------------------------------
+        hr_style = "<hr class='st-section-rule'>"
+        st.markdown(hr_style, unsafe_allow_html=True)
+        vincitore_row = df_anno.iloc[0]
+        tempi_validi = pd.notna(vincitore_row.get('TotalSeconds')) and vincitore_row.get('TotalSeconds', 0) > 0
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("📍 Distance", f"{vincitore_row.get('Distance (km)', 'N/A')} km")
+        c2.metric("🏁 Stages", vincitore_row.get('Number of stages', 'N/A'))
         if tempi_validi:
-            ore_totali = vincitore_anno['TotalSeconds'] / 3600
-            vel_media = vincitore_anno['Distance (km)'] / ore_totali
-            c_met3.metric("Winner's Average Speed", f"{vel_media:.1f} km/h")
+            ore = vincitore_row['TotalSeconds'] / 3600
+            vel = vincitore_row['Distance (km)'] / ore
+            c3.metric("⚡ Avg Speed", f"{vel:.1f} km/h")
         else:
-            c_met3.metric("Winner's Average Speed", "N/A")
-        # ==========================================
-        # 5. TABELLA DATI COMPLETI
-        # ==========================================
-        st.markdown("<h4 style='color: #000000; margin-top: 30px;'>Complete Edition Data</h4>", unsafe_allow_html=True)
+            c3.metric("⚡ Avg Speed", "N/A")
+        # Calcola quanti corridori hanno concluso la gara
+        finishers = df_anno[df_anno['ResultType'] == 'time']['Rank_Num'].count() if 'ResultType' in df_anno.columns else len(df_anno)
+        c4.metric("✅ Finishers", int(finishers) if finishers else "N/A")
 
-        # 1. Rinomina le colonne criptiche B e P
-        df_anno_pulito = df_anno.rename(columns={'B': 'Bonus', 'P': 'Penalty'})
+        # ----------------------------------------------------------
+        # 7. PIRAMIDE DEL TEMPO
+        # ----------------------------------------------------------
+        st.markdown(hr_style, unsafe_allow_html=True)
+        st.markdown('<span class="st-section-label">· Time Gap Anatomy ·</span>', unsafe_allow_html=True)
+        st.markdown(f"""
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:900;color:#1a1a1a;margin:0 0 4px;">
+                The Time Pyramid — {int(anno_selezionato)}
+            </h3>
+            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
+                Each bar is a rider's gap from the winner. The wider the pyramid, the more dominant the victory.
+            </p>
+        """, unsafe_allow_html=True)
 
-        # 2. Converti in modo sicuro e correggi gli apici convertendo esplicitamente OGNI valore in stringa prima del controllo
-        for col in ['Bonus', 'Penalty']:
-            df_anno_pulito[col] = df_anno_pulito[col].apply(
-                lambda x: str(x).rstrip("'") + "''" if (pd.notna(x) and str(x) != 'None' and str(x).endswith("'") and not str(x).endswith("''")) else x
-            )
-        
-        df_anno_pulito['Penalty'] = df_anno_pulito['Penalty'].apply(
-            lambda x: str(x).replace("00 ", "").replace("00' ", "") if (pd.notna(x) and ("00 " in str(x) or "00' " in str(x))) else x
+        df_pyr = df_anno[df_anno['Rank_Num'].notna()].sort_values('Rank_Num').head(15).copy()
+        df_pyr = df_pyr[df_pyr['GapSeconds'].notna()]
+        gap_dati_disponibili = df_pyr[df_pyr['GapSeconds'] > 0]['GapSeconds'].count() >= 2
+
+        if not gap_dati_disponibili:
+            st.markdown("""
+                <div style="background:#111;border:1px solid #2a2a2a;border-radius:4px;
+                            padding:16px 20px;font-family:'Merriweather',serif;color:#888;font-style:italic;">
+                    Time gap data not available for this early edition of the Tour.
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            def fmt_gap_pyr(s):
+                if s == 0: return "Leader"
+                h = int(s) // 3600
+                m = (int(s) % 3600) // 60
+                sec = int(s) % 60
+                if h > 0: return f"+{h}h {m:02d}'{sec:02d}\""
+                if m > 0: return f"+{m}'{sec:02d}\""
+                return f"+{sec}\""
+
+            max_gap = df_pyr['GapSeconds'].max()
+            MAX_BAR_PX = 200
+            BAR_COLORS = [
+                "#FFCC00","#5DCAA5","#378ADD","#EF9F27",
+                "#D85A30","#7F77DD","#D4537E","#639922",
+                "#888780","#E24B4A","#1D9E75","#BA7517",
+                "#185FA5","#993556","#5F5E5A",
+            ]
+
+            rows_pyr = ""
+            for i, row in enumerate(df_pyr.itertuples()):
+                rank    = int(row.Rank_Num)
+                name    = str(row.Rider).title()
+                gap_s   = float(row.GapSeconds)
+                gap_txt = fmt_gap_pyr(gap_s)
+                team    = str(row.Team) if hasattr(row, 'Team') and row.Team else ""
+
+                is_winner = (rank == 1)
+                bar_w = 0 if is_winner else max(4, int((gap_s / max_gap) * MAX_BAR_PX))
+                col   = BAR_COLORS[min(i, len(BAR_COLORS)-1)]
+
+                # Alterna sinistra/destra per i corridori dopo il vincitore
+                if is_winner:
+                    rows_pyr += f"""
+                    <div class="pyr-row pyr-winner-row">
+                      <div class="pyr-left" style="justify-content:flex-end;">
+                        <span class="pyr-name" style="font-weight:700;color:#FFCC00;">{name}</span>
+                        <span class="pyr-team">{team}</span>
+                      </div>
+                      <div class="pyr-center">
+                        <div class="pyr-axis-dot" style="background:#FFCC00;"></div>
+                      </div>
+                      <div class="pyr-right">
+                        <span class="pyr-gap" style="color:#FFCC00;">Leader</span>
+                      </div>
+                    </div>"""
+                elif rank % 2 == 0:
+                    # pari → barra verso sinistra, nome a destra
+                    rows_pyr += f"""
+                    <div class="pyr-row">
+                      <div class="pyr-left">
+                        <div class="pyr-bar" style="width:{bar_w}px;background:{col};"></div>
+                        <span class="pyr-gap-left">{gap_txt}</span>
+                      </div>
+                      <div class="pyr-center"><div class="pyr-axis-dot"></div></div>
+                      <div class="pyr-right">
+                        <span class="pyr-rank">#{rank}</span>
+                        <span class="pyr-name">{name}</span>
+                      </div>
+                    </div>"""
+                else:
+                    # dispari → barra verso destra, nome a sinistra
+                    rows_pyr += f"""
+                    <div class="pyr-row">
+                      <div class="pyr-left" style="justify-content:flex-end;">
+                        <span class="pyr-name">{name}</span>
+                        <span class="pyr-rank">#{rank}</span>
+                      </div>
+                      <div class="pyr-center"><div class="pyr-axis-dot"></div></div>
+                      <div class="pyr-right">
+                        <div class="pyr-bar" style="width:{bar_w}px;background:{col};"></div>
+                        <span class="pyr-gap-right">{gap_txt}</span>
+                      </div>
+                    </div>"""
+
+            doping_note = ""
+            if titolo_revocato:
+                doping_note = """<div style="margin-top:10px;font-size:11px;color:#cc0000;
+                    font-family:'Merriweather',serif;font-style:italic;">
+                    ✕ Title subsequently stripped — gaps shown reflect race result.</div>"""
+
+            pyramid_html = f"""
+            <style>
+            .pyr-wrap {{
+                font-family: 'Merriweather', Georgia, serif;
+                background: #0d0d0d;
+                border: 1px solid #222;
+                border-radius: 4px;
+                padding: 20px 12px 16px;
+                position: relative;
+            }}
+            .pyr-axis-line {{
+                position: absolute;
+                left: 50%; top: 0; bottom: 0;
+                width: 1px;
+                background: #2a2a2a;
+                transform: translateX(-0.5px);
+                pointer-events: none;
+            }}
+            .pyr-row {{
+                display: grid;
+                grid-template-columns: 1fr 16px 1fr;
+                align-items: center;
+                height: 32px;
+                margin-bottom: 3px;
+            }}
+            .pyr-winner-row {{ height: 38px; margin-bottom: 6px; }}
+            .pyr-left  {{ display:flex; align-items:center; gap:6px; justify-content:flex-end; padding-right:8px; overflow:hidden; }}
+            .pyr-right {{ display:flex; align-items:center; gap:6px; justify-content:flex-start; padding-left:8px; overflow:hidden; }}
+            .pyr-center {{ display:flex; align-items:center; justify-content:center; }}
+            .pyr-axis-dot {{
+                width: 6px; height: 6px;
+                border-radius: 50%;
+                background: #444;
+                flex-shrink: 0;
+            }}
+            .pyr-bar {{
+                height: 18px;
+                border-radius: 2px;
+                flex-shrink: 0;
+                transition: width 0.5s ease;
+            }}
+            .pyr-name {{
+                font-size: 12px;
+                color: #d0ccc4;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 150px;
+            }}
+            .pyr-team {{
+                font-size: 10px;
+                color: #555;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 120px;
+                margin-left: 6px;
+                font-style: italic;
+            }}
+            .pyr-rank {{
+                font-size: 10px;
+                color: #555;
+                flex-shrink: 0;
+                font-weight: 700;
+            }}
+            .pyr-gap-left  {{ font-size: 11px; color: #888; white-space: nowrap; font-family: monospace; }}
+            .pyr-gap-right {{ font-size: 11px; color: #888; white-space: nowrap; font-family: monospace; }}
+            .pyr-gap {{ font-size: 12px; white-space: nowrap; font-family: monospace; }}
+            .pyr-scale {{
+                margin-top: 14px;
+                padding-top: 10px;
+                border-top: 1px solid #1e1e1e;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 16px;
+            }}
+            .pyr-scale-bar {{
+                height: 3px;
+                background: #333;
+                border-radius: 1px;
+            }}
+            .pyr-scale-label {{ font-size: 10px; color: #555; letter-spacing: 1px; text-transform: uppercase; font-family: Arial, sans-serif; }}
+            </style>
+
+            <div class="pyr-wrap">
+              <div class="pyr-axis-line"></div>
+              {rows_pyr}
+              <div class="pyr-scale">
+                <span class="pyr-scale-label">← wider = bigger gap from leader →</span>
+                <div class="pyr-scale-bar" style="width:{MAX_BAR_PX}px;"></div>
+                <span class="pyr-scale-label">{fmt_gap_pyr(int(max_gap))}</span>
+              </div>
+            </div>
+            {doping_note}
+            """
+            import streamlit.components.v1 as components
+            pyr_height = 38 + (len(df_pyr) - 1) * 35 + 60
+            components.html(pyramid_html, height=pyr_height, scrolling=False)
+
+# ----------------------------------------------------------
+        # 8. GRAFICO RADIALE STORICO (D3.js)
+        # ----------------------------------------------------------
+        st.markdown(hr_style, unsafe_allow_html=True)
+        st.markdown('<span class="st-section-label">· Historical Competitiveness ·</span>', unsafe_allow_html=True)
+        st.markdown("""
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:900;color:#1a1a1a;margin:0 0 4px;">
+                The Ring of Suffering
+            </h3>
+            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
+                A radial timeline of the Tour. Each arc is an edition; length represents the time gap between 1st and 2nd place.
+            </p>
+        """, unsafe_allow_html=True)
+
+        RADIAL_HTML = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <meta charset="utf-8">
+<style>
+          :root {
+            /* Variabili colore iniettate per mappare il grafico sul tuo tema Streamlit scuro */
+            --color-background-primary: #0d0d0d;
+            --color-text-primary: #f0ece4;
+            --color-text-secondary: #aaa;
+            --color-text-tertiary: #666;
+            --color-border-secondary: #444;
+            --color-border-tertiary: #2a2a2a;
+            --font-serif: 'Merriweather', Georgia, serif;
+            --border-radius-md: 4px;
+          }
+          
+body { 
+            background: transparent; 
+            font-family: sans-serif; 
+            margin: 0; 
+            overflow: hidden; /* 🪄 Nasconde la barra di scorrimento laterale */
+          }
+
+          .wrap {
+            display: grid;
+            grid-template-columns: 1fr 240px;
+            gap: 10px;
+            align-items: start;
+            background: #0d0d0d;
+            border: 1px solid #222;
+            border-radius: 4px;
+            padding: 24px 30px 24px 12px;
+            
+            margin: 16px auto; /* Aggiunge 16px di spazio fisico esterno su tutti i lati e centra */
+            width: calc(100% - 32px); /* Dice al box di occupare il 100% MENO i 16+16px dei margini */
+            box-sizing: border-box;
+          }
+.chart-col {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+          }
+          
+          #rv {
+            width: 100%;
+            max-width: 460px; /* Leggermente ridotto per dare margine */
+            height: auto;
+            aspect-ratio: 1 / 1; /* 🪄 Il segreto per non far tagliare MAI gli SVG */
+            display: block;
+            margin: 0; 
+          }
+
+          .info-col {
+            padding: 10px 0 10px 20px; /* Spazio a sinistra per staccarsi dal grafico */
+            border-left: 1px solid var(--color-border-tertiary);
+          }
+          .info-year{font-size:28px;font-weight:500;color:var(--color-text-primary);font-family:var(--font-serif);line-height:1}
+          .info-badge{display:inline-block;margin-top:6px;font-size:11px;font-weight:500;padding:3px 8px;border-radius:99px}
+          .badge-epic{background:#1a0a0a;color:#ff6b6b}
+          .badge-dom{background:#1a1400;color:#FFCC00}
+          .badge-norm{background:#0a0a1a;color:#7bafd4}
+          .info-winner{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-top:12px;line-height:1.3}
+          .info-label{font-size:10px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:1px;margin-top:10px}
+          .info-gap{font-size:22px;font-weight:500;font-family:monospace;color:var(--color-text-primary);line-height:1.2;margin-top:2px}
+          .info-note{font-size:11px;color:var(--color-text-secondary);margin-top:10px;line-height:1.5;font-style:italic}
+          .legend{display:flex;align-items:center;gap:8px;margin-top:16px;padding-top:12px;border-top:0.5px solid var(--color-border-tertiary)}
+          .leg-bar{height:6px;border-radius:3px;flex:1}
+          .leg-label{font-size:10px;color:var(--color-text-tertiary);white-space:nowrap}
+          .controls{margin-top:14px;padding-top:12px;border-top:0.5px solid var(--color-border-tertiary)}
+          .ctrl-label{font-size:10px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+          .filter-btn{font-size:11px;padding:4px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer;margin-right:4px;margin-bottom:4px;transition:background .15s,color .15s}
+          .filter-btn.on{background:var(--color-text-primary);color:var(--color-background-primary);border-color:transparent}
+          .hint{font-size:10px;color:var(--color-text-tertiary);text-align:center;margin-top:6px}
+        </style>
+        </head>
+        <body>
+        <div class="wrap">
+          <div class="chart-col">
+            <svg id="rv" width="100%" viewBox="0 0 440 440"></svg>
+            <p class="hint">Hover or tap an arc to explore · Arc length = gap from leader to runner-up</p>
+          </div>
+          <div class="info-col" id="info-col">
+            <div style="font-size:12px;color:var(--color-text-tertiary);font-style:italic;margin-top:20px">Hover an arc to see edition details</div>
+            <div class="legend" style="margin-top:24px">
+              <span class="leg-label">tight</span>
+              <div class="leg-bar" style="background:linear-gradient(to right,#FFCC00,#ff8c00,#cc3300)"></div>
+              <span class="leg-label">dominated</span>
+            </div>
+            <div class="controls">
+              <div class="ctrl-label">Highlight era</div>
+              <button class="filter-btn on" data-era="all">All</button>
+              <button class="filter-btn" data-era="pre">Pre-1950</button>
+              <button class="filter-btn" data-era="mid">1950–1989</button>
+              <button class="filter-btn" data-era="mod">1990–today</button>
+            </div>
+          </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+        <script>
+        const DATA = [
+          {y:1903,w:"Maurice Garin",g:10761},{y:1904,w:"Henri Cornet",g:8174},
+          {y:1913,w:"Philippe Thys",g:517},{y:1914,w:"Philippe Thys",g:110},
+          {y:1919,w:"Firmin Lambot",g:6174},{y:1920,w:"Philippe Thys",g:3441},
+          {y:1921,w:"Léon Scieur",g:1116},{y:1922,w:"Firmin Lambot",g:2475},
+          {y:1923,w:"Henri Pélissier",g:1841},{y:1924,w:"Ottavio Bottecchia",g:2136},
+          {y:1925,w:"Ottavio Bottecchia",g:3260},{y:1926,w:"Lucien Buysse",g:4945},
+          {y:1927,w:"Nicolas Frantz",g:6501},{y:1928,w:"Nicolas Frantz",g:3007},
+          {y:1929,w:"Maurice De Waele",g:2663},{y:1930,w:"André Leducq",g:853},
+          {y:1931,w:"Antonin Magne",g:776},{y:1932,w:"André Leducq",g:1443},
+          {y:1933,w:"Georges Speicher",g:241},{y:1934,w:"Antonin Magne",g:1651},
+          {y:1935,w:"Romain Maes",g:1072},{y:1936,w:"Sylvère Maes",g:1615},
+          {y:1937,w:"Roger Lapébie",g:437},{y:1938,w:"Gino Bartali",g:1107},
+          {y:1939,w:"Sylvère Maes",g:1838},{y:1947,w:"Jean Robic",g:238},
+          {y:1948,w:"Gino Bartali",g:1612},{y:1949,w:"Fausto Coppi",g:655},
+          {y:1950,w:"Ferdi Kübler",g:570},{y:1951,w:"Hugo Koblet",g:1320},
+          {y:1952,w:"Fausto Coppi",g:1697},{y:1953,w:"Louison Bobet",g:858},
+          {y:1954,w:"Louison Bobet",g:949},{y:1955,w:"Louison Bobet",g:293},
+          {y:1956,w:"Roger Walkowiak",g:85},{y:1957,w:"Jacques Anquetil",g:896},
+          {y:1958,w:"Charly Gaul",g:190},{y:1959,w:"Federico Bahamontes",g:241},
+          {y:1960,w:"Gastone Nencini",g:302},{y:1961,w:"Jacques Anquetil",g:734},
+          {y:1962,w:"Jacques Anquetil",g:299},{y:1963,w:"Jacques Anquetil",g:215},
+          {y:1964,w:"Jacques Anquetil",g:55},{y:1965,w:"Felice Gimondi",g:160},
+          {y:1966,w:"Lucien Aimar",g:67},{y:1967,w:"Roger Pingeon",g:220},
+          {y:1968,w:"Jan Janssen",g:38},{y:1969,w:"Eddy Merckx",g:1074},
+          {y:1970,w:"Eddy Merckx",g:761},{y:1971,w:"Eddy Merckx",g:591},
+          {y:1972,w:"Eddy Merckx",g:641},{y:1973,w:"Luis Ocaña",g:951},
+          {y:1974,w:"Eddy Merckx",g:484},{y:1975,w:"Bernard Thévenet",g:167},
+          {y:1976,w:"Lucien Van Impe",g:254},{y:1977,w:"Bernard Thévenet",g:48},
+          {y:1978,w:"Bernard Hinault",g:236},{y:1979,w:"Bernard Hinault",g:787},
+          {y:1980,w:"Joop Zoetemelk",g:415},{y:1981,w:"Bernard Hinault",g:874},
+          {y:1982,w:"Bernard Hinault",g:381},{y:1983,w:"Laurent Fignon",g:244},
+          {y:1984,w:"Laurent Fignon",g:632},{y:1985,w:"Bernard Hinault",g:102},
+          {y:1986,w:"Greg LeMond",g:190},{y:1987,w:"Stephen Roche",g:40},
+          {y:1988,w:"Pedro Delgado",g:433},{y:1989,w:"Greg LeMond",g:8,epic:true,note:"8 seconds — the closest finish in Tour history"},
+          {y:1990,w:"Greg LeMond",g:136},{y:1991,w:"Miguel Indurain",g:216},
+          {y:1992,w:"Miguel Indurain",g:275},{y:1993,w:"Miguel Indurain",g:299},
+          {y:1994,w:"Miguel Indurain",g:339},{y:1995,w:"Miguel Indurain",g:275},
+          {y:1996,w:"Bjarne Riis",g:101},{y:1997,w:"Jan Ullrich",g:549},
+          {y:1998,w:"Marco Pantani",g:201},
+          {y:2006,w:"Oscar Pereiro",g:32,note:"Landis stripped — Pereiro awarded"},{y:2007,w:"Alberto Contador",g:23,epic:true,note:"23 seconds — second closest ever"},
+          {y:2008,w:"Carlos Sastre",g:58},{y:2009,w:"Alberto Contador",g:251},
+          {y:2010,w:"Andy Schleck",g:181},{y:2011,w:"Cadel Evans",g:94},
+          {y:2012,w:"Bradley Wiggins",g:201},{y:2013,w:"Chris Froome",g:260},
+          {y:2014,w:"Vincenzo Nibali",g:457},{y:2015,w:"Chris Froome",g:72},
+          {y:2016,w:"Chris Froome",g:245},{y:2017,w:"Chris Froome",g:54},
+          {y:2018,w:"Geraint Thomas",g:111},{y:2019,w:"Egan Bernal",g:71},
+          {y:2020,w:"Tadej Pogacar",g:59,note:"Roglic lost in final TT — stunning reversal"},
+          {y:2021,w:"Tadej Pogacar",g:320},{y:2022,w:"Jonas Vingegaard",g:163},
+          {y:2023,w:"Jonas Vingegaard",g:449},{y:2024,w:"Tadej Pogacar",g:377},
+          {y:2025,w:"Tadej Pogacar",g:264}
+        ];
+
+        const EPIC_THRESHOLD = 60;
+        const DOM_THRESHOLD  = 1200;
+
+        function fmtGap(s){
+          if(s<60) return s+'″';
+          const m=Math.floor(s/60),sec=s%60;
+          if(m<60) return m+"'"+String(sec).padStart(2,'0')+'″';
+          const h=Math.floor(m/60),rm=m%60;
+          return h+'h '+String(rm).padStart(2,'0')+"'"+String(sec).padStart(2,'0')+'″';
+        }
+
+        function gapColor(g){
+          const t = Math.min(1, Math.log(g+1)/Math.log(DOM_THRESHOLD+1));
+          const stops = [
+            [255,204,0],[255,140,0],[204,60,0],[140,20,0]
+          ];
+          const i = Math.min(stops.length-2, Math.floor(t*(stops.length-1)));
+          const f = t*(stops.length-1)-i;
+          const a=stops[i], b=stops[i+1];
+          return `rgb(${Math.round(a[0]+(b[0]-a[0])*f)},${Math.round(a[1]+(b[1]-a[1])*f)},${Math.round(a[2]+(b[2]-a[2])*f)})`;
+        }
+
+        function badgeClass(g){ return g<=EPIC_THRESHOLD?'badge-epic':g>=DOM_THRESHOLD?'badge-dom':'badge-norm'; }
+        function badgeLabel(g){ return g<=EPIC_THRESHOLD?'epic — photo finish':g>=DOM_THRESHOLD?'dominated':'competitive'; }
+
+        let activeEra='all';
+
+        function eraMatch(d){
+          if(activeEra==='all') return true;
+          if(activeEra==='pre') return d.y<1950;
+          if(activeEra==='mid') return d.y>=1950&&d.y<=1989;
+          if(activeEra==='mod') return d.y>1989;
+        }
+
+        const svg = d3.select('#rv');
+        const W=440, CX=220, CY=220;
+        const R_IN=72, R_MAX=200;
+        const gapLog = d => Math.log(d.g+1);
+        const maxLog  = Math.log(d3.max(DATA,d=>d.g)+1);
+        const minLog  = Math.log(d3.min(DATA,d=>d.g)+1);
+        const scaleR  = g => R_IN + ((Math.log(g+1)-minLog)/(maxLog-minLog))*(R_MAX-R_IN);
+
+        const N = DATA.length;
+        const GAP_RAD = 0.012;
+        const arcSpan = (2*Math.PI - N*GAP_RAD) / N;
+
+        const arc = d3.arc();
+
+        const gMain = svg.append('g').attr('transform',`translate(${CX},${CY})`);
+
+        gMain.append('circle').attr('r',R_IN-6).attr('fill','none')
+          .attr('stroke','var(--color-border-tertiary)').attr('stroke-width',0.5);
+
+        [1,2,3].forEach(i=>{
+          gMain.append('circle')
+            .attr('r', R_IN + i*(R_MAX-R_IN)/3)
+            .attr('fill','none')
+            .attr('stroke','var(--color-border-tertiary)')
+            .attr('stroke-width',0.5)
+            .attr('stroke-dasharray','3 4');
+        });
+
+        const arcs = gMain.selectAll('path.arc')
+          .data(DATA).enter().append('path').attr('class','arc')
+          .attr('d',(d,i)=>{
+            const startA = -Math.PI/2 + i*(arcSpan+GAP_RAD);
+            return arc({innerRadius:R_IN, outerRadius:scaleR(d.g), startAngle:startA, endAngle:startA+arcSpan});
+          })
+          .attr('fill', d=>gapColor(d.g))
+          .attr('opacity', d=>eraMatch(d)?1:0.12)
+          .attr('stroke','none')
+          .style('cursor','pointer');
+
+        const epicRing = gMain.selectAll('circle.epic')
+          .data(DATA.filter(d=>d.epic)).enter().append('circle')
+          .attr('class','epic')
+          .attr('cx',(d,i)=>{
+            const idx=DATA.indexOf(d);
+            const a=-Math.PI/2+idx*(arcSpan+GAP_RAD)+arcSpan/2;
+            return Math.cos(a)*(scaleR(d.g)+8);
+          })
+          .attr('cy',(d)=>{
+            const idx=DATA.indexOf(d);
+            const a=-Math.PI/2+idx*(arcSpan+GAP_RAD)+arcSpan/2;
+            return Math.sin(a)*(scaleR(d.g)+8);
+          })
+          .attr('r',3).attr('fill','#ff4444').attr('opacity',0.9);
+
+        const DECADE_YEARS = [1910, 1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
+        DECADE_YEARS.forEach(yr => {
+          const idx = DATA.findIndex(d => d.y >= yr);
+          if (idx < 0) return;
+          const a = -Math.PI/2 + idx * (arcSpan + GAP_RAD);
+
+          // Raggio tratteggiato che taglia il grafico per mostrare l'inizio esatto del decennio
+          gMain.append('line')
+            .attr('x1', Math.cos(a) * R_IN)
+            .attr('y1', Math.sin(a) * R_IN)
+            .attr('x2', Math.cos(a) * (R_MAX + 10)) // La linea esce di 10px dal bordo massimo
+            .attr('y2', Math.sin(a) * (R_MAX + 10))
+            .attr('stroke', 'var(--color-border-secondary)')
+            .attr('stroke-width', 0.5)
+            .attr('stroke-dasharray', '2 4');
+
+          // Piccola tacca interna
+          const x1 = Math.cos(a) * (R_IN - 4), y1 = Math.sin(a) * (R_IN - 4);
+          const x2 = Math.cos(a) * R_IN, y2 = Math.sin(a) * R_IN;
+          gMain.append('line').attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2)
+            .attr('stroke', 'var(--color-text-tertiary)').attr('stroke-width', 1);
+
+          // Mostriamo l'etichetta di testo solo ogni 20 anni per non affollare il centro
+          if ([1910, 1930, 1950, 1970, 1990, 2010].includes(yr)) {
+            const lx = Math.cos(a) * (R_IN - 16), ly = Math.sin(a) * (R_IN - 16);
+            gMain.append('text').attr('x', lx).attr('y', ly)
+              .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
+              .attr('font-size', 9)
+              .attr('fill', 'var(--color-text-primary)') // Colore bianco per massima leggibilità
+              .text(yr);
+          }
+        });
+
+        let highlighted=null;
+        function showInfo(d){
+          highlighted=d;
+          const bc=badgeClass(d.g), bl=badgeLabel(d.g);
+          document.getElementById('info-col').innerHTML=`
+            <div class="info-year">${d.y}</div>
+            <span class="info-badge ${bc}">${bl}</span>
+            <div class="info-label" style="margin-top:14px">Winner</div>
+            <div class="info-winner">${d.w}</div>
+            <div class="info-label">Gap to runner-up</div>
+            <div class="info-gap">+${fmtGap(d.g)}</div>
+            ${d.note?`<div class="info-note">${d.note}</div>`:''}
+            <div class="legend">
+              <span class="leg-label">tight</span>
+              <div class="leg-bar" style="background:linear-gradient(to right,#FFCC00,#ff8c00,#cc3300)"></div>
+              <span class="leg-label">dominated</span>
+            </div>
+            <div class="controls">
+              <div class="ctrl-label">Highlight era</div>
+              ${['all','pre','mid','mod'].map(e=>`<button class="filter-btn${activeEra===e?' on':''}" data-era="${e}">${{all:'All',pre:'Pre-1950',mid:'1950–1989',mod:'1990–today'}[e]}</button>`).join('')}
+            </div>
+          `;
+          bindEraButtons();
+        }
+
+arcs.on('mouseover',(ev,d)=>{
+          // IL FIX 1: Se l'arco non fa parte dell'epoca selezionata, ignora il mouse!
+          if (!eraMatch(d)) return; 
+          
+          arcs.attr('opacity',x=>x===d?1:(eraMatch(x)?0.35:0.08));
+          showInfo(d);
+        }).on('mouseout',()=>{
+          arcs.attr('opacity',d=>eraMatch(d)?1:0.12);
+        });
+
+        function bindEraButtons(){
+          document.querySelectorAll('.filter-btn').forEach(btn=>{
+            btn.addEventListener('click',()=>{
+              activeEra=btn.dataset.era;
+              document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('on',b.dataset.era===activeEra));
+              arcs.attr('opacity',d=>eraMatch(d)?1:0.12);
+              
+              // IL FIX 2: Resetta il pannello laterale quando si cambia filtro
+              document.getElementById('info-col').innerHTML = `
+                <div style="font-size:12px;color:var(--color-text-tertiary);font-style:italic;margin-top:20px">Hover an active arc to see edition details</div>
+                <div class="legend" style="margin-top:24px">
+                  <span class="leg-label">tight</span>
+                  <div class="leg-bar" style="background:linear-gradient(to right,#FFCC00,#ff8c00,#cc3300)"></div>
+                  <span class="leg-label">dominated</span>
+                </div>
+                <div class="controls">
+                  <div class="ctrl-label">Highlight era</div>
+                  ${['all','pre','mid','mod'].map(e=>`<button class="filter-btn${activeEra===e?' on':''}" data-era="${e}">${{all:'All',pre:'Pre-1950',mid:'1950–1989',mod:'1990–today'}[e]}</button>`).join('')}
+                </div>
+              `;
+              bindEraButtons(); // Riattacca gli eventi ai nuovi bottoni ricreati
+            });
+          });
+        }
+        bindEraButtons();
+
+        const centerLabel = gMain.append('text').attr('text-anchor','middle').attr('dominant-baseline','central')
+          .attr('font-size',10).attr('fill','var(--color-text-tertiary)').attr('y',-6).text('Gap');
+        const centerLabel2 = gMain.append('text').attr('text-anchor','middle').attr('dominant-baseline','central')
+          .attr('font-size',10).attr('fill','var(--color-text-tertiary)').attr('y',6).text('1st → 2nd');
+        </script>
+        </body>
+        </html>
+        """
+
+        import streamlit.components.v1 as components
+        components.html(RADIAL_HTML, height=500)
+        # ----------------------------------------------------------
+        # 8. LEADERBOARD ANIMATA — stile videogioco/archivio
+        # ----------------------------------------------------------
+        st.markdown(hr_style, unsafe_allow_html=True)
+        st.markdown('<span class="st-section-label">· Full Classification ·</span>', unsafe_allow_html=True)
+        st.markdown(f"""
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:900;color:#1a1a1a;margin:0 0 4px;">
+                General Classification — {int(anno_selezionato)}
+            </h3>
+            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
+                Hover a row to highlight. Click a column header to sort.
+            </p>
+        """, unsafe_allow_html=True)
+
+        # Prepariamo i dati
+        df_lb = df_anno.copy()
+        df_lb = df_lb.rename(columns={'B': 'Bonus', 'P': 'Penalty'})
+        df_lb['GapMin_display'] = df_lb['GapSeconds'].apply(
+            lambda x: "–" if (pd.isna(x) or x == 0) else f"+{int(x)//3600:02d}h {(int(x)%3600)//60:02d}' {int(x)%60:02d}\""
         )
-        # 3. Definisci solo le colonne utili che vuoi mostrare
-        colonne_da_mostrare = ['Rank', 'Rider', 'Rider No.', 'Team', 'Times', 'Gap', 'Bonus', 'Penalty']
+        df_lb['Bar_pct'] = df_lb['GapSeconds'].apply(
+            lambda x: 0 if pd.isna(x) or x == 0 else min(100, (x / df_lb['GapSeconds'].max()) * 100) if df_lb['GapSeconds'].max() > 0 else 0
+        )
 
-        # 4. Mostra il dataframe pulito e formattato correttamente
-        st.dataframe(
-            df_anno_pulito[colonne_da_mostrare], 
-            use_container_width=True, 
-            hide_index=True
-            )
+        # Costruiamo la leaderboard come HTML animato
+        rows_html = ""
+        medal_colors = {1: "#FFD700", 2: "#C0C0C0", 3: "#CD7F32"}
+
+        for i, row in df_lb.head(30).iterrows():
+            rank = row.get('Rank', i + 1)
+            rider = str(row.get('Rider', 'N/A'))
+            team = str(row.get('Team', ''))
+            times = str(row.get('Times', ''))
+            gap_disp = row.get('GapMin_display', '–')
+            bar = row.get('Bar_pct', 0)
+
+            try:
+                rank_int = int(float(str(rank)))
+            except:
+                rank_int = 99
+
+            medal = medal_colors.get(rank_int, None)
+            rank_cell_style = f"color:{medal};font-weight:900;" if medal else "color:#888;font-weight:600;"
+            row_highlight = "lb-row-top3" if rank_int <= 3 else "lb-row"
+            doping_badge = ' <span style="color:#cc0000;font-size:9px;vertical-align:super;">✕</span>' if (titolo_revocato and rank_int == 1) else ""
+
+            bar_html = f"""
+                <div style="width:100%;height:3px;background:#1e1e1e;border-radius:2px;margin-top:4px;">
+                    <div style="width:{bar:.1f}%;height:100%;background:linear-gradient(to right,#FFCC00,#ff8c00);border-radius:2px;transition:width 0.6s ease;"></div>
+                </div>
+            """ if bar > 0 else ""
+
+            rows_html += f"""
+            <div class="{row_highlight}">
+              <div class="lb-rank" style="{rank_cell_style}">{rank}</div>
+              <div class="lb-rider">
+                <div class="lb-name">{rider}{doping_badge}</div>
+                <div class="lb-team">{team}</div>
+                {bar_html}
+              </div>
+              <div class="lb-time">{times}</div>
+              <div class="lb-gap">{gap_disp}</div>
+            </div>
+            """
+
+        leaderboard_html = f"""
+        <style>
+        .lb-wrap {{ font-family:'Merriweather',Georgia,serif; background:#0d0d0d; border:1px solid #222; border-radius:4px; overflow:hidden; }}
+        .lb-head {{ display:grid; grid-template-columns:48px 1fr 160px 120px;
+                    background:#111; padding:8px 16px; border-bottom:2px solid #FFCC00; }}
+        .lb-head span {{ font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#FFCC00; font-family:Arial,sans-serif; }}
+        .lb-row, .lb-row-top3 {{
+            display:grid; grid-template-columns:48px 1fr 160px 120px;
+            padding:10px 16px; border-bottom:1px solid #1a1a1a;
+            transition:background 0.15s;
+            animation: fadeSlideIn 0.4s ease both;
+        }}
+        .lb-row:hover {{ background:#181818; }}
+        .lb-row-top3 {{ background:rgba(255,204,0,0.04); }}
+        .lb-row-top3:hover {{ background:rgba(255,204,0,0.09); }}
+        @keyframes fadeSlideIn {{ from {{ opacity:0; transform:translateY(6px); }} to {{ opacity:1; transform:translateY(0); }} }}
+        .lb-rank {{ font-size:18px; display:flex; align-items:center; }}
+        .lb-rider {{ display:flex; flex-direction:column; justify-content:center; padding-right:12px; }}
+        .lb-name {{ font-size:13px; font-weight:700; color:#f0ece4; line-height:1.2; }}
+        .lb-team {{ font-size:10px; color:#666; margin-top:2px; font-style:italic; }}
+        .lb-time {{ font-size:12px; color:#aaa; display:flex; align-items:center; font-family:monospace; }}
+        .lb-gap  {{ font-size:12px; color:#FFCC00; display:flex; align-items:center; font-family:monospace; }}
+        </style>
+        <div class="lb-wrap">
+          <div class="lb-head">
+            <span>#</span><span>Rider</span><span>Time</span><span>Gap</span>
+          </div>
+          {rows_html}
+        </div>
+        """
+
+        import streamlit.components.v1 as components
+        components.html(leaderboard_html, height=min(950, 32 * min(30, len(df_lb)) + 60), scrolling=True)
+
     else:
-        st.warning("Unable to load data. Make sure the link is correct and the file is accessible.")
+        st.warning("Data unavailable. Check the dataset connection.")
 
 
 elif st.session_state.pagina_corrente == "corridori":
