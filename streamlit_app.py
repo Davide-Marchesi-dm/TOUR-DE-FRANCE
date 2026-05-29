@@ -540,27 +540,29 @@ elif st.session_state.pagina_corrente == "classifica":
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
 
-        /* ── Selectbox scura ── */
-        div[data-testid="stSelectbox"] label p { color: #1a1a1a !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important; }
+/* ── Selectbox scura ── */
+        div[data-testid="stSelectbox"] label p { color: #f0ece4 !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important; }
         div[data-baseweb="select"] > div { background-color: #111 !important; color: #fff !important; border: 1px solid #444 !important; border-radius: 3px !important; }
         div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111 !important; }
         div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li { color: #fff !important; background-color: #111 !important; }
         div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover { background-color: #2a2a2a !important; }
         ul[role="listbox"] li[aria-selected="true"] { color: #FFCC00 !important; }
 
-        /* ── Sticky nav bar ── */
+/* ── Sticky nav bar ── */
         div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) {
-            position: sticky; top: 0; z-index: 999;
-            width: 100vw !important; left: 0 !important; right: 0 !important;
-            margin-left: calc(-50vw + 50%) !important;
+            position: sticky; top: 16px; z-index: 999;
             background-color: #0d0d0d !important;
             padding: 10px 24px !important;
-            border-bottom: 2px solid #FFCC00;
+            border: 1px solid #222 !important; /* Stesso bordino elegante degli altri grafici */
+            border-bottom: 2px solid #FFCC00 !important;
+            border-radius: 4px !important;
+            width: calc(100% - 32px) !important; /* Lascia 16 pixel di respiro per lato */
+            margin: 16px auto 30px auto !important; /* Centra la barra e le dà spazio sopra e sotto */
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4); /* Leggera ombra per farla galleggiare sul testo */
         }
-        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) > div { background-color: #0d0d0d !important; }
-        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox label { color: #FFCC00 !important; font-size: 13px !important; letter-spacing: 1px; text-transform: uppercase; }
-        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) div[data-baseweb="select"] > div { background-color: #1a1a1a !important; border: 1px solid #FFCC00 !important; }
-
+        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) > div { background-color: transparent !important; }
+        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox label { color: #f0ece4 !important; font-size: 13px !important; letter-spacing: 1px; text-transform: uppercase; }
+        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) div[data-baseweb="select"] > div { background-color: #1a1a1a !important; border: 1px solid #FFCC00 !important; }  
         /* ── Metric cards ── */
         [data-testid="stMetric"] { background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 4px; padding: 14px 18px !important; }
         [data-testid="stMetricLabel"] p { color: #888 !important; font-family: 'Merriweather', serif !important; font-size: 11px !important; text-transform: uppercase; letter-spacing: 1.5px; }
@@ -637,10 +639,8 @@ elif st.session_state.pagina_corrente == "classifica":
         # ----------------------------------------------------------
         # 4. PODIO — stile giornale copertina
         # ----------------------------------------------------------
-        st.markdown('<span class="st-section-label">· Front Page ·</span>', unsafe_allow_html=True)
         st.markdown(f"""
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
-                       color:#1a1a1a;margin:0 0 20px;">
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:900;color:#1a1a1a; margin-left: 16px; margin-bottom: 4px;">
                 The Podium of the {int(anno_selezionato)} Edition
             </h3>
         """, unsafe_allow_html=True)
@@ -651,19 +651,18 @@ elif st.session_state.pagina_corrente == "classifica":
                 val = df_anno.iloc[row_idx].get(col, default)
                 return default if pd.isna(val) else str(val)
 
-            r1 = safe_get(0, "Rider")
-            t1 = safe_get(0, "Team")
-            r2 = safe_get(1, "Rider"); g2 = safe_get(1, "Gap")
-            r3 = safe_get(2, "Rider"); g3 = safe_get(2, "Gap")
-
+            r1 = safe_get(0, "Rider"); t1 = safe_get(0, "Team")
+            r2 = safe_get(1, "Rider"); g2 = safe_get(1, "Gap"); t2 = safe_get(1, "Team")
+            r3 = safe_get(2, "Rider"); g3 = safe_get(2, "Gap"); t3 = safe_get(2, "Team")
+        
             flag_map = {
-                "France": "🇫🇷", "Italy": "🇮🇹", "Belgium": "🇧🇪", "Spain": "🇪🇸",
-                "Netherlands": "🇳🇱", "Luxembourg": "🇱🇺", "Switzerland": "🇨🇭",
-                "Ireland": "🇮🇪", "Germany": "🇩🇪", "USA": "🇺🇸", "United States": "🇺🇸",
-                "Denmark": "🇩🇰", "Colombia": "🇨🇴", "Slovenia": "🇸🇮",
-                "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Dnmark": "🇩🇰",
+                "france": "🇫🇷", "italy": "🇮🇹", "belgium": "🇧🇪", "spain": "🇪🇸",
+                "netherlands": "🇳🇱", "luxembourg": "🇱🇺", "switzerland": "🇨🇭",
+                "ireland": "🇮🇪", "germany": "🇩🇪", "usa": "🇺🇸", "united states": "🇺🇸",
+                "denmark": "🇩🇰", "colombia": "🇨🇴", "slovenia": "🇸🇮",
+                "united kingdom": "🇬🇧", "great britain": "🇬🇧", "australia": "🇦🇺",
+                "portugal": "🇵🇹", "colombia": "🇨🇴", "kazakhstan": "🇰🇿", "norway": "🇳🇴"
             }
-
             # Cerchiamo la nazione del vincitore nel dataset Tour_Winners
             winner_row = df_tour_w[df_tour_w['Year'] == anno_selezionato] if not df_tour_w.empty else pd.DataFrame()
             nazione_vincitore = ""
@@ -672,7 +671,13 @@ elif st.session_state.pagina_corrente == "classifica":
                 nazione_vincitore = flag_map.get(str(naz).strip(), "")
 
             doping_marker = ' <span style="font-size:11px;color:#cc0000;vertical-align:middle;">✕</span>' if titolo_revocato else ""
-
+            def get_flag(rider_name):
+                # Cerchiamo la riga del corridore nel df_anno per trovarne la nazionalità
+                row = df_anno[df_anno['Rider'] == rider_name]
+                if not row.empty:
+                    naz = str(row.iloc[0].get('Country', '')).strip().lower()
+                    return flag_map.get(naz, "")
+                return ""
             html_podio = f"""
             <style>
             .podium-wrap {{ display:flex; justify-content:center; align-items:flex-end; gap:0; margin:30px 0 40px; font-family:'Merriweather',Georgia,serif; }}
@@ -705,12 +710,12 @@ elif st.session_state.pagina_corrente == "classifica":
 
             <div class="podium-wrap">
               <!-- 2nd -->
-              <div class="podium-col">
+                <div class="podium-col">
                 <div class="podium-rider">
                   <div class="podium-pos">Runner-up</div>
                   <div class="podium-name">{r2}</div>
                   <div class="podium-gap">{g2}</div>
-                </div>
+                  <div class="podium-team">{t2}</div>  </div>
                 <hr class="podium-rule">
                 <div class="podium-block pb-2"><div class="podium-num pn-2">2</div></div>
               </div>
@@ -726,12 +731,12 @@ elif st.session_state.pagina_corrente == "classifica":
                 <div class="podium-block pb-1"><div class="podium-num pn-1">1</div></div>
               </div>
               <!-- 3rd -->
-              <div class="podium-col">
+                <div class="podium-col">
                 <div class="podium-rider">
                   <div class="podium-pos">Third Place</div>
                   <div class="podium-name">{r3}</div>
                   <div class="podium-gap">{g3}</div>
-                </div>
+                  <div class="podium-team">{t3}</div>  </div>
                 <hr class="podium-rule">
                 <div class="podium-block pb-3"><div class="podium-num pn-3">3</div></div>
               </div>
@@ -870,12 +875,16 @@ elif st.session_state.pagina_corrente == "classifica":
 
             pyramid_html = f"""
             <style>
+            body {{ margin: 0; background: transparent; overflow: hidden; }}
             .pyr-wrap {{
                 font-family: 'Merriweather', Georgia, serif;
                 background: #0d0d0d;
                 border: 1px solid #222;
                 border-radius: 4px;
                 padding: 20px 12px 16px;
+                margin: 16px auto;
+                width: calc(100% - 32px);
+                box-sizing: border-box;
                 position: relative;
             }}
             .pyr-axis-line {{
@@ -1227,37 +1236,37 @@ body {
           })
           .attr('r',3).attr('fill','#ff4444').attr('opacity',0.9);
 
-        const DECADE_YEARS = [1910, 1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
+        
+        const DECADE_YEARS = [1910, 1930, 1950, 1970, 1990, 2010];
+        
         DECADE_YEARS.forEach(yr => {
           const idx = DATA.findIndex(d => d.y >= yr);
           if (idx < 0) return;
-          const a = -Math.PI/2 + idx * (arcSpan + GAP_RAD);
+          
+          // Il segreto dell'allineamento: calcoliamo l'angolo al CENTRO esatto della barra, non al bordo
+          const a = -Math.PI/2 + idx * (arcSpan + GAP_RAD) + (arcSpan / 2);
 
-          // Raggio tratteggiato che taglia il grafico per mostrare l'inizio esatto del decennio
+          // Raggio tratteggiato elegante e sottile. Si ferma a R_MAX, così è impossibile che venga tagliato!
           gMain.append('line')
-            .attr('x1', Math.cos(a) * R_IN)
-            .attr('y1', Math.sin(a) * R_IN)
-            .attr('x2', Math.cos(a) * (R_MAX + 10)) // La linea esce di 10px dal bordo massimo
-            .attr('y2', Math.sin(a) * (R_MAX + 10))
-            .attr('stroke', 'var(--color-border-secondary)')
-            .attr('stroke-width', 0.5)
+            .attr('x1', Math.cos(a) * (R_IN - 4))
+            .attr('y1', Math.sin(a) * (R_IN - 4))
+            .attr('x2', Math.cos(a) * R_MAX) 
+            .attr('y2', Math.sin(a) * R_MAX)
+            .attr('stroke', 'var(--color-border-tertiary)')
+            .attr('stroke-width', 0.8)
             .attr('stroke-dasharray', '2 4');
 
-          // Piccola tacca interna
-          const x1 = Math.cos(a) * (R_IN - 4), y1 = Math.sin(a) * (R_IN - 4);
-          const x2 = Math.cos(a) * R_IN, y2 = Math.sin(a) * R_IN;
-          gMain.append('line').attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2)
-            .attr('stroke', 'var(--color-text-tertiary)').attr('stroke-width', 1);
-
-          // Mostriamo l'etichetta di testo solo ogni 20 anni per non affollare il centro
-          if ([1910, 1930, 1950, 1970, 1990, 2010].includes(yr)) {
-            const lx = Math.cos(a) * (R_IN - 16), ly = Math.sin(a) * (R_IN - 16);
-            gMain.append('text').attr('x', lx).attr('y', ly)
-              .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
-              .attr('font-size', 9)
-              .attr('fill', 'var(--color-text-primary)') // Colore bianco per massima leggibilità
-              .text(yr);
-          }
+          // Testo orizzontale, pulito e perfettamente centrato
+          const lx = Math.cos(a) * (R_IN - 18), ly = Math.sin(a) * (R_IN - 18);
+          gMain.append('text')
+            .attr('x', lx)
+            .attr('y', ly)
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central')
+            .attr('font-size', 10)
+            .attr('font-family', 'var(--font-serif)') // Usa lo stesso font elegante Merriweather
+            .attr('fill', 'var(--color-text-secondary)')
+            .text(yr);
         });
 
         let highlighted=null;
@@ -1399,13 +1408,31 @@ arcs.on('mouseover',(ev,d)=>{
 
         leaderboard_html = f"""
         <style>
-        .lb-wrap {{ font-family:'Merriweather',Georgia,serif; background:#0d0d0d; border:1px solid #222; border-radius:4px; overflow:hidden; }}
-        .lb-head {{ display:grid; grid-template-columns:48px 1fr 160px 120px;
-                    background:#111; padding:8px 16px; border-bottom:2px solid #FFCC00; }}
-        .lb-head span {{ font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#FFCC00; font-family:Arial,sans-serif; }}
+
+        .lb-wrap {{ 
+            font-family:'Merriweather',Georgia,serif; 
+            background:#0d0d0d; 
+            border:1px solid #222; 
+            border-radius:4px; 
+            overflow:hidden; 
+            /* 🪄 FIX: Margini allineati alla barra di navigazione */
+            margin: 16px 16px 30px 16px !important; 
+            width: calc(100% - 32px) !important;
+            box-sizing: border-box !important;
+        }}
+        .lb-head {{ 
+            display:grid; grid-template-columns:48px 1fr 160px 120px;
+            background:#111; 
+            padding:10px 24px !important; /* Allineato al padding della barra */
+            border-bottom:2px solid #FFCC00; 
+        }}
+        .lb-head span {{ 
+            font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#FFCC00; font-family:Arial,sans-serif; 
+        }}
         .lb-row, .lb-row-top3 {{
             display:grid; grid-template-columns:48px 1fr 160px 120px;
-            padding:10px 16px; border-bottom:1px solid #1a1a1a;
+            padding:10px 24px !important; /* Allineato al padding della barra */
+            border-bottom:1px solid #1a1a1a;
             transition:background 0.15s;
             animation: fadeSlideIn 0.4s ease both;
         }}
@@ -1418,7 +1445,8 @@ arcs.on('mouseover',(ev,d)=>{
         .lb-name {{ font-size:13px; font-weight:700; color:#f0ece4; line-height:1.2; }}
         .lb-team {{ font-size:10px; color:#666; margin-top:2px; font-style:italic; }}
         .lb-time {{ font-size:12px; color:#aaa; display:flex; align-items:center; font-family:monospace; }}
-        .lb-gap  {{ font-size:12px; color:#FFCC00; display:flex; align-items:center; font-family:monospace; }}
+        .lb-gap {{ font-size:12px; color:#FFCC00; display:flex; align-items:center; font-family:monospace; }}
+
         </style>
         <div class="lb-wrap">
           <div class="lb-head">
