@@ -1165,7 +1165,7 @@ elif st.session_state.pagina_corrente == "tappe":
 
         lista_anni = sorted(df_stage_h['Year'].unique(), reverse=True)
         lista_anni = [anno for anno in lista_anni if anno > 0]
-        # ✅ MODIFICA: label "Select an edition to view details:" in NERO
+        # ✅ label "Select an edition to view details:" in NERO
         anno_scelto = st.selectbox("Select an edition to view details:", lista_anni)
 
         df_anno = df_stage_h[df_stage_h['Year'] == anno_scelto].sort_values('Stages').copy()
@@ -1203,44 +1203,57 @@ elif st.session_state.pagina_corrente == "tappe":
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            st.markdown(f"<h3 style='color: black;'>Leadership Evolution in {anno_scelto}</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='color: black; margin-bottom: 10px;'>Leadership Evolution in {anno_scelto}</h3>", unsafe_allow_html=True)
             
+            # Definizione del dizionario di configurazione delle maglie
             maglie_config = {
                 "Yellow": {
                     "col": "Yellow Jersey", 
                     "color": "#FFCC00", 
                     "img": "https://www.bobshop.com/media/92/7a/02/1776411535/11346-1_1.png?ts=1776411535",
                     "anno_intro": 1919,
-                    "storia": "The Yellow Jersey was introduced in 1919. Before then, the leader was identified only by a green armband."
+                    "storia": "The Yellow Jersey was introduced in 1919. Before then, the leader was identified only by a green armband. It matches the yellow paper of the historical *L'Auto* newspaper."
                 },
                 "Green": {
                     "col": "Green jersey", 
                     "color": "#009900", 
                     "img": "https://lh3.googleusercontent.com/d/1d1GLPgO6NHqt4bguSBdXjs8NowirbXAu",
                     "anno_intro": 1953,
-                    "storia": "The Green Jersey (points classification) was created in 1953 to celebrate the 50th anniversary of the Tour de France."
+                    "storia": "The Green Jersey (points classification) was created in 1953 to celebrate the 50th anniversary of the Tour de France. It rewards the most consistent sprinters."
                 },
                 "Polka-dot": {
                     "col": "Polka-dot jersey", 
                     "color": "#FF0000", 
                     "img": "https://lh3.googleusercontent.com/d/1sOEebeyDAuhP0Mt6I5L4poKbahfv3xky",
                     "anno_intro": 1975,
-                    "storia": "Although the Mountains Classification has existed since 1933, the famous red and white Polka-dot jersey was officially born only in 1975!"
+                    "storia": "Although the Mountains Classification has existed since 1933, the famous red and white Polka-dot jersey was officially born only in 1975 to reward the King of the Mountains!"
                 },
                 "White": {
                     "col": "White jersey", 
                     "color": "#CCCCCC", 
                     "img": "https://lh3.googleusercontent.com/d/1DAYUL8bk7eYxd83opOKJCkYT_afuKWdp",
                     "anno_intro": 1975,
-                    "storia": "The White Jersey, reserved for the best young rider (currently Under-25), was established in 1975."
+                    "storia": "The White Jersey, reserved for the best young rider (currently Under-25) in the General Classification, was established in 1975."
                 }
             }
 
+            # Il selettore radio nativo per le maglie
             scelta_maglia = st.radio(
                 "Select the jersey:", 
                 list(maglie_config.keys()), 
                 horizontal=True
             )
+
+            # ==========================================
+            # ℹ️ NUOVO POPOVER DINAMICO E CONTESTUALE
+            # ==========================================
+            colore_testo_popup = maglie_config[scelta_maglia]["color"]
+            
+            with st.popover(f"ℹ️ Read about the {scelta_maglia} Jersey", use_container_width=True):
+                st.markdown(f"### <span style='color: {colore_testo_popup};'>{scelta_maglia} Jersey Classification</span>", unsafe_allow_html=True)
+                st.markdown(maglie_config[scelta_maglia]["storia"])
+
+            st.markdown("<br>", unsafe_allow_html=True)
 
             col_selezionata = maglie_config[scelta_maglia]["col"]
             colore_linea = maglie_config[scelta_maglia]["color"]
@@ -1318,7 +1331,7 @@ elif st.session_state.pagina_corrente == "tappe":
             col_chart1, col_chart2, col_table = st.columns([1, 1, 1.5], gap="medium")
 
             with col_chart1:
-                # ✅ MODIFICA: "Multiple Stage Winners" in BIANCO
+                # ✅ "Multiple Stage Winners" in BIANCO
                 st.markdown("<b style='color: white;'>Multiple Stage Winners</b>", unsafe_allow_html=True)
                 df_top10 = vittorie_count.reset_index()
                 df_top10.columns = ['Athlete', 'Victories']
@@ -1330,7 +1343,7 @@ elif st.session_state.pagina_corrente == "tappe":
                 st.plotly_chart(fig_vittorie, use_container_width=True)
 
             with col_chart2:
-                # ✅ MODIFICA: "Team Dominance" in BIANCO
+                # ✅ "Team Dominance" in BIANCO
                 st.markdown("<b style='color: white;'>Team Dominance</b>", unsafe_allow_html=True)
                 team_counts = df_anno['Team'].value_counts().reset_index()
                 team_counts.columns = ['Team', 'Victories']
@@ -1360,12 +1373,11 @@ elif st.session_state.pagina_corrente == "tappe":
                 st.plotly_chart(fig_team, use_container_width=True)
             
             with col_table:
-                # ✅ MODIFICA: "Route Details" in BIANCO
+                # ✅ "Route Details" in BIANCO
                 st.markdown("<b style='color: white;'>Route Details</b>", unsafe_allow_html=True)
                 cols_to_show = ['Stages', 'Start', 'End', 'Vincitore_Clean']
                 df_display = df_anno[cols_to_show].copy()
                 st.dataframe(df_display, use_container_width=True, hide_index=True, height=350)
-
     # ---------------------------------------------------------
     # VISTA 3: MAPPA INTERATTIVA 
     # ---------------------------------------------------------
