@@ -1532,219 +1532,1108 @@ arcs.on('mouseover',(ev,d)=>{
         st.warning("Data unavailable. Check the dataset connection.")
 
 
+# ==========================================
+# SEZIONE RIDERS — CODICE COMPLETO
+# Sostituisce il blocco: elif st.session_state.pagina_corrente == "corridori":
+# ==========================================
+
 elif st.session_state.pagina_corrente == "corridori":
+
+    # ----------------------------------------------------------
+    # 0. PREPARAZIONE DATI GLOBALI
+    # ----------------------------------------------------------
+    import json
+
+    # Carriera normalizzata (anno_carriera = Tour #1, #2, #3...)
+    df_r_norm = df_storico.copy()
+    df_r_norm['Rank_Num'] = pd.to_numeric(df_r_norm['Rank'], errors='coerce')
+    df_r_norm = df_r_norm.sort_values(['Rider', 'Year'])
+    df_r_norm['anno_carriera'] = df_r_norm.groupby('Rider').cumcount() + 1
+
+    # Tour Winners puliti
+    df_w_clean = df_tour_w.copy()
+    df_w_clean['Country_clean'] = df_w_clean['Country'].str.strip().replace({
+        'United States': 'USA', 'Dnmark': 'Denmark'
+    })
+    df_w_clean['rt_clean'] = df_w_clean['rider_type_(PPS)'].str.strip()
+    df_w_clean['decade'] = (df_w_clean['Year'] // 10) * 10
+
+    # Country → ISO3 per choropleth
+    ISO_MAP = {
+        'France': 'FRA', 'Belgium': 'BEL', 'Spain': 'ESP', 'Italy': 'ITA',
+        'USA': 'USA', 'United Kingdom': 'GBR', 'Luxembourg': 'LUX',
+        'Denmark': 'DNK', 'Slovenia': 'SVN', 'Netherlands': 'NLD',
+        'Switzerland': 'CHE', 'Colombia': 'COL', 'Australia': 'AUS',
+        'Germany': 'DEU', 'Ireland': 'IRL'
+    }
+    df_w_clean['ISO'] = df_w_clean['Country_clean'].map(ISO_MAP)
+
+    # Colori nazioni
+    COUNTRY_COLORS = {
+        'France': '#0055A4', 'Belgium': '#FAE042', 'Spain': '#AA151B',
+        'Italy': '#009246', 'USA': '#B22234', 'United Kingdom': '#CF142B',
+        'Luxembourg': '#00A2E8', 'Denmark': '#C60C30', 'Slovenia': '#003DA5',
+        'Netherlands': '#FF6600', 'Switzerland': '#FF0000',
+        'Colombia': '#FCD116', 'Australia': '#00843D', 'Germany': '#000000',
+        'Ireland': '#169B62'
+    }
+
+    # ----------------------------------------------------------
+    # 1. CSS GLOBALE SEZIONE RIDERS
+    # ----------------------------------------------------------
     st.markdown("""
         <style>
-        div[data-baseweb="select"] > div { background-color: #111111 !important; color: #FFFFFF !important; border-radius: 5px !important; }
-        div[data-baseweb="popover"], div[data-baseweb="popover"] > div, div[data-baseweb="popover"] > div > div, div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111111 !important; }
-        div[data-baseweb="popover"] li, div[data-baseweb="popover"] li span, ul[data-baseweb="menu"] li { color: #FFFFFF !important; background-color: transparent !important; }
-        div[data-baseweb="popover"] li:hover, ul[data-baseweb="menu"] li:hover { background-color: #333333 !important; }
-        .stSelectbox label { color: #000000 !important; font-weight: bold !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
+
+        /* ── Tab navigation ── */
+        .riders-tab-bar {
+            display: flex;
+            gap: 0;
+            border-bottom: 3px solid #1a1a1a;
+            margin-bottom: 32px;
+        }
+        .riders-tab {
+            padding: 12px 28px;
+            font-family: 'Merriweather', serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #888;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -3px;
+            background: transparent;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .riders-tab.active {
+            color: #1a1a1a;
+            border-bottom: 3px solid #FFCC00;
+        }
+        .riders-tab:hover { color: #1a1a1a; }
+
+        /* ── Masthead ── */
+        .riders-masthead {
+            border-top: 5px solid #1a1a1a;
+            border-bottom: 2px solid #1a1a1a;
+            padding: 12px 0 8px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        /* ── Section label ── */
+        .r-section-label {
+            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+            color: #888; font-family: Arial, sans-serif;
+            display: block; margin-bottom: 4px;
+        }
+        .r-rule { border: none; border-top: 1px solid #c8bfad; margin: 24px 0; }
+
+        /* ── Selectbox dark ── */
+        div[data-testid="stSelectbox"] label p { color: #1a1a1a !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important; }
+        div[data-baseweb="select"] > div { background-color: #111 !important; color: #fff !important; border: 1px solid #444 !important; border-radius: 3px !important; }
+        div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111 !important; }
+        div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li { color: #fff !important; background-color: #111 !important; }
+        div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover { background-color: #2a2a2a !important; }
+        ul[role="listbox"] li[aria-selected="true"] { color: #FFCC00 !important; }
+
+        /* ── Multiselect dark ── */
+        div[data-testid="stMultiSelect"] label p { color: #1a1a1a !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important; }
+
+        /* ── H2H Fighter card ── */
+        .fighter-card {
+            background: #0d0d0d;
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            padding: 20px;
+            font-family: 'Merriweather', Georgia, serif;
+            position: relative;
+            overflow: hidden;
+        }
+        .fighter-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+        .fighter-card-1::before { background: #FFCC00; }
+        .fighter-card-2::before { background: #FF6B6B; }
+        .fighter-card-3::before { background: #4ECDC4; }
+
+        .fighter-name {
+            font-size: 22px; font-weight: 900; color: #f0ece4;
+            line-height: 1.1; margin-bottom: 6px; text-transform: uppercase;
+            letter-spacing: -0.5px;
+        }
+        .fighter-country { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 14px; }
+        .fighter-stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .fighter-stat-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: #666; font-family: Arial; }
+        .fighter-stat-val { font-size: 16px; font-weight: 900; color: #FFCC00; }
+        .fighter-bar-wrap { width: 100%; height: 4px; background: #1e1e1e; border-radius: 2px; margin-top: 3px; }
+        .fighter-bar { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
+
+        /* ── VS badge ── */
+        .vs-badge {
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Merriweather', serif;
+            font-size: 28px; font-weight: 900;
+            color: #FFCC00;
+            text-shadow: 0 0 20px rgba(255,204,0,0.4);
+            height: 100%;
+        }
         </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("<h2 style='text-align: center; color: #000000; margin-bottom: 30px;'>🏆 Riders of the Grande Boucle</h2>", unsafe_allow_html=True)
+    # ----------------------------------------------------------
+    # 2. TESTATA GIORNALISTICA
+    # ----------------------------------------------------------
+    st.markdown("""
+        <div class="riders-masthead">
+            <span style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;font-family:Arial,sans-serif;">
+                Riders Archive · From 1903 to Today · 3,601 Athletes
+            </span>
+            <h1 style="font-family:'Merriweather',Georgia,serif;font-size:42px;font-weight:900;
+                       color:#1a1a1a;margin:4px 0 2px;letter-spacing:-1px;">
+                The Men of the Grande Boucle
+            </h1>
+            <div style="font-size:10px;letter-spacing:2px;color:#888;font-family:Arial,sans-serif;
+                        border-top:1px solid #c8bfad;padding-top:6px;margin-top:6px;">
+                Champions · Careers · Rivalries · Nations
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    if not df_tour_w.empty:
-        lista_campioni = sorted(df_tour_w['Winner'].dropna().unique())
-        
+    # ----------------------------------------------------------
+    # 3. TAB NAVIGATION
+    # ----------------------------------------------------------
+    if "riders_tab" not in st.session_state:
+        st.session_state.riders_tab = "champions"
+
+    col_t1, col_t2, col_t3, col_t4 = st.columns(4)
+    with col_t1:
+        if st.button("🏆  THE CHAMPIONS", use_container_width=True,
+                     type="primary" if st.session_state.riders_tab == "champions" else "secondary"):
+            st.session_state.riders_tab = "champions"
+    with col_t2:
+        if st.button("📈  CAREER EXPLORER", use_container_width=True,
+                     type="primary" if st.session_state.riders_tab == "career" else "secondary"):
+            st.session_state.riders_tab = "career"
+    with col_t3:
+        if st.button("⚔️  HEAD-TO-HEAD", use_container_width=True,
+                     type="primary" if st.session_state.riders_tab == "h2h" else "secondary"):
+            st.session_state.riders_tab = "h2h"
+    with col_t4:
+        if st.button("🌍  NATIONS", use_container_width=True,
+                     type="primary" if st.session_state.riders_tab == "nations" else "secondary"):
+            st.session_state.riders_tab = "nations"
+
+    st.markdown("""
+        <style>
+        button[kind="primary"] {
+            background-color: #1a1a1a !important;
+            color: #FFCC00 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            border-bottom: 3px solid #FFCC00 !important;
+            font-family: 'Merriweather', serif !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 1px !important;
+            text-transform: uppercase !important;
+            padding: 12px !important;
+        }
+        button[kind="secondary"] {
+            background-color: transparent !important;
+            color: #888 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            border-bottom: 3px solid #c8bfad !important;
+            font-family: 'Merriweather', serif !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 1px !important;
+            text-transform: uppercase !important;
+            padding: 12px !important;
+        }
+        button[kind="secondary"]:hover {
+            color: #1a1a1a !important;
+            border-bottom-color: #888 !important;
+            background-color: transparent !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    hr = "<hr class='r-rule'>"
+
+    # ══════════════════════════════════════════════════════════
+    # TAB 1 — THE CHAMPIONS
+    # ══════════════════════════════════════════════════════════
+    if st.session_state.riders_tab == "champions":
+
         st.markdown("""
-            <style>
-            /* Sticky bar per la selectbox riders */
-            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) {
-                position: sticky;
-                top: 0px;
-                z-index: 999;
-
-                width: 100vw !important;
-                left: 0 !important;
-                right: 0 !important;
-                margin-left: calc(-50vw + 50%) !important;
-
-                background-color: #111111 !important;
-                padding: 12px 24px !important;
-                border-bottom: 2px solid #333333;
-            }
-
-            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) > div {
-                width: 100% !important;
-                max-width: 100% !important;
-                background-color: #111111 !important;
-            }
-
-            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 !important;
-            }
-
-            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox label {
-                color: #FFFFFF !important;
-                font-weight: bold !important;
-                font-size: 14px !important;
-            }
-
-            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) div[data-baseweb="select"] > div {
-                background-color: #111111 !important;
-                color: #FFFFFF !important;
-                border: 1px solid #555555 !important;
-                border-radius: 4px !important;
-            }
-
-            /* Menu a tendina aperto */
-            div[data-baseweb="popover"],
-            div[data-baseweb="popover"] > div,
-            div[data-baseweb="popover"] > div > div,
-            ul[data-baseweb="menu"],
-            ul[role="listbox"] {
-                background-color: #111111 !important;
-                border: 1px solid #444444 !important;
-            }
-            div[data-baseweb="popover"] li,
-            div[data-baseweb="popover"] li span,
-            div[data-baseweb="popover"] li div,
-            ul[data-baseweb="menu"] li,
-            ul[role="listbox"] li {
-                color: #FFFFFF !important;
-                background-color: #111111 !important;
-            }
-            div[data-baseweb="popover"] li:hover,
-            ul[data-baseweb="menu"] li:hover,
-            ul[role="listbox"] li:hover {
-                background-color: #333333 !important;
-                color: #FFFFFF !important;
-            }
-            ul[role="listbox"] li[aria-selected="true"] {
-                background-color: #222222 !important;
-                color: #FFCC00 !important;
-            }
-            </style>
+            <span class="r-section-label">· The Golden Age ·</span>
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Age of Glory — When Champions Conquered the Tour
+            </h3>
+            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:8px;">
+                Each dot is a Tour winner. Position on Y-axis = age at victory. Color = nation. Hover to explore.
+            </p>
         """, unsafe_allow_html=True)
 
-        vincitore_scelto = st.selectbox("🚴  Select a rider:", lista_campioni)
+        # ── BEESWARM: età vincitori per anno ──
+        df_bee = df_w_clean.dropna(subset=['age']).copy()
+        df_bee['Winner_display'] = df_bee['Winner'].str.title()
+        df_bee['rt_display'] = df_bee['rt_clean'].str.title()
 
-        st.markdown("<hr style='border: 1px solid #ccc; margin-top: 20px; margin-bottom: 30px;'>", unsafe_allow_html=True)
-        storico_vittorie = df_tour_w[df_tour_w['Winner'] == vincitore_scelto].sort_values('Year')
-        numero_vittorie = len(storico_vittorie)
-        anni_vittoria = ", ".join(storico_vittorie['Year'].astype(str).tolist())
-        dati_vincitore = storico_vittorie.iloc[-1]
+        fig_bee = px.strip(
+            df_bee, x='Year', y='age',
+            color='Country_clean',
+            hover_name='Winner_display',
+            hover_data={'Country_clean': True, 'rt_display': True, 'age': True, 'Year': True},
+            labels={'age': 'Age at Victory', 'Year': 'Edition', 'Country_clean': 'Nation', 'rt_display': 'Rider Type'},
+            color_discrete_map=COUNTRY_COLORS,
+            stripmode='overlay'
+        )
+        fig_bee.update_traces(marker=dict(size=11, opacity=0.85, line=dict(width=1, color='rgba(0,0,0,0.3)')), jitter=0.3)
 
-        col_bio, col_pps = st.columns([1.2, 2], gap="large")
+        # Linea media mobile
+        df_bee_yr = df_bee.groupby('Year')['age'].mean().reset_index()
+        fig_bee.add_scatter(
+            x=df_bee_yr['Year'], y=df_bee_yr['age'],
+            mode='lines', line=dict(color='#1a1a1a', width=1.5, dash='dot'),
+            name='Average age', hoverinfo='skip'
+        )
+        # Annotazione Pogacar
+        fig_bee.add_annotation(
+            x=2020, y=21, text="Pogacar, 21<br>youngest modern winner",
+            showarrow=True, arrowhead=2, arrowcolor='#1a1a1a',
+            font=dict(size=10, color='#1a1a1a', family='Arial'),
+            bgcolor='rgba(255,204,0,0.85)', borderpad=4, ax=60, ay=-30
+        )
+        fig_bee.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+            height=420, margin=dict(l=0, r=0, t=10, b=0),
+            legend=dict(
+                title='Nation', orientation='v', x=1.01, y=1,
+                font=dict(size=10), bgcolor='rgba(244,241,234,0.9)',
+                bordercolor='#c8bfad', borderwidth=1
+            ),
+            xaxis=dict(title='Edition', showgrid=False, tickfont=dict(size=10)),
+            yaxis=dict(title='Age', showgrid=True, gridcolor='#e8e4da', gridwidth=1),
+        )
+        st.plotly_chart(fig_bee, use_container_width=True)
 
-        with col_bio:
+        st.markdown(hr, unsafe_allow_html=True)
+
+        # ── BUMP CHART: dominanza nazioni per decade ──
+        st.markdown("""
+            <span class="r-section-label">· National Dynasties ·</span>
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                The Rise & Fall of Nations — A Century of Dominance
+            </h3>
+            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:8px;">
+                Victories per decade for the top 8 nations. Hover each line to track the shift of power.
+            </p>
+        """, unsafe_allow_html=True)
+
+        TOP_NATIONS = ['France', 'Belgium', 'Spain', 'Italy', 'USA', 'United Kingdom', 'Luxembourg', 'Denmark']
+        df_bump = df_w_clean[df_w_clean['Country_clean'].isin(TOP_NATIONS)].groupby(['decade', 'Country_clean']).size().reset_index(name='wins')
+
+        fig_bump = go.Figure()
+        for nation in TOP_NATIONS:
+            df_n = df_bump[df_bump['Country_clean'] == nation].sort_values('decade')
+            if df_n.empty:
+                continue
+            color = COUNTRY_COLORS.get(nation, '#888')
+            fig_bump.add_trace(go.Scatter(
+                x=df_n['decade'], y=df_n['wins'],
+                mode='lines+markers+text',
+                name=nation,
+                line=dict(color=color, width=2.5),
+                marker=dict(size=8, color=color, line=dict(width=1.5, color='white')),
+                text=df_n['wins'].astype(str),
+                textposition='top center',
+                textfont=dict(size=9, color=color),
+                hovertemplate=f'<b>{nation}</b><br>Decade: %{{x}}s<br>Victories: %{{y}}<extra></extra>'
+            ))
+        fig_bump.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+            height=400, margin=dict(l=0, r=0, t=10, b=0),
+            legend=dict(orientation='h', y=-0.15, x=0.5, xanchor='center', font=dict(size=10)),
+            xaxis=dict(title='Decade', tickvals=list(range(1900, 2030, 10)),
+                       ticktext=[f"{d}s" for d in range(1900, 2030, 10)],
+                       showgrid=False),
+            yaxis=dict(title='Victories', showgrid=True, gridcolor='#e8e4da'),
+        )
+        # Annotazioni ere storiche
+        for x0, x1, label in [(1914, 1918, 'WWI'), (1939, 1947, 'WWII')]:
+            fig_bump.add_vrect(x0=x0, x1=x1, fillcolor='#888', opacity=0.12, line_width=0,
+                               annotation_text=label, annotation_position='inside top',
+                               annotation_font=dict(size=9, color='#666'))
+        st.plotly_chart(fig_bump, use_container_width=True)
+
+        st.markdown(hr, unsafe_allow_html=True)
+
+        # ── RIDER TYPE HEATMAP per decade ──
+        st.markdown("""
+            <span class="r-section-label">· Tactical Evolution ·</span>
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Who Wins the Tour? — The Rider Type Revolution
+            </h3>
+            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:8px;">
+                Heatmap of winning rider types per decade. From the early sprinters to the modern pure climbers.
+            </p>
+        """, unsafe_allow_html=True)
+
+        df_heat = df_w_clean.groupby(['decade', 'rt_clean']).size().reset_index(name='count')
+        df_heat_pivot = df_heat.pivot(index='rt_clean', columns='decade', values='count').fillna(0)
+
+        fig_heat = go.Figure(data=go.Heatmap(
+            z=df_heat_pivot.values,
+            x=[f"{int(c)}s" for c in df_heat_pivot.columns],
+            y=[t.title() for t in df_heat_pivot.index],
+            colorscale=[[0, '#F4F1EA'], [0.01, '#FFF3CD'], [0.4, '#FFCC00'], [0.7, '#FF8C00'], [1, '#1a1a1a']],
+            text=df_heat_pivot.values.astype(int),
+            texttemplate='%{text}',
+            textfont=dict(size=13, family='Merriweather, serif'),
+            hovertemplate='<b>%{y}</b><br>%{x}<br>Victories: %{z}<extra></extra>',
+            showscale=False,
+        ))
+        fig_heat.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+            height=220, margin=dict(l=0, r=0, t=10, b=0),
+            xaxis=dict(side='bottom', tickfont=dict(size=10)),
+            yaxis=dict(tickfont=dict(size=11)),
+        )
+        st.plotly_chart(fig_heat, use_container_width=True)
+
+
+    # ══════════════════════════════════════════════════════════
+    # TAB 2 — CAREER EXPLORER
+    # ══════════════════════════════════════════════════════════
+    elif st.session_state.riders_tab == "career":
+
+        st.markdown("""
+            <span class="r-section-label">· Individual Archive ·</span>
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Career Explorer — Track Any Rider Through Time
+            </h3>
+            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
+                Select a rider to explore their complete Tour de France career. Add others to compare on a normalized timeline.
+            </p>
+        """, unsafe_allow_html=True)
+
+        all_riders_list = sorted(df_r_norm['Rider'].dropna().unique())
+
+        col_sel1, col_sel2 = st.columns([1, 2])
+        with col_sel1:
+            rider_main = st.selectbox("🚴 Main rider:", all_riders_list,
+                                      index=all_riders_list.index('TADEJ POGACAR') if 'TADEJ POGACAR' in all_riders_list else 0)
+        with col_sel2:
+            altri = [r for r in all_riders_list if r != rider_main]
+            riders_extra = st.multiselect("➕ Add for comparison (max 2):", altri, max_selections=2)
+
+        riders_sel = [rider_main] + riders_extra
+        PALETTE = ['#FFCC00', '#FF6B6B', '#4ECDC4']
+
+        # ── CAREER ARC normalizzato ──
+        st.markdown(hr, unsafe_allow_html=True)
+        st.markdown(f"""
+            <span class="r-section-label">· Normalized Career Arc ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Final GC Rank — Tour #1, #2, #3... (Career-Normalized)
+            </h4>
+            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
+                X-axis = participation number in career, not the calendar year. Allows true peer comparison.
+            </p>
+        """, unsafe_allow_html=True)
+
+        fig_arc = go.Figure()
+        for i, rider in enumerate(riders_sel):
+            df_rd = df_r_norm[df_r_norm['Rider'] == rider].dropna(subset=['Rank_Num']).sort_values('anno_carriera')
+            if df_rd.empty:
+                continue
+            color = PALETTE[i]
+            fig_arc.add_trace(go.Scatter(
+                x=df_rd['anno_carriera'],
+                y=df_rd['Rank_Num'],
+                mode='lines+markers',
+                name=rider.title(),
+                line=dict(color=color, width=3),
+                marker=dict(size=10, color=color, line=dict(width=2, color='white')),
+                hovertemplate=(
+                    f'<b>{rider.title()}</b><br>'
+                    'Tour #%{x} of career<br>'
+                    'GC Rank: #%{y}<br>'
+                    '<extra></extra>'
+                ),
+                customdata=df_rd[['Year', 'Team']].values,
+            ))
+            # Annotazione anno reale sui punti
+            for _, row in df_rd.iterrows():
+                fig_arc.add_annotation(
+                    x=row['anno_carriera'], y=row['Rank_Num'],
+                    text=str(int(row['Year'])),
+                    showarrow=False,
+                    font=dict(size=8, color=color, family='Arial'),
+                    yshift=14, xshift=0,
+                )
+
+        fig_arc.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+            height=420, margin=dict(l=0, r=0, t=10, b=0),
+            legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center', font=dict(size=11)),
+            xaxis=dict(
+                title='Tour participation in career',
+                tickmode='linear', dtick=1,
+                tickvals=list(range(1, 17)),
+                ticktext=[f'Tour #{n}' for n in range(1, 17)],
+                showgrid=False, tickfont=dict(size=9),
+            ),
+            yaxis=dict(
+                title='GC Final Rank', autorange='reversed',
+                showgrid=True, gridcolor='#e8e4da',
+                tickmode='linear', dtick=5,
+            ),
+        )
+        # Fascia top-10
+        fig_arc.add_hrect(y0=1, y1=10, fillcolor='rgba(255,204,0,0.06)',
+                          line_width=0, annotation_text='Top 10 zone',
+                          annotation_position='right', annotation_font=dict(size=9, color='#aaa'))
+        st.plotly_chart(fig_arc, use_container_width=True)
+
+        st.markdown(hr, unsafe_allow_html=True)
+
+        # ── PHYSICAL OUTLIER STRIP (solo per vincitori) ──
+        st.markdown("""
+            <span class="r-section-label">· Physical Profile ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Physical Outlier Detector — Is This Champion Atypical?
+            </h4>
+            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
+                Distribution of all Tour winners (grey). Red dot = selected rider. Only available for GC winners.
+            </p>
+        """, unsafe_allow_html=True)
+
+        PHYSICAL_COLS = {
+            'age': ('Age at Victory', 'years'),
+            'BMI': ('BMI', 'kg/m²'),
+            'weight_(Kg)': ('Weight', 'kg'),
+        }
+
+        df_phys = df_w_clean.dropna(subset=['age', 'BMI', 'weight_(Kg)'])
+
+        # Cerca se il rider principale è un vincitore
+        rider_main_norm = rider_main.title().lower()
+        winner_match = df_phys[df_phys['Winner'].str.lower().str.strip() == rider_main_norm.strip()]
+        if winner_match.empty:
+            # Prova parziale
+            winner_match = df_phys[df_phys['Winner'].str.lower().str.contains(rider_main.split()[0].lower())]
+
+        fig_strips = go.Figure()
+        metrics_list = list(PHYSICAL_COLS.items())
+        y_positions = [3, 2, 1]
+
+        for idx, (col, (label, unit)) in enumerate(metrics_list):
+            y_val = y_positions[idx]
+            vals = df_phys[col].dropna()
+
+            # Jitter per i punti di sfondo
+            import numpy as np
+            jitter = np.random.uniform(-0.18, 0.18, size=len(vals))
+
+            fig_strips.add_trace(go.Scatter(
+                x=vals, y=[y_val + j for j in jitter],
+                mode='markers',
+                marker=dict(size=7, color='#c8bfad', opacity=0.6,
+                            line=dict(width=0.5, color='#888')),
+                showlegend=False,
+                hovertemplate=f'<b>{label}</b>: %{{x}} {unit}<extra></extra>',
+                name=label,
+            ))
+
+            # Mediana
+            median_val = vals.median()
+            fig_strips.add_shape(type='line',
+                x0=median_val, x1=median_val,
+                y0=y_val - 0.25, y1=y_val + 0.25,
+                line=dict(color='#888', width=2, dash='dot'))
+
+            # Punto del rider selezionato
+            if not winner_match.empty and pd.notna(winner_match[col].values[0]):
+                rider_val = winner_match[col].values[0]
+                fig_strips.add_trace(go.Scatter(
+                    x=[rider_val], y=[y_val],
+                    mode='markers+text',
+                    marker=dict(size=16, color='#FFCC00',
+                                line=dict(width=2, color='#1a1a1a'), symbol='diamond'),
+                    text=[f'{rider_val:.1f}'], textposition='top center',
+                    textfont=dict(size=10, color='#1a1a1a'),
+                    showlegend=False,
+                    hovertemplate=f'<b>{rider_main.title()}</b><br>{label}: {rider_val:.1f} {unit}<extra></extra>',
+                    name=f'{rider_main.title()} — {label}',
+                ))
+
+        fig_strips.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+            height=300, margin=dict(l=120, r=20, t=20, b=20),
+            xaxis=dict(title='Value', showgrid=True, gridcolor='#e8e4da'),
+            yaxis=dict(
+                tickmode='array',
+                tickvals=y_positions,
+                ticktext=[v[0] for v in PHYSICAL_COLS.values()],
+                showgrid=False,
+            ),
+            showlegend=False,
+        )
+
+        if winner_match.empty:
             st.markdown(f"""
-<div style="background-color: #000000; padding: 20px; border-radius: 10px; border-left: 8px solid #FFCC00;">
-<h3 style="color: #FFCC00; margin-bottom: 5px;">{vincitore_scelto}</h3>
-<p style="color: #ffffff; font-size: 1.1rem; margin-bottom: 2px;"><b>Country:</b> {dati_vincitore.get('Country', 'N/D')}</p>
-<p style="color: #ffffff; font-size: 0.9rem; font-style: italic;">{dati_vincitore.get('Team', 'Team N/D')}</p>
-</div>
-""", unsafe_allow_html=True)
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("<h4 style='color: #000;'>Antropometric Data</h4>", unsafe_allow_html=True)
-            c1, c2 = st.columns(2)
-
-            raw_h = str(dati_vincitore.get('height_(m)', '0')).replace(',', '.')
-            try:
-                val_h = float(raw_h)
-                if val_h > 10: 
-                    s_h = str(int(val_h))
-                    txt_altezza = f"{s_h[0]}.{s_h[1:3]} m" 
-                else:
-                    txt_altezza = f"{val_h:.2f} m"
-            except:
-                txt_altezza = "N/D"
-
-            try:
-                val_peso = float(str(dati_vincitore.get('weight_(Kg)', '0')).replace(',', '.'))
-                txt_peso = f"{val_peso:.1f} kg" 
-            except:
-                txt_peso = "N/D"
-
-            c1.metric("Height", txt_altezza)
-            c1.metric("Weight", txt_peso)
-
-            try:
-                eta = int(dati_vincitore.get('age', 0))
-                c2.metric("Age", f"{eta}")
-            except:
-                c2.metric("Age", "N/D")
-
-            try:
-                bmi_val = float(str(dati_vincitore.get('BMI', 0)).replace(',', '.'))
-                c2.metric("BMI", f"{bmi_val:.1f}")
-            except:
-                c2.metric("BMI", "N/D")
-                    
-        with col_pps:
-            st.markdown("<h4 style='color: #000;'>Analisi Tecnica (PPS)</h4>", unsafe_allow_html=True)
-            tipo_pps = dati_vincitore.get('rider_type_(PPS)', 'N/D')
-            simile_pps = dati_vincitore.get('close_rider_type_(PPS)', 'N/D')
-
-            st.markdown(f"""
-                <div style="background-color: #E6E1CF; padding: 20px; border-radius: 5px; color: #000; border: 1px solid #999;">
-                    <p style="margin-bottom: 10px;"><b> Rider Type:</b><br><span style="font-size: 1.3rem; font-weight: bold; color: #d4af37;">{tipo_pps}</span></p>
-                    <p style="margin-bottom: 0;"><b>Close Rider Type:</b><br><span>{simile_pps}</span></p>
+                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:12px 16px;
+                            border-radius:3px;font-family:'Merriweather',serif;color:#666;font-style:italic;font-size:12px;">
+                    Physical data available only for GC winners. <strong>{rider_main.title()}</strong> is shown in context with all champions.
                 </div>
             """, unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-        
-        st.markdown("<hr style='border: 1px dashed #ccc; margin-top: 20px; margin-bottom: 20px;'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='color: #000; font-weight: bold;'>Comparative Career Analysis</h4>", unsafe_allow_html=True)
-        
-        nome_principale = str(vincitore_scelto).strip().upper()
-        df_storico['Rider_Norm'] = df_storico['Rider'].astype(str).str.strip().str.upper()
-        tutti_i_corridori = sorted(df_storico['Rider'].astype(str).str.strip().unique())
-        
-        st.markdown("""
-            <style>
-            div[data-testid="stMultiSelect"] label p { color: #000000 !important; font-weight: bold !important; font-size: 1.1rem !important; }
-            </style>
-        """, unsafe_allow_html=True)
-        
-        sfidanti = st.multiselect(
-            "Add other riders to the chart for a head-to-head comparison:", 
-            options=[c for c in tutti_i_corridori if str(c).strip().upper() != nome_principale],
-            help="Seleziona uno o più nomi dall'archivio storico"
-        )
-        
-        nomi_da_cercare = [nome_principale] + [str(s).strip().upper() for s in sfidanti]
-        
-        def match_multiplo(nome_db):
-            for nome in nomi_da_cercare:
-                if nome in nome_db or nome_db in nome: return True
-            return False
-            
-        maschera_ricerca = df_storico['Rider_Norm'].apply(match_multiplo)
-        df_plot = df_storico[maschera_ricerca].copy()
-        
-        if not df_plot.empty:
-            df_plot['Rank_Num'] = pd.to_numeric(df_plot['Rank'], errors='coerce')
-            df_grafico = df_plot.dropna(subset=['Rank_Num'])
-            
-            grafico_carriera = alt.Chart(df_grafico).mark_line(
-                point=alt.OverlayMarkDef(size=80, opacity=1, filled=True), strokeWidth=3
-            ).encode(
-                x=alt.X('Year:O', title='Anno', axis=alt.Axis(labelAngle=-45)),
-                y=alt.Y('Rank_Num:Q', title='Final Position', scale=alt.Scale(reverse=True, domainMin=1)),
-                color=alt.Color('Rider:N', title='Athletes', scale=alt.Scale(scheme='set1')),
-                tooltip=[
-                    alt.Tooltip('Rider:N', title='Ciclista'),
-                    alt.Tooltip('Year:O', title='Anno'),
-                    alt.Tooltip('Rank:N', title='Classifica Generale'),
-                    alt.Tooltip('Team:N', title='Squadra'),
-                    alt.Tooltip('Times:N', title='Tempo')
-                ]
-            ).properties(height=450).interactive().configure(
-                background='black', view=alt.ViewConfig(stroke='transparent'),
-                axis=alt.AxisConfig(labelColor='white', titleColor='white', gridColor='#333333', domainColor='#333333', tickColor='white'),
-                legend=alt.LegendConfig(labelColor='white', titleColor='white')
-            )
-            st.altair_chart(grafico_carriera, use_container_width=True, theme=None)
-            
-    else:
-        st.warning("Caricamento del dataset vincitori non riuscito.")
 
+        st.plotly_chart(fig_strips, use_container_width=True)
+
+        st.markdown(hr, unsafe_allow_html=True)
+
+        # ── LONGEVITY vs PEAK ──
+        st.markdown("""
+            <span class="r-section-label">· Longevity vs Peak ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Career Longevity vs Peak Performance
+            </h4>
+            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
+                Each dot = a rider with 3+ participations. X = best GC rank ever. Y = total Tours ridden. Selected riders highlighted.
+            </p>
+        """, unsafe_allow_html=True)
+
+        df_longevity = df_r_norm.groupby('Rider').agg(
+            partecipazioni=('Year', 'count'),
+            best_rank=('Rank_Num', 'min')
+        ).reset_index()
+        df_longevity = df_longevity[df_longevity['partecipazioni'] >= 3]
+        df_longevity['is_selected'] = df_longevity['Rider'].isin(riders_sel)
+        df_longevity['size'] = df_longevity['is_selected'].map({True: 16, False: 6})
+        df_longevity['color'] = '#c8bfad'
+
+        for i, rider in enumerate(riders_sel):
+            df_longevity.loc[df_longevity['Rider'] == rider, 'color'] = PALETTE[i]
+
+        fig_long = go.Figure()
+
+        # Background dots
+        df_bg = df_longevity[~df_longevity['is_selected']]
+        fig_long.add_trace(go.Scatter(
+            x=df_bg['best_rank'], y=df_bg['partecipazioni'],
+            mode='markers',
+            marker=dict(size=6, color='#c8bfad', opacity=0.5, line=dict(width=0.5, color='#888')),
+            showlegend=False,
+            hovertemplate='<b>%{customdata[0]}</b><br>Best: #%{x}<br>Tours: %{y}<extra></extra>',
+            customdata=df_bg[['Rider']].values,
+        ))
+
+        # Selected riders
+        for i, rider in enumerate(riders_sel):
+            df_sel = df_longevity[df_longevity['Rider'] == rider]
+            if df_sel.empty:
+                continue
+            fig_long.add_trace(go.Scatter(
+                x=df_sel['best_rank'], y=df_sel['partecipazioni'],
+                mode='markers+text',
+                marker=dict(size=18, color=PALETTE[i], line=dict(width=2, color='white'), symbol='star'),
+                text=[rider.title()],
+                textposition='top center',
+                textfont=dict(size=10, color=PALETTE[i]),
+                name=rider.title(),
+                hovertemplate=f'<b>{rider.title()}</b><br>Best GC: #%{{x}}<br>Tours ridden: %{{y}}<extra></extra>',
+            ))
+
+        fig_long.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+            height=380, margin=dict(l=0, r=0, t=10, b=0),
+            xaxis=dict(title='Best GC Rank (lower = better)', showgrid=True, gridcolor='#e8e4da'),
+            yaxis=dict(title='Total Tour participations', showgrid=True, gridcolor='#e8e4da'),
+            legend=dict(orientation='h', y=-0.15, x=0.5, xanchor='center'),
+        )
+        # Quadrant labels
+        fig_long.add_annotation(x=2, y=14, text='🏆 Elite Champions', showarrow=False,
+                                font=dict(size=10, color='#888', family='Arial'), opacity=0.7)
+        fig_long.add_annotation(x=50, y=14, text='🐢 Loyal Domestiques', showarrow=False,
+                                font=dict(size=10, color='#888', family='Arial'), opacity=0.7)
+        st.plotly_chart(fig_long, use_container_width=True)
+
+
+    # ══════════════════════════════════════════════════════════
+    # TAB 3 — HEAD-TO-HEAD
+    # ══════════════════════════════════════════════════════════
+    elif st.session_state.riders_tab == "h2h":
+
+        st.markdown("""
+            <span class="r-section-label">· The Duel ·</span>
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Head-to-Head — The Greatest Rivalries
+            </h3>
+            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
+                Select up to 3 riders. Career normalized: Tour #1 vs Tour #1, regardless of the year.
+                <strong>⚠ Max 3 riders.</strong>
+            </p>
+        """, unsafe_allow_html=True)
+
+        PALETTE_H2H = ['#FFCC00', '#FF6B6B', '#4ECDC4']
+        all_riders_h2h = sorted(df_r_norm['Rider'].dropna().unique())
+
+        col_h1, col_h2, col_h3 = st.columns(3)
+        with col_h1:
+            h2h_r1 = st.selectbox("Fighter 1:", all_riders_h2h,
+                                  index=all_riders_h2h.index('EDDY MERCKX') if 'EDDY MERCKX' in all_riders_h2h else 0,
+                                  key='h2h_r1')
+        with col_h2:
+            others2 = [r for r in all_riders_h2h if r != h2h_r1]
+            h2h_r2 = st.selectbox("Fighter 2:", others2,
+                                  index=others2.index('BERNARD HINAULT') if 'BERNARD HINAULT' in others2 else 0,
+                                  key='h2h_r2')
+        with col_h3:
+            others3 = [r for r in all_riders_h2h if r not in [h2h_r1, h2h_r2]]
+            h2h_add = st.selectbox("Fighter 3 (optional):", ['— None —'] + others3, key='h2h_r3')
+
+        h2h_riders = [h2h_r1, h2h_r2]
+        if h2h_add != '— None —':
+            h2h_riders.append(h2h_add)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # ── FIGHTER CARDS (stile mix giornale/videogame) ──
+        cols_fighters = st.columns(len(h2h_riders) * 2 - 1)
+
+        for fi, rider in enumerate(h2h_riders):
+            df_rd = df_r_norm[df_r_norm['Rider'] == rider].dropna(subset=['Rank_Num'])
+            n_tours = len(df_rd)
+            best_rank = int(df_rd['Rank_Num'].min()) if n_tours > 0 else 'N/A'
+            wins = len(df_w_clean[df_w_clean['Winner'].str.upper().str.strip() == rider.strip()])
+            top10 = len(df_rd[df_rd['Rank_Num'] <= 10])
+            color = PALETTE_H2H[fi]
+
+            # Country
+            wrow = df_w_clean[df_w_clean['Winner'].str.upper().str.strip() == rider.strip()]
+            country = wrow['Country_clean'].values[0] if not wrow.empty else '—'
+            rider_type = wrow['rt_clean'].values[0].strip().title() if not wrow.empty else '—'
+
+            card_col_idx = fi * 2
+
+            # Calcolo barre (normalizzate su max possibile)
+            bar_wins = min(100, (wins / 7) * 100)      # max 7 (Merckx/Armstrong/Indurain)
+            bar_top10 = min(100, (top10 / n_tours) * 100) if n_tours > 0 else 0
+            bar_tours = min(100, (n_tours / 16) * 100) # max 16
+
+            with cols_fighters[card_col_idx]:
+                st.markdown(f"""
+                    <div class="fighter-card fighter-card-{fi+1}">
+                        <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;
+                                    color:{color};font-family:Arial;margin-bottom:4px;">
+                            Fighter {fi+1}
+                        </div>
+                        <div class="fighter-name">{rider.title()}</div>
+                        <div class="fighter-country">{country} · {rider_type}</div>
+                        <hr style="border:none;border-top:1px solid #2a2a2a;margin:10px 0;">
+
+                        <div class="fighter-stat-row">
+                            <span class="fighter-stat-label">GC Victories</span>
+                            <span class="fighter-stat-val" style="color:{color};">{wins}</span>
+                        </div>
+                        <div class="fighter-bar-wrap">
+                            <div class="fighter-bar" style="width:{bar_wins:.0f}%;background:{color};"></div>
+                        </div>
+
+                        <div class="fighter-stat-row" style="margin-top:10px;">
+                            <span class="fighter-stat-label">Tours Ridden</span>
+                            <span class="fighter-stat-val" style="color:{color};">{n_tours}</span>
+                        </div>
+                        <div class="fighter-bar-wrap">
+                            <div class="fighter-bar" style="width:{bar_tours:.0f}%;background:{color};"></div>
+                        </div>
+
+                        <div class="fighter-stat-row" style="margin-top:10px;">
+                            <span class="fighter-stat-label">Top-10 Rate</span>
+                            <span class="fighter-stat-val" style="color:{color};">{bar_top10:.0f}%</span>
+                        </div>
+                        <div class="fighter-bar-wrap">
+                            <div class="fighter-bar" style="width:{bar_top10:.0f}%;background:{color};"></div>
+                        </div>
+
+                        <div class="fighter-stat-row" style="margin-top:10px;">
+                            <span class="fighter-stat-label">Best GC Result</span>
+                            <span class="fighter-stat-val" style="color:{color};">#{best_rank}</span>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            # VS badge tra i corridori
+            if fi < len(h2h_riders) - 1:
+                with cols_fighters[card_col_idx + 1]:
+                    st.markdown(f"""
+                        <div class="vs-badge"
+                             style="font-size:32px;font-weight:900;color:#FFCC00;
+                                    text-align:center;padding:60px 0;
+                                    font-family:'Merriweather',serif;
+                                    text-shadow:0 0 20px rgba(255,204,0,0.3);">
+                            VS
+                        </div>
+                    """, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(hr, unsafe_allow_html=True)
+
+        # ── CAREER ARC normalizzato H2H ──
+        st.markdown("""
+            <span class="r-section-label">· The Race Through Careers ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Career Arc — Side by Side, Tour by Tour
+            </h4>
+            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
+                X = career participation number. Both start from Tour #1. Year labels shown on each point.
+            </p>
+        """, unsafe_allow_html=True)
+
+        fig_h2h_arc = go.Figure()
+        for i, rider in enumerate(h2h_riders):
+            df_rd = df_r_norm[df_r_norm['Rider'] == rider].dropna(subset=['Rank_Num']).sort_values('anno_carriera')
+            if df_rd.empty:
+                continue
+            color = PALETTE_H2H[i]
+            fig_h2h_arc.add_trace(go.Scatter(
+                x=df_rd['anno_carriera'], y=df_rd['Rank_Num'],
+                mode='lines+markers',
+                name=rider.title(),
+                line=dict(color=color, width=3),
+                marker=dict(size=11, color=color, line=dict(width=2, color='white')),
+                hovertemplate=(
+                    f'<b>{rider.title()}</b><br>'
+                    'Tour #%{x} of career (%{customdata[0]})<br>'
+                    'GC Rank: #%{y}<extra></extra>'
+                ),
+                customdata=df_rd[['Year']].values,
+            ))
+            for _, row in df_rd.iterrows():
+                fig_h2h_arc.add_annotation(
+                    x=row['anno_carriera'], y=row['Rank_Num'],
+                    text=str(int(row['Year'])),
+                    showarrow=False,
+                    font=dict(size=8, color=color, family='Arial'),
+                    yshift=14,
+                )
+
+        fig_h2h_arc.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+            height=400, margin=dict(l=0, r=0, t=10, b=0),
+            legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center', font=dict(size=11)),
+            xaxis=dict(
+                title='Tour participation in career',
+                tickmode='linear', dtick=1,
+                tickvals=list(range(1, 17)),
+                ticktext=[f'Tour #{n}' for n in range(1, 17)],
+                showgrid=False, tickfont=dict(size=9),
+            ),
+            yaxis=dict(title='GC Final Rank', autorange='reversed',
+                       showgrid=True, gridcolor='#e8e4da'),
+        )
+        fig_h2h_arc.add_hrect(y0=1, y1=3, fillcolor='rgba(255,204,0,0.08)',
+                              line_width=0, annotation_text='Podium zone',
+                              annotation_position='right', annotation_font=dict(size=9, color='#aaa'))
+        st.plotly_chart(fig_h2h_arc, use_container_width=True)
+
+        st.markdown(hr, unsafe_allow_html=True)
+
+        # ── WIN/LOSS DOTS per anni condivisi ──
+        st.markdown("""
+            <span class="r-section-label">· Direct Duels ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Head-to-Head Record — Shared Editions
+            </h4>
+            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:16px;">
+                Each column = an edition where both competed. Color = who finished higher.
+            </p>
+        """, unsafe_allow_html=True)
+
+        # Shared years between rider 1 and 2
+        years_r1 = set(df_r_norm[df_r_norm['Rider'] == h2h_r1]['Year'].values)
+        years_r2 = set(df_r_norm[df_r_norm['Rider'] == h2h_r2]['Year'].values)
+        shared_years = sorted(years_r1 & years_r2)
+
+        if shared_years:
+            duel_rows = []
+            for yr in shared_years:
+                row1 = df_r_norm[(df_r_norm['Rider'] == h2h_r1) & (df_r_norm['Year'] == yr)]
+                row2 = df_r_norm[(df_r_norm['Rider'] == h2h_r2) & (df_r_norm['Year'] == yr)]
+                if row1.empty or row2.empty:
+                    continue
+                rk1 = row1['Rank_Num'].values[0]
+                rk2 = row2['Rank_Num'].values[0]
+                if pd.isna(rk1) or pd.isna(rk2):
+                    continue
+                winner_this_year = h2h_r1 if rk1 < rk2 else h2h_r2
+                duel_rows.append({
+                    'Year': yr, 'Rank_R1': rk1, 'Rank_R2': rk2,
+                    'Winner': winner_this_year, 'Gap': abs(int(rk1) - int(rk2))
+                })
+
+            if duel_rows:
+                df_duel = pd.DataFrame(duel_rows)
+                wins_r1 = (df_duel['Winner'] == h2h_r1).sum()
+                wins_r2 = (df_duel['Winner'] == h2h_r2).sum()
+
+                # Scoreboard
+                st.markdown(f"""
+                    <div style="display:flex;align-items:center;justify-content:center;gap:32px;
+                                margin:16px 0;font-family:'Merriweather',serif;">
+                        <div style="text-align:center;">
+                            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#888;">{h2h_r1.title()}</div>
+                            <div style="font-size:52px;font-weight:900;color:{PALETTE_H2H[0]};line-height:1;">{wins_r1}</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:11px;color:#888;">shared<br>editions</div>
+                            <div style="font-size:28px;font-weight:700;color:#1a1a1a;">{len(df_duel)}</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#888;">{h2h_r2.title()}</div>
+                            <div style="font-size:52px;font-weight:900;color:{PALETTE_H2H[1]};line-height:1;">{wins_r2}</div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+                # Dot chart per anno
+                fig_duel = go.Figure()
+
+                for _, row in df_duel.iterrows():
+                    color_dot = PALETTE_H2H[0] if row['Winner'] == h2h_r1 else PALETTE_H2H[1]
+                    winner_name = h2h_r1.title() if row['Winner'] == h2h_r1 else h2h_r2.title()
+                    fig_duel.add_trace(go.Scatter(
+                        x=[row['Year']], y=[0],
+                        mode='markers+text',
+                        marker=dict(size=28, color=color_dot, line=dict(width=2, color='white')),
+                        text=[str(int(row['Year']))],
+                        textposition='top center',
+                        textfont=dict(size=9, color='#1a1a1a', family='Arial'),
+                        showlegend=False,
+                        hovertemplate=(
+                            f"<b>{int(row['Year'])}</b><br>"
+                            f"🥇 {winner_name}<br>"
+                            f"{h2h_r1.title()}: #{int(row['Rank_R1'])}<br>"
+                            f"{h2h_r2.title()}: #{int(row['Rank_R2'])}<br>"
+                            f"Gap: {int(row['Gap'])} positions<extra></extra>"
+                        ),
+                    ))
+
+                fig_duel.update_layout(
+                    plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                    height=160, margin=dict(l=0, r=0, t=40, b=20),
+                    xaxis=dict(showgrid=False, zeroline=False, tickfont=dict(size=10)),
+                    yaxis=dict(visible=False, range=[-0.5, 0.8]),
+                    showlegend=False,
+                )
+
+                # Legend manuale
+                for i, (rider, color) in enumerate([(h2h_r1, PALETTE_H2H[0]), (h2h_r2, PALETTE_H2H[1])]):
+                    fig_duel.add_annotation(
+                        x=0.02 + i * 0.35, y=1.15, xref='paper', yref='paper',
+                        text=f'● {rider.title()} wins',
+                        showarrow=False, font=dict(size=10, color=color, family='Arial'),
+                    )
+
+                st.plotly_chart(fig_duel, use_container_width=True)
+            else:
+                st.info("No direct duel data available for these riders in shared editions.")
+        else:
+            st.markdown(f"""
+                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:12px 16px;
+                            border-radius:3px;font-family:'Merriweather',serif;color:#666;font-style:italic;font-size:12px;">
+                    {h2h_r1.title()} and {h2h_r2.title()} never raced the Tour in the same year.
+                </div>
+            """, unsafe_allow_html=True)
+
+        # ── PARALLEL COORDINATES ──
+        st.markdown(hr, unsafe_allow_html=True)
+        st.markdown("""
+            <span class="r-section-label">· Multi-Dimensional Comparison ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Parallel Coordinates — All Dimensions at Once
+            </h4>
+            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
+                Each line = one Tour edition. Axes: GC Rank · GapSeconds · Career Tour #. Drag axes to reorder.
+            </p>
+        """, unsafe_allow_html=True)
+
+        df_para_list = []
+        for i, rider in enumerate(h2h_riders):
+            df_rd = df_r_norm[df_r_norm['Rider'] == rider].dropna(subset=['Rank_Num']).copy()
+            df_rd['rider_idx'] = i
+            df_rd['rider_name'] = rider.title()
+            df_para_list.append(df_rd)
+
+        if df_para_list:
+            df_para = pd.concat(df_para_list)
+            df_para['GapSeconds_safe'] = df_para['GapSeconds'].fillna(0).clip(upper=20000)
+
+            fig_para = px.parallel_coordinates(
+                df_para,
+                color='rider_idx',
+                dimensions=['anno_carriera', 'Rank_Num', 'GapSeconds_safe'],
+                labels={
+                    'anno_carriera': 'Career Tour #',
+                    'Rank_Num': 'GC Rank',
+                    'GapSeconds_safe': 'Gap (sec)',
+                    'rider_idx': 'Rider'
+                },
+                color_continuous_scale=PALETTE_H2H[:len(h2h_riders)],
+            )
+            fig_para.update_layout(
+                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+                height=380, margin=dict(l=60, r=60, t=40, b=20),
+                coloraxis_showscale=False,
+            )
+            st.plotly_chart(fig_para, use_container_width=True)
+
+
+    # ══════════════════════════════════════════════════════════
+    # TAB 4 — NATIONS
+    # ══════════════════════════════════════════════════════════
+    elif st.session_state.riders_tab == "nations":
+
+        st.markdown("""
+            <span class="r-section-label">· Geographic Analysis ·</span>
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Nations of the Tour — Where Champions Are Born
+            </h3>
+            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
+                Choropleth map of Tour de France GC victories by country. Hover for details.
+            </p>
+        """, unsafe_allow_html=True)
+
+        # ── CHOROPLETH ──
+        df_choro = df_w_clean.groupby(['Country_clean', 'ISO']).size().reset_index(name='victories')
+        # Merge USA
+        df_choro.loc[df_choro['Country_clean'] == 'USA', 'ISO'] = 'USA'
+
+        fig_choro = px.choropleth(
+            df_choro,
+            locations='ISO',
+            color='victories',
+            hover_name='Country_clean',
+            hover_data={'victories': True, 'ISO': False},
+            color_continuous_scale=[
+                [0, '#F4F1EA'],
+                [0.05, '#FFF3CD'],
+                [0.2, '#FFDD57'],
+                [0.5, '#FFCC00'],
+                [0.8, '#FF8C00'],
+                [1.0, '#1a1a1a']
+            ],
+            labels={'victories': 'GC Victories'},
+        )
+        fig_choro.update_geos(
+            showcoastlines=True, coastlinecolor='#c8bfad',
+            showland=True, landcolor='#F4F1EA',
+            showocean=True, oceancolor='#e8f4f8',
+            showframe=False,
+            projection_type='natural earth',
+            center=dict(lat=48, lon=10),
+            lataxis_range=[35, 72],
+            lonaxis_range=[-15, 40],
+        )
+        fig_choro.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+            height=480, margin=dict(l=0, r=0, t=10, b=0),
+            coloraxis_colorbar=dict(
+                title='Victories', tickfont=dict(size=10),
+                len=0.6, thickness=12,
+            ),
+        )
+        st.plotly_chart(fig_choro, use_container_width=True)
+
+        st.markdown(hr, unsafe_allow_html=True)
+
+        # ── TREEMAP dominance ──
+        st.markdown("""
+            <span class="r-section-label">· Victory Share ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Treemap — The Weight of Nations
+            </h4>
+            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
+                Each rectangle = a country. Size = total GC victories. Color = share (%).
+            </p>
+        """, unsafe_allow_html=True)
+
+        df_tree = df_w_clean.groupby('Country_clean').size().reset_index(name='victories')
+        df_tree = df_tree[df_tree['victories'] > 0]
+        df_tree['pct'] = (df_tree['victories'] / df_tree['victories'].sum() * 100).round(1)
+        df_tree['label'] = df_tree['Country_clean'] + '<br>' + df_tree['victories'].astype(str) + ' wins'
+
+        fig_tree = px.treemap(
+            df_tree,
+            path=['Country_clean'],
+            values='victories',
+            color='pct',
+            color_continuous_scale=[
+                [0, '#F4F1EA'], [0.1, '#FFF3CD'], [0.4, '#FFCC00'],
+                [0.7, '#FF8C00'], [1.0, '#1a1a1a']
+            ],
+            hover_data={'pct': ':.1f'},
+            labels={'pct': '% of all wins', 'victories': 'GC Victories'},
+            custom_data=['victories', 'pct'],
+        )
+        fig_tree.update_traces(
+            texttemplate='<b>%{label}</b><br>%{customdata[0]} wins · %{customdata[1]:.1f}%',
+            textfont=dict(size=12, family='Merriweather, serif'),
+            hovertemplate='<b>%{label}</b><br>GC Victories: %{customdata[0]}<br>Share: %{customdata[1]:.1f}%<extra></extra>',
+        )
+        fig_tree.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+            height=420, margin=dict(l=0, r=0, t=10, b=0),
+            coloraxis_showscale=False,
+        )
+        st.plotly_chart(fig_tree, use_container_width=True)
+
+        st.markdown(hr, unsafe_allow_html=True)
+
+        # ── DECADE DOMINANCE TABLE ──
+        st.markdown("""
+            <span class="r-section-label">· Era by Era ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                Who Ruled Each Decade?
+            </h4>
+        """, unsafe_allow_html=True)
+
+        df_dec = df_w_clean.groupby(['decade', 'Country_clean']).size().reset_index(name='wins')
+        df_dec_pivot = df_dec.pivot(index='Country_clean', columns='decade', values='wins').fillna(0).astype(int)
+        df_dec_pivot.columns = [f"{int(c)}s" for c in df_dec_pivot.columns]
+        df_dec_pivot['TOTAL'] = df_dec_pivot.sum(axis=1)
+        df_dec_pivot = df_dec_pivot.sort_values('TOTAL', ascending=False)
+        df_dec_pivot.index.name = 'Nation'
+
+        st.dataframe(
+            df_dec_pivot.style.background_gradient(cmap='YlOrBr', subset=df_dec_pivot.columns[:-1])
+                              .format('{:.0f}')
+                              .set_properties(**{'font-family': 'Merriweather, serif', 'font-size': '12px'}),
+            use_container_width=True,
+        )
+
+        
 elif st.session_state.pagina_corrente == "tappe":
     
     # ==========================================
