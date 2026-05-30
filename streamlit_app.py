@@ -2215,83 +2215,102 @@ elif st.session_state.pagina_corrente == "corridori":
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # ── FIGHTER CARDS (stile mix giornale/videogame) ──
-        cols_fighters = st.columns(len(h2h_riders) * 2 - 1)
-
+        # ── FIGHTER CARDS via components.html (fix rendering) ──
+        fighter_cards_data = []
         for fi, rider in enumerate(h2h_riders):
             df_rd = df_r_norm[df_r_norm['Rider'] == rider].dropna(subset=['Rank_Num'])
             n_tours = len(df_rd)
-            best_rank = int(df_rd['Rank_Num'].min()) if n_tours > 0 else 'N/A'
+            best_rank = int(df_rd['Rank_Num'].min()) if n_tours > 0 else 0
             wins = len(df_w_clean[df_w_clean['Winner'].str.upper().str.strip() == rider.strip()])
             top10 = len(df_rd[df_rd['Rank_Num'] <= 10])
-            color = PALETTE_H2H[fi]
-
-            # Country
             wrow = df_w_clean[df_w_clean['Winner'].str.upper().str.strip() == rider.strip()]
             country = wrow['Country_clean'].values[0] if not wrow.empty else '—'
             rider_type = wrow['rt_clean'].values[0].strip().title() if not wrow.empty else '—'
-
-            card_col_idx = fi * 2
-
-            # Calcolo barre (normalizzate su max possibile)
-            bar_wins = min(100, (wins / 7) * 100)      # max 7 (Merckx/Armstrong/Indurain)
+            bar_wins  = min(100, (wins / 7) * 100)
             bar_top10 = min(100, (top10 / n_tours) * 100) if n_tours > 0 else 0
-            bar_tours = min(100, (n_tours / 16) * 100) # max 16
+            bar_tours = min(100, (n_tours / 16) * 100)
+            fighter_cards_data.append({
+                'rider': rider.title(), 'country': country, 'type': rider_type,
+                'wins': wins, 'n_tours': n_tours, 'top10_pct': round(bar_top10),
+                'best_rank': best_rank, 'bar_wins': round(bar_wins),
+                'bar_tours': round(bar_tours), 'bar_top10': round(bar_top10),
+                'color': PALETTE_H2H[fi], 'fi': fi + 1,
+            })
 
-            with cols_fighters[card_col_idx]:
-                st.markdown(f"""
-                    <div class="fighter-card fighter-card-{fi+1}">
-                        <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;
-                                    color:{color};font-family:Arial;margin-bottom:4px;">
-                            Fighter {fi+1}
-                        </div>
-                        <div class="fighter-name">{rider.title()}</div>
-                        <div class="fighter-country">{country} · {rider_type}</div>
-                        <hr style="border:none;border-top:1px solid #2a2a2a;margin:10px 0;">
+        # Build cards HTML as single block
+        cards_cols = []
+        for i, d in enumerate(fighter_cards_data):
+            c = d['color']
+            card_html = f"""
+            <div style="flex:1;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;
+                        padding:22px 20px;font-family:'Merriweather',Georgia,serif;
+                        position:relative;overflow:hidden;border-top:3px solid {c};">
+                <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;
+                            color:{c};font-family:Arial;margin-bottom:6px;">Fighter {d['fi']}</div>
+                <div style="font-size:20px;font-weight:900;color:#f0ece4;line-height:1.1;
+                            margin-bottom:4px;text-transform:uppercase;letter-spacing:-0.5px;">
+                    {d['rider']}</div>
+                <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;
+                            color:#888;margin-bottom:16px;">{d['country']} · {d['type']}</div>
+                <hr style="border:none;border-top:1px solid #2a2a2a;margin:0 0 14px;">
+                <!-- GC Victories -->
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                    <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#666;font-family:Arial;">GC Victories</span>
+                    <span style="font-size:18px;font-weight:900;color:{c};">{d['wins']}</span>
+                </div>
+                <div style="width:100%;height:4px;background:#1e1e1e;border-radius:2px;margin-bottom:12px;">
+                    <div style="width:{d['bar_wins']}%;height:100%;background:{c};border-radius:2px;transition:width 0.8s;"></div>
+                </div>
+                <!-- Tours Ridden -->
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                    <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#666;font-family:Arial;">Tours Ridden</span>
+                    <span style="font-size:18px;font-weight:900;color:{c};">{d['n_tours']}</span>
+                </div>
+                <div style="width:100%;height:4px;background:#1e1e1e;border-radius:2px;margin-bottom:12px;">
+                    <div style="width:{d['bar_tours']}%;height:100%;background:{c};border-radius:2px;transition:width 0.8s;"></div>
+                </div>
+                <!-- Top-10 Rate -->
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                    <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#666;font-family:Arial;">Top-10 Rate</span>
+                    <span style="font-size:18px;font-weight:900;color:{c};">{d['top10_pct']}%</span>
+                </div>
+                <div style="width:100%;height:4px;background:#1e1e1e;border-radius:2px;margin-bottom:12px;">
+                    <div style="width:{d['bar_top10']}%;height:100%;background:{c};border-radius:2px;transition:width 0.8s;"></div>
+                </div>
+                <!-- Best GC -->
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#666;font-family:Arial;">Best GC Result</span>
+                    <span style="font-size:18px;font-weight:900;color:{c};">#{d['best_rank']}</span>
+                </div>
+            </div>"""
+            cards_cols.append(card_html)
 
-                        <div class="fighter-stat-row">
-                            <span class="fighter-stat-label">GC Victories</span>
-                            <span class="fighter-stat-val" style="color:{color};">{wins}</span>
-                        </div>
-                        <div class="fighter-bar-wrap">
-                            <div class="fighter-bar" style="width:{bar_wins:.0f}%;background:{color};"></div>
-                        </div>
+        # VS separators
+        n = len(fighter_cards_data)
+        all_parts = []
+        for i, card in enumerate(cards_cols):
+            all_parts.append(card)
+            if i < n - 1:
+                all_parts.append("""
+                <div style="display:flex;align-items:center;justify-content:center;
+                            padding:0 12px;min-width:60px;">
+                    <span style="font-size:30px;font-weight:900;color:#FFCC00;
+                                 font-family:'Merriweather',serif;
+                                 text-shadow:0 0 16px rgba(255,204,0,0.35);">VS</span>
+                </div>""")
 
-                        <div class="fighter-stat-row" style="margin-top:10px;">
-                            <span class="fighter-stat-label">Tours Ridden</span>
-                            <span class="fighter-stat-val" style="color:{color};">{n_tours}</span>
-                        </div>
-                        <div class="fighter-bar-wrap">
-                            <div class="fighter-bar" style="width:{bar_tours:.0f}%;background:{color};"></div>
-                        </div>
+        fighter_html = f"""
+        <!DOCTYPE html><html><head>
+        <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
+        <style>body{{margin:0;background:transparent;padding:4px 0;}}</style>
+        </head><body>
+        <div style="display:flex;align-items:stretch;gap:0;">
+            {''.join(all_parts)}
+        </div>
+        </body></html>"""
 
-                        <div class="fighter-stat-row" style="margin-top:10px;">
-                            <span class="fighter-stat-label">Top-10 Rate</span>
-                            <span class="fighter-stat-val" style="color:{color};">{bar_top10:.0f}%</span>
-                        </div>
-                        <div class="fighter-bar-wrap">
-                            <div class="fighter-bar" style="width:{bar_top10:.0f}%;background:{color};"></div>
-                        </div>
-
-                        <div class="fighter-stat-row" style="margin-top:10px;">
-                            <span class="fighter-stat-label">Best GC Result</span>
-                            <span class="fighter-stat-val" style="color:{color};">#{best_rank}</span>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
-
-            # VS badge tra i corridori
-            if fi < len(h2h_riders) - 1:
-                with cols_fighters[card_col_idx + 1]:
-                    st.markdown(f"""
-                        <div class="vs-badge"
-                             style="font-size:32px;font-weight:900;color:#FFCC00;
-                                    text-align:center;padding:60px 0;
-                                    font-family:'Merriweather',serif;
-                                    text-shadow:0 0 20px rgba(255,204,0,0.3);">
-                            VS
-                        </div>
-                    """, unsafe_allow_html=True)
+        card_height = 320 + (60 * (len(fighter_cards_data) > 2))
+        components.html(fighter_html, height=card_height)
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown(hr, unsafe_allow_html=True)
@@ -2464,48 +2483,83 @@ elif st.session_state.pagina_corrente == "corridori":
                 </div>
             """, unsafe_allow_html=True)
 
-        # ── PARALLEL COORDINATES ──
+        # ── BEST RANK COMPARISON BAR CHART ──
         st.markdown(hr, unsafe_allow_html=True)
         st.markdown("""
-            <span class="r-section-label">· Multi-Dimensional Comparison ·</span>
+            <span class="r-section-label">· Career Stats Breakdown ·</span>
             <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Parallel Coordinates — All Dimensions at Once
+                Career Breakdown — Rank Distribution by Zone
             </h4>
             <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
-                Each line = one Tour edition. Axes: GC Rank · GapSeconds · Career Tour #. Drag axes to reorder.
+                For each rider: how many Tours ended in the Win / Podium / Top-10 / Rest zone.
             </p>
         """, unsafe_allow_html=True)
 
-        df_para_list = []
+        breakdown_rows = []
+        zones = ['Win', 'Podium (2-3)', 'Top 10 (4-10)', 'Rest (11+)']
         for i, rider in enumerate(h2h_riders):
-            df_rd = df_r_norm[df_r_norm['Rider'] == rider].dropna(subset=['Rank_Num']).copy()
-            df_rd['rider_idx'] = i
-            df_rd['rider_name'] = rider.title()
-            df_para_list.append(df_rd)
+            df_rd = df_r_norm[df_r_norm['Rider'] == rider].dropna(subset=['Rank_Num'])
+            total = len(df_rd)
+            if total == 0:
+                continue
+            counts = {
+                'Win':            len(df_rd[df_rd['Rank_Num'] == 1]),
+                'Podium (2-3)':   len(df_rd[df_rd['Rank_Num'].between(2, 3)]),
+                'Top 10 (4-10)':  len(df_rd[df_rd['Rank_Num'].between(4, 10)]),
+                'Rest (11+)':     len(df_rd[df_rd['Rank_Num'] > 10]),
+            }
+            for zone, cnt in counts.items():
+                breakdown_rows.append({
+                    'Rider': rider.title(), 'Zone': zone,
+                    'Count': cnt, 'Pct': round(cnt / total * 100, 1),
+                    'Color': PALETTE_H2H[i],
+                })
 
-        if df_para_list:
-            df_para = pd.concat(df_para_list)
-            df_para['GapSeconds_safe'] = df_para['GapSeconds'].fillna(0).clip(upper=20000)
+        if breakdown_rows:
+            df_breakdown = pd.DataFrame(breakdown_rows)
+            ZONE_OPACITY = {'Win': 1.0, 'Podium (2-3)': 0.82, 'Top 10 (4-10)': 0.55, 'Rest (11+)': 0.28}
+            fig_bkd = go.Figure()
+            for zone in zones:
+                df_z = df_breakdown[df_breakdown['Zone'] == zone]
+                for _, row in df_z.iterrows():
+                    rider_idx = h2h_riders.index(row['Rider'].upper()) if row['Rider'].upper() in h2h_riders else 0
+                    base_color = PALETTE_H2H[rider_idx]
+                    # Converti hex in rgba
+                    r_hex = base_color.lstrip('#')
+                    r, g, b = int(r_hex[0:2],16), int(r_hex[2:4],16), int(r_hex[4:6],16)
+                    alpha = ZONE_OPACITY[zone]
+                    rgba = f"rgba({r},{g},{b},{alpha})"
+                    fig_bkd.add_trace(go.Bar(
+                        name=zone, x=[row['Rider']], y=[row['Count']],
+                        marker_color=rgba,
+                        marker_line=dict(width=0),
+                        text=[f"{row['Count']}<br>({row['Pct']}%)"],
+                        textposition='inside',
+                        textfont=dict(size=11, color='white' if alpha > 0.5 else '#888', family='Arial'),
+                        hovertemplate=f"<b>{row['Rider']}</b><br>{zone}: {row['Count']} Tours ({row['Pct']}%)<extra></extra>",
+                        showlegend=(list(df_breakdown[df_breakdown['Zone']==zone]['Rider'])[0] == row['Rider']),
+                        legendgroup=zone,
+                        legendgrouptitle_text=zone if rider_idx == 0 else None,
+                    ))
 
-            fig_para = px.parallel_coordinates(
-                df_para,
-                color='rider_idx',
-                dimensions=['anno_carriera', 'Rank_Num', 'GapSeconds_safe'],
-                labels={
-                    'anno_carriera': 'Career Tour #',
-                    'Rank_Num': 'GC Rank',
-                    'GapSeconds_safe': 'Gap (sec)',
-                    'rider_idx': 'Rider'
-                },
-                color_continuous_scale=PALETTE_H2H[:len(h2h_riders)],
-            )
-            fig_para.update_layout(
+            fig_bkd.update_layout(
+                barmode='stack',
                 plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
                 font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-                height=380, margin=dict(l=60, r=60, t=40, b=20),
-                coloraxis_showscale=False,
+                height=340, margin=dict(l=0, r=0, t=10, b=0),
+                showlegend=True,
+                legend=dict(
+                    orientation='h', y=-0.15, x=0.5, xanchor='center',
+                    font=dict(size=10),
+                    traceorder='normal',
+                ),
+                xaxis=dict(title='', tickfont=dict(size=12, family='Merriweather, serif')),
+                yaxis=dict(title='Number of Tours', showgrid=True, gridcolor='#e8e4da'),
             )
-            st.plotly_chart(fig_para, use_container_width=True)
+
+            # Linea separatrice tra zone con annotazioni
+            zone_labels = {'Win': '🏆 Win', 'Podium (2-3)': '🥈 Podium', 'Top 10 (4-10)': 'Top 10', 'Rest (11+)': 'Rest'}
+            st.plotly_chart(fig_bkd, use_container_width=True)
 
 
     # ══════════════════════════════════════════════════════════
@@ -2567,47 +2621,87 @@ elif st.session_state.pagina_corrente == "corridori":
 
         st.markdown(hr, unsafe_allow_html=True)
 
-        # ── TREEMAP dominance ──
+        # ── SUNBURST: Continente → Nazione ──
         st.markdown("""
             <span class="r-section-label">· Victory Share ·</span>
             <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Treemap — The Weight of Nations
+                Sunburst — The Dynasties of the Tour
             </h4>
             <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
-                Each rectangle = a country. Size = total GC victories. Color = share (%).
+                Inner ring = continent. Outer ring = nation. Size = GC victories. Hover or click to explore.
             </p>
         """, unsafe_allow_html=True)
 
-        df_tree = df_w_clean.groupby('Country_clean').size().reset_index(name='victories')
-        df_tree = df_tree[df_tree['victories'] > 0]
-        df_tree['pct'] = (df_tree['victories'] / df_tree['victories'].sum() * 100).round(1)
-        df_tree['label'] = df_tree['Country_clean'] + '<br>' + df_tree['victories'].astype(str) + ' wins'
+        CONTINENT_MAP = {
+            'France': 'Western Europe', 'Belgium': 'Western Europe',
+            'Netherlands': 'Western Europe', 'Luxembourg': 'Western Europe',
+            'Switzerland': 'Western Europe', 'Germany': 'Western Europe',
+            'Spain': 'Southern Europe', 'Italy': 'Southern Europe',
+            'Portugal': 'Southern Europe',
+            'United Kingdom': 'British Isles', 'Ireland': 'British Isles',
+            'Denmark': 'Northern Europe', 'Norway': 'Northern Europe',
+            'Slovenia': 'Central Europe', 'Austria': 'Central Europe',
+            'USA': 'Americas', 'Colombia': 'Americas',
+            'Australia': 'Oceania',
+        }
+        CONTINENT_COLORS = {
+            'Western Europe': '#FFCC00', 'Southern Europe': '#FF8C00',
+            'British Isles': '#CF142B', 'Northern Europe': '#4ECDC4',
+            'Central Europe': '#7B68EE', 'Americas': '#B22234',
+            'Oceania': '#00843D',
+        }
 
-        fig_tree = px.treemap(
-            df_tree,
-            path=['Country_clean'],
-            values='victories',
-            color='pct',
-            color_continuous_scale=[
-                [0, '#F4F1EA'], [0.1, '#FFF3CD'], [0.4, '#FFCC00'],
-                [0.7, '#FF8C00'], [1.0, '#1a1a1a']
-            ],
-            hover_data={'pct': ':.1f'},
-            labels={'pct': '% of all wins', 'victories': 'GC Victories'},
-            custom_data=['victories', 'pct'],
-        )
-        fig_tree.update_traces(
-            texttemplate='<b>%{label}</b><br>%{customdata[0]} wins · %{customdata[1]:.1f}%',
-            textfont=dict(size=12, family='Merriweather, serif'),
-            hovertemplate='<b>%{label}</b><br>GC Victories: %{customdata[0]}<br>Share: %{customdata[1]:.1f}%<extra></extra>',
-        )
-        fig_tree.update_layout(
+        df_sun = df_w_clean.groupby('Country_clean').size().reset_index(name='victories')
+        df_sun['continent'] = df_sun['Country_clean'].map(CONTINENT_MAP).fillna('Other')
+        df_sun['pct'] = (df_sun['victories'] / df_sun['victories'].sum() * 100).round(1)
+        df_sun['cont_color'] = df_sun['continent'].map(CONTINENT_COLORS).fillna('#888')
+
+        # Sunburst con Plotly
+        # Livelli: root → continent → country
+        labels = ['Tour de France']
+        parents = ['']
+        values = [df_sun['victories'].sum()]
+        colors = ['#1a1a1a']
+        customdata_sun = [(110, 100.0)]
+
+        # Continenti
+        for cont in df_sun['continent'].unique():
+            df_c = df_sun[df_sun['continent'] == cont]
+            total_c = df_c['victories'].sum()
+            pct_c = round(total_c / df_sun['victories'].sum() * 100, 1)
+            labels.append(cont)
+            parents.append('Tour de France')
+            values.append(total_c)
+            colors.append(CONTINENT_COLORS.get(cont, '#888'))
+            customdata_sun.append((total_c, pct_c))
+
+        # Nazioni
+        for _, row in df_sun.iterrows():
+            labels.append(row['Country_clean'])
+            parents.append(row['continent'])
+            values.append(row['victories'])
+            colors.append(row['cont_color'])
+            customdata_sun.append((row['victories'], row['pct']))
+
+        fig_sun = go.Figure(go.Sunburst(
+            labels=labels,
+            parents=parents,
+            values=values,
+            marker=dict(colors=colors, line=dict(color='#F4F1EA', width=2)),
+            hovertemplate='<b>%{label}</b><br>Victories: %{customdata[0]}<br>Share: %{customdata[1]:.1f}%<extra></extra>',
+            customdata=customdata_sun,
+            texttemplate='<b>%{label}</b><br>%{value}',
+            textfont=dict(size=11, family='Arial'),
+            insidetextorientation='radial',
+            branchvalues='total',
+            rotation=90,
+        ))
+        fig_sun.update_layout(
             plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
             font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=420, margin=dict(l=0, r=0, t=10, b=0),
-            coloraxis_showscale=False,
+            height=500, margin=dict(l=0, r=0, t=10, b=0),
         )
-        st.plotly_chart(fig_tree, use_container_width=True)
+        st.plotly_chart(fig_sun, use_container_width=True)
 
         st.markdown(hr, unsafe_allow_html=True)
 
@@ -2626,591 +2720,1150 @@ elif st.session_state.pagina_corrente == "corridori":
         df_dec_pivot = df_dec_pivot.sort_values('TOTAL', ascending=False)
         df_dec_pivot.index.name = 'Nation'
 
-        st.dataframe(
-            df_dec_pivot.style.background_gradient(cmap='YlOrBr', subset=df_dec_pivot.columns[:-1])
-                              .format('{:.0f}')
-                              .set_properties(**{'font-family': 'Merriweather, serif', 'font-size': '12px'}),
-            use_container_width=True,
+        # Heatmap manuale senza matplotlib
+        max_val = df_dec_pivot.iloc[:, :-1].max().max()
+
+        def cell_bg(val, is_total=False):
+            if is_total:
+                return "#1a1a1a", "#FFCC00"
+            if val == 0:
+                return "#F4F1EA", "#bbb"
+            intensity = val / max_val  # 0→1
+            # Scala: basso=#FFF3CD, alto=#1a1a1a
+            if intensity < 0.3:
+                r, g, b = 255, int(243 - intensity/0.3*80), int(205 - intensity/0.3*100)
+            elif intensity < 0.7:
+                t = (intensity - 0.3) / 0.4
+                r = int(255 - t*115)
+                g = int(163 - t*83)
+                b = int(105 - t*85)
+            else:
+                t = (intensity - 0.7) / 0.3
+                r = int(140 - t*114)
+                g = int(80 - t*54)
+                b = int(20 - t*6)
+            txt = "#f0ece4" if intensity > 0.55 else "#1a1a1a"
+            return f"rgb({r},{g},{b})", txt
+
+        cols_decade = ["Nation"] + list(df_dec_pivot.columns)
+        header_cells = "".join(
+            f'<th style="padding:8px 12px;font-size:10px;letter-spacing:1px;text-transform:uppercase;'
+            f'font-family:Arial;color:#888;border-bottom:2px solid #1a1a1a;white-space:nowrap;">{c}</th>'
+            for c in cols_decade
         )
 
+        body_rows = ""
+        for nation, row in df_dec_pivot.iterrows():
+            cells = f'<td style="padding:8px 12px;font-weight:700;font-size:12px;'
+            cells += f'font-family:Merriweather,serif;color:#1a1a1a;border-right:1px solid #e8e4da;'
+            cells += f'white-space:nowrap;">{nation}</td>'
+            for ci, col in enumerate(df_dec_pivot.columns):
+                val = row[col]
+                is_total = col == "TOTAL"
+                bg, fg = cell_bg(val, is_total)
+                fw = "900" if is_total else ("700" if val > 0 else "400")
+                cells += (
+                    f'<td style="padding:8px 12px;text-align:center;background:{bg};'
+                    f'color:{fg};font-weight:{fw};font-size:{"13" if is_total else "12"}px;'
+                    f'font-family:{"Arial" if is_total else "Merriweather,serif"};'
+                    f'border-right:1px solid #e8e4da;">'
+                    f'{"" if val == 0 and not is_total else int(val)}</td>'
+                )
+            body_rows += f'<tr style="border-bottom:1px solid #e8e4da;">{cells}</tr>'
+
+        decade_table_html = f"""
+        <div style="overflow-x:auto;margin-top:8px;">
+        <table style="width:100%;border-collapse:collapse;font-family:'Merriweather',serif;
+                      background:#F4F1EA;border:1px solid #c8bfad;border-radius:4px;overflow:hidden;">
+            <thead><tr style="background:#1a1a1a;">{header_cells}</tr></thead>
+            <tbody>{body_rows}</tbody>
+        </table>
+        </div>"""
+        st.markdown(decade_table_html, unsafe_allow_html=True)
+
         
+# ==========================================
+# SEZIONE STAGES — CODICE COMPLETO RIDISEGNATO
+# Sostituisce il blocco: elif st.session_state.pagina_corrente == "tappe":
+# ==========================================
+
 elif st.session_state.pagina_corrente == "tappe":
+
+    # ----------------------------------------------------------
+    # 0. PREPARAZIONE DATI GLOBALI
+    # ----------------------------------------------------------
+    df_stage_h['Year'] = df_stage_h['Year'].fillna(0).astype(int)
+    df_stage_h_filtered = df_stage_h[df_stage_h['Year'] >= 1903].copy()
+
+# df_coords = stages_TDF.xlsx
+    df_coords_all = df_coords.copy()
     
-    # ==========================================
-    # 1. INIZIALIZZAZIONE DELLO STATO "ZERO SCROLL"
-    # ==========================================
+    # 1. Pulizia preventiva
+    df_coords_all.columns = df_coords_all.columns.str.strip()
+
+    if 'Year' not in df_coords_all.columns:
+        df_coords_all['Year'] = pd.to_datetime(df_coords_all['Date'], errors='coerce').dt.year
+
+    # 2. Allineamento nomi colonne per la mappa (Start/End -> Origin/Destination)
+    if 'Start' in df_coords_all.columns and 'Origin' not in df_coords_all.columns:
+        df_coords_all = df_coords_all.rename(columns={'Start': 'Origin'})
+    if 'End' in df_coords_all.columns and 'Destination' not in df_coords_all.columns:
+        df_coords_all = df_coords_all.rename(columns={'End': 'Destination'})
+
+    # 3. Gestione Tipo di Tappa a prova di crash
+    col_type = next((col for col in ['Type', 'Stage Type', 'Type of stage', 'Type of route', 'Stage_Type'] if col in df_coords_all.columns), None)
+
+    if col_type is None:
+        # Se nel file Excel non c'è il tipo, assegniamo 'Other' a tutte le tappe per non far bloccare l'app
+        df_coords_all['Type_group'] = 'Other'
+    else:
+        TYPE_MAP = {
+            'Plain stage': 'Flat', 'Flat stage': 'Flat', 'Flat Stage': 'Flat',
+            'Flat cobblestone stage': 'Flat', 'Plain stage with cobblestones': 'Flat',
+            'Stage with mountain(s)': 'Mountain', 'High mountain stage': 'Mountain',
+            'Mountain stage': 'Mountain', 'Mountain Stage': 'Mountain',
+            'Medium mountain stage': 'Mountain', 'Stage with mountain': 'Mountain',
+            'Hilly stage': 'Hilly',
+            'Individual time trial': 'Time Trial', 'Mountain time trial': 'Time Trial',
+            'Team time trial': 'Team TT',
+            'Half Stage': 'Other', 'Transition stage': 'Other',
+            'Intermediate stage': 'Other',
+        }
+        df_coords_all['Type_group'] = df_coords_all[col_type].astype(str).str.strip().map(TYPE_MAP).fillna('Other')
+    
+    df_coords_all['decade'] = (df_coords_all['Year'] // 10) * 10
+
+    TYPE_COLORS = {
+        'Flat': '#4ECDC4', 'Mountain': '#FF6B6B',
+        'Hilly': '#FFCC00', 'Time Trial': '#A29BFE',
+        'Team TT': '#FD79A8', 'Other': '#888',
+    }
+
+    # Coordinate hardcoded per le città più frequenti del Tour
+    CITY_COORDS = {
+        'Paris': (48.8566, 2.3522), 'Bordeaux': (44.8378, -0.5792),
+        'Pau': (43.2951, -0.3708), 'Luchon': (42.7911, 0.5936),
+        'Metz': (49.1193, 6.1757), 'Grenoble': (45.1885, 5.7245),
+        'Nice': (43.7102, 7.2620), 'Perpignan': (42.6887, 2.8948),
+        'Marseille': (43.2965, 5.3698), 'Caen': (49.1829, -0.3707),
+        'Bayonne': (43.4929, -1.4748), 'Montpellier': (43.6108, 3.8767),
+        'Brest': (48.3904, -4.4861), 'Nantes': (47.2184, -1.5536),
+        'Belfort': (47.6370, 6.8632), 'Toulouse': (43.6047, 1.4442),
+        'Roubaix': (50.6942, 3.1746), 'Gap': (44.5594, 6.0773),
+        'Strasbourg': (48.5734, 7.7521), 'Aix-les-Bains': (45.6888, 5.9141),
+        'La Rochelle': (46.1591, -1.1520), 'Angers': (47.4784, -0.5632),
+        'Le Havre': (49.4938, 0.1077), 'Rouen': (49.4432, 1.0993),
+        'Lyon': (45.7640, 4.8357), 'Cherbourg': (49.6337, -1.6225),
+        'Lille': (50.6292, 3.0573), 'Morzine': (46.1792, 6.7108),
+        'Dijon': (47.3220, 5.0415), "Alpe d'Huez": (45.0919, 6.0706),
+        'Versailles': (48.8014, 2.1301), 'Nancy': (48.6921, 6.1844),
+        'Rennes': (48.1173, -1.6778), 'Dunkerque': (51.0343, 2.3767),
+        'Limoges': (45.8336, 1.2611), 'Mulhouse': (47.7508, 7.3359),
+        'Cannes': (43.5528, 7.0174), 'Toulon': (43.1242, 5.9280),
+        'Vannes': (47.6559, -2.7603), 'Amiens': (49.8942, 2.2957),
+        'Albi': (43.9279, 2.1480), 'Reims': (49.2583, 4.0317),
+        'Geneva': (46.2044, 6.1432), 'Dieppe': (49.9218, 1.0798),
+        'Brussels': (50.8503, 4.3517), 'Liège': (50.6326, 5.5797),
+        'Amsterdam': (52.3676, 4.9041), 'Rotterdam': (51.9244, 4.4777),
+        'London': (51.5074, -0.1278), 'Dublin': (53.3498, -6.2603),
+        'Frankfurt': (50.1109, 8.6821), 'Berlin': (52.5200, 13.4050),
+        'Luxembourg': (49.6116, 6.1319), 'Lausanne': (46.5197, 6.6323),
+        'Berne': (46.9480, 7.4474), 'Zurich': (47.3769, 8.5417),
+        'Milan': (45.4654, 9.1859), 'Turin': (45.0703, 7.6869),
+        'San Sebastián': (43.3183, -1.9812), 'Bilbao': (43.2630, -2.9350),
+        'Barcelona': (41.3851, 2.1734), 'Madrid': (40.4168, -3.7038),
+        'Briançon': (44.8956, 6.6415), 'Besançon': (47.2378, 6.0241),
+        'Saint-Étienne': (45.4397, 4.3872), 'Évian': (46.3890, 6.5890),
+        'Mâcon': (46.3069, 4.8281), 'Lons-le-Saunier': (46.6750, 5.5556),
+        'Pontarlier': (46.9057, 6.3556), 'Chamonix': (45.9237, 6.8694),
+        'Megève': (45.8572, 6.6194), 'Courchevel': (45.4154, 6.6344),
+        'L\'Alpe-d\'Huez': (45.0919, 6.0706), 'Alpe d\'Huez': (45.0919, 6.0706),
+        'Luz-Ardiden': (42.8889, -0.0300), 'Superbagnères': (42.7917, 0.5822),
+        'Pla-d\'Adet': (42.8181, 0.3178), 'La Mongie': (42.9142, 0.1672),
+        'Hautacam': (43.0397, -0.0506), 'Peyragudes': (42.8253, 0.3833),
+        'Le Bourg-d\'Oisans': (45.0560, 6.0261), 'Saint-Gaudens': (43.1058, 0.7236),
+        'Dax': (43.7101, -1.0520), 'Agen': (44.2009, 0.6219),
+        'Issoire': (45.5447, 3.2494), 'Vichy': (46.1278, 3.4267),
+        'Clermont-Ferrand': (45.7772, 3.0870), 'Aurillac': (44.9283, 2.4419),
+        'Mende': (44.5194, 3.4986), 'Millau': (44.0996, 3.0778),
+        'Rodez': (44.3500, 2.5750), 'Nîmes': (43.8367, 4.3601),
+        'Montélimar': (44.5567, 4.7522), 'Valence': (44.9334, 4.8924),
+        'Carpentras': (44.0561, 5.0528), 'Avignon': (43.9493, 4.8055),
+        'Aix-en-Provence': (43.5298, 5.4474), 'Antibes': (43.5804, 7.1283),
+        'Monaco': (43.7384, 7.4246), 'Menton': (43.7765, 7.5024),
+        'Charleville': (49.7657, 4.7180), 'Épernay': (49.0399, 3.9598),
+        'Laval': (48.0740, -0.7709), 'Le Mans': (47.9960, 0.1966),
+        'Tours': (47.3941, 0.6848), 'Orléans': (47.9029, 1.9093),
+        'Chartres': (48.4469, 1.4889), 'Évreux': (49.0266, 1.1511),
+        'Chateauroux': (46.8130, 1.6919), 'Guéret': (46.1717, 1.8716),
+        'Saintes': (45.7461, -0.6333), 'Cognac': (45.6944, -0.3289),
+        'Angoulême': (45.6497, 0.1563), 'Périgueux': (45.1851, 0.7210),
+        'Brive-la-Gaillarde': (45.1589, 1.5347), 'Tulle': (45.2676, 1.7727),
+        'Figeac': (44.6085, 2.0328), 'Cahors': (44.4486, 1.4420),
+        'Tarbes': (43.2329, 0.0780), 'Foix': (42.9649, 1.6058),
+        'Ax-les-Thermes': (42.7198, 1.8367), 'Carcassonne': (43.2130, 2.3491),
+        'Sète': (43.4072, 3.6968), 'Béziers': (43.3444, 3.2150),
+        'Pézenas': (43.4617, 3.4233), 'Lodève': (43.7311, 3.3194),
+        'Mâcon': (46.3069, 4.8281), 'Bourg-en-Bresse': (46.2050, 5.2257),
+        'Thonon-les-Bains': (46.3731, 6.4778), 'Annecy': (45.8992, 6.1294),
+        'Albertville': (45.6753, 6.3942), 'Bourg-Saint-Maurice': (45.6186, 6.7697),
+        'Val-d\'Isère': (45.4481, 6.9770), 'Tignes': (45.4688, 6.9086),
+        'Isola 2000': (44.1892, 7.1711), 'Auron': (44.2033, 6.9258),
+        'Sestrières': (44.9583, 6.8772), 'Turin': (45.0703, 7.6869),
+        'Alessandria': (44.9119, 8.6148), 'Cuneo': (44.3842, 7.5420),
+        'Embrun': (44.5639, 6.4978), 'Sisteron': (44.2004, 5.9434),
+        'Digne-les-Bains': (44.0920, 6.2361), 'Castellane': (43.8494, 6.5133),
+        'Draguignan': (43.5353, 6.4647), 'Fréjus': (43.4297, 6.7370),
+        'Saint-Raphaël': (43.4250, 6.7694), 'Hyères': (43.1203, 6.1286),
+        'Dunkerque': (51.0343, 2.3767), 'Calais': (50.9513, 1.8587),
+        'Boulogne-sur-Mer': (50.7264, 1.6141), 'Amiens': (49.8942, 2.2957),
+        'Compiègne': (49.4183, 2.8268), 'Soissons': (49.3817, 3.3232),
+        'Laon': (49.5636, 3.6245), 'Épinal': (48.1726, 6.4506),
+        'Colmar': (48.0793, 7.3585), 'Ribeauvillé': (48.1938, 7.3202),
+        'Thann': (47.8122, 7.1025), 'Gerardmer': (48.0726, 6.8773),
+        'Remiremont': (48.0168, 6.5905), 'Vittel': (48.2006, 5.9533),
+        'Bar-le-Duc': (48.7731, 5.1622), 'Verdun': (49.1611, 5.3875),
+        'Sedan': (49.7016, 4.9400), 'Charleville-Mézières': (49.7657, 4.7180),
+    }
+
+    # ----------------------------------------------------------
+    # 1. CSS GLOBALE SEZIONE STAGES
+    # ----------------------------------------------------------
+    st.markdown("""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
+
+        /* ── Masthead ── */
+        .stages-masthead {
+            border-top: 5px solid #1a1a1a;
+            border-bottom: 2px solid #1a1a1a;
+            padding: 12px 0 8px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .st-section-label-s {
+            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+            color: #888; font-family: Arial, sans-serif;
+            display: block; margin-bottom: 4px;
+        }
+        .s-rule { border: none; border-top: 1px solid #c8bfad; margin: 28px 0; }
+
+        /* ── Card fotografiche ── */
+        .stage-card-wrap {
+            position: relative; height: 260px;
+            background-size: cover; background-position: center;
+            border-radius: 4px 4px 0 0; overflow: hidden; cursor: pointer;
+        }
+        .stage-card-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
+        }
+        .stage-card-text {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 16px; color: white;
+        }
+        .stage-card-subtitle {
+            font-size: 10px; font-weight: 700; color: #FFCC00;
+            letter-spacing: 2px; text-transform: uppercase;
+            font-family: Arial, sans-serif; margin-bottom: 6px;
+        }
+        .stage-card-title {
+            font-size: 20px; font-weight: 900; line-height: 1.1;
+            text-transform: uppercase; font-family: 'Merriweather', serif;
+        }
+
+        /* ── Selectbox scura ── */
+        div[data-testid="stSelectbox"] label p { color: #1a1a1a !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important; }
+        div[data-baseweb="select"] > div { background-color: #111 !important; color: #fff !important; border: 1px solid #444 !important; border-radius: 3px !important; }
+        div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111 !important; }
+        div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li { color: #fff !important; background-color: #111 !important; }
+        div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover { background-color: #2a2a2a !important; }
+        ul[role="listbox"] li[aria-selected="true"] { color: #FFCC00 !important; }
+
+        /* ── Radio buttons ── */
+        div[data-testid="stRadio"] label, div[data-testid="stRadio"] p,
+        div[data-testid="stRadio"] span { color: #1a1a1a !important; }
+
+        /* ── Bottoni card ── */
+        button[kind="primary"] {
+            background-color: #1a1a1a !important; color: #FFCC00 !important;
+            border: none !important; border-radius: 0 !important;
+            border-bottom: 3px solid #FFCC00 !important;
+            font-family: 'Merriweather', serif !important; font-size: 11px !important;
+            font-weight: 700 !important; letter-spacing: 1.5px !important;
+            text-transform: uppercase !important; padding: 14px !important;
+        }
+        button[kind="secondary"] {
+            background-color: #F4F1EA !important; color: #888 !important;
+            border: 1px solid #c8bfad !important; border-radius: 0 !important;
+            font-family: 'Merriweather', serif !important; font-size: 11px !important;
+            font-weight: 700 !important; letter-spacing: 1.5px !important;
+            text-transform: uppercase !important; padding: 14px !important;
+        }
+        button[kind="secondary"]:hover {
+            color: #1a1a1a !important; border-color: #888 !important;
+            background-color: #ece8e0 !important;
+        }
+
+        /* ── Slider ── */
+        [data-testid="stSlider"] {
+            background-color: #111; padding: 14px 18px; border-radius: 4px;
+            border-bottom: 2px solid #FFCC00;
+        }
+        [data-testid="stWidgetLabel"] p { color: #f0ece4 !important; font-family: 'Merriweather', serif !important; font-size: 11px !important; letter-spacing: 1px !important; }
+        [data-testid="stSliderTickBarMin"], [data-testid="stSliderTickBarMax"] { color: #888 !important; }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # ----------------------------------------------------------
+    # 2. TESTATA GIORNALISTICA
+    # ----------------------------------------------------------
+    st.markdown("""
+        <div class="stages-masthead">
+            <span style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;font-family:Arial,sans-serif;">
+                Stages Archive · 1903 to Today · 2,400+ Stages
+            </span>
+            <h1 style="font-family:'Merriweather',Georgia,serif;font-size:42px;font-weight:900;
+                       color:#1a1a1a;margin:4px 0 2px;letter-spacing:-1px;">
+                The Road Unfolds
+            </h1>
+            <div style="font-size:10px;letter-spacing:2px;color:#888;font-family:Arial,sans-serif;
+                        border-top:1px solid #c8bfad;padding-top:6px;margin-top:6px;">
+                Historical Trends · Edition Details · Geography of Le Tour
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # ----------------------------------------------------------
+    # 3. STATE
+    # ----------------------------------------------------------
     if "vista_tappe" not in st.session_state:
         st.session_state.vista_tappe = "storico"
 
-    # ==========================================
-    # 2. INIEZIONE CSS
-    # ==========================================
-    st.markdown("""
-        <style>
-        /* 1. Forza il testo dei Radio Button e delle loro opzioni al NERO */
-        div[data-testid="stRadio"] label, 
-        div[data-testid="stRadio"] p,
-        div[data-testid="stRadio"] span {
-            color: #000000 !important;
-        }        
-        div[data-baseweb="select"] > div {
-            background-color: #111111 !important; 
-            color: #FFFFFF !important; 
-            border-radius: 5px !important;
-        }
-        div[data-baseweb="popover"],
-        div[data-baseweb="popover"] > div,
-        div[data-baseweb="popover"] > div > div,
-        div[data-baseweb="popover"] ul,
-        ul[data-baseweb="menu"],
-        ul[role="listbox"] {
-            background-color: #111111 !important;
-        }
-        div[data-baseweb="popover"] li,
-        div[data-baseweb="popover"] li span,
-        ul[data-baseweb="menu"] li {
-            color: #FFFFFF !important;
-            background-color: transparent !important;
-        }
-        div[data-baseweb="popover"] li:hover,
-        ul[data-baseweb="menu"] li:hover {
-            background-color: #333333 !important;
-        }
-        /* Label selectbox in NERO */
-        .stSelectbox label,
-        div[data-testid="stSelectbox"] label p {
-            color: #000000 !important;
-            font-weight: bold !important;
-        }
-        /* CSS per lo slider */
-        [data-testid="stSlider"] {
-            background-color: #000000;
-            padding: 15px 20px;
-            border-radius: 8px;
-        }
-        [data-testid="stWidgetLabel"] p {
-            color: #ffffff !important;
-        }
-        [data-testid="stSliderTickBarMin"], 
-        [data-testid="stSliderTickBarMax"], 
-        div[data-testid="stSlider"] div {
-            color: #ffffff !important;
-        }
-        
-        /* ---> STILE ESCLUSIVO PER I BOTTONI DELLE CARD (type="primary") <--- */
-        button[kind="primary"] {
-            background-color: #FAFF00 !important;
-            color: #000000 !important;
-            border: none !important;
-            border-radius: 0px !important;
-            font-weight: 900 !important;
-            font-size: 16px !important;
-            padding: 15px !important;
-            border-bottom: 0px !important; 
-            transition: all 0.2s ease-in-out;
-            margin-top: -15px !important; 
-            text-transform: uppercase;
-        }
-        button[kind="primary"]:hover {
-            background-color: #000000 !important;
-            color: #FAFF00 !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    # --- PREPARAZIONE DATI ---
-    df_stage_h['Year'] = df_stage_h['Year'].fillna(0).astype(int)
-
-    st.markdown("<h2 style='text-align: center; color: #000000; margin-bottom: 30px;'>🗺️ Stages and Routes Analysis</h2>", unsafe_allow_html=True)
-
-    # ==========================================
-    # URL IMMAGINI CARD — modifica qui per cambiare le foto
-    # ==========================================
-    URL_CARD1 = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9RqpfLR4o-8OqXaHgfkX3i_AQWqHXGhGGkQ&s" 
-    URL_CARD2 = "https://cdn.shopify.com/s/files/1/0040/5251/6910/files/GettyImages-1232277_1024x1024.jpg?v=1624033149"  # Maglie Tour
+    # ----------------------------------------------------------
+    # 4. CARD FOTOGRAFICHE
+    # ----------------------------------------------------------
+    URL_CARD1 = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9RqpfLR4o-8OqXaHgfkX3i_AQWqHXGhGGkQ&s"
+    URL_CARD2 = "https://cdn.shopify.com/s/files/1/0040/5251/6910/files/GettyImages-1232277_1024x1024.jpg?v=1624033149"
     URL_CARD3 = "https://preview.redd.it/map-of-all-the-stages-in-the-history-of-the-tour-de-france-v0-v1t2yrg7zzyf1.jpeg?width=1080&crop=smart&auto=webp&s=16442894182572aebe679320c02811e74f233f67"
-        
-    # ==========================================
-    # 4. CREAZIONE DELLE 3 CARD FOTOGRAFICHE
-    # ==========================================
-    def create_image_card(subtitle, title, bg_url):
-        return f"""
-        <div style="
-            position: relative;
-            height: 250px;
-            background-image: url('{bg_url}');
-            background-size: cover;
-            background-position: center;
-            border-top-left-radius: 4px;
-            border-top-right-radius: 4px;
-        ">
-            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 70%; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent);"></div>
-            <div style="position: absolute; bottom: 15px; left: 15px; right: 15px; z-index: 2; color: white; font-family: 'Arial', sans-serif;">
-                <div style="font-size: 14px; font-weight: bold; color: #FAFF00; letter-spacing: 1px; margin-bottom: 5px;">{subtitle}</div>
-                <div style="font-size: 22px; font-weight: 900; line-height: 1.1; text-transform: uppercase;">{title}</div>
-            </div>
-        </div>
-        """
 
-    col_card1, col_card2, col_card3 = st.columns(3, gap="medium")
+    cards_data = [
+        ("storico",  "SECTION 1 · DATA",      "HISTORICAL<br>TRENDS",        URL_CARD1),
+        ("dettaglio","SECTION 2 · EDITIONS",   "DETAILS &<br>JERSEYS",        URL_CARD2),
+        ("mappa",    "SECTION 3 · GEOGRAPHY",  "GEOGRAPHIC<br>EXPLORATION",   URL_CARD3),
+    ]
 
-    with col_card1:
-        st.markdown(create_image_card("SECTION 1 | DATA", "GENERAL<br>HISTORICAL TRENDS", URL_CARD1), unsafe_allow_html=True)
-        if st.button("FIND OUT MORE", key="btn_storico", type="primary", use_container_width=True):
-            st.session_state.vista_tappe = "storico"
+    col_c1, col_c2, col_c3 = st.columns(3, gap="small")
+    cols_cards = [col_c1, col_c2, col_c3]
 
-    with col_card2:
-        st.markdown(create_image_card("SECTION 2 | EDITIONS", "DETAILS<br>& JERSEYS", URL_CARD2), unsafe_allow_html=True)
-        if st.button("FIND OUT MORE", key="btn_dettaglio", type="primary", use_container_width=True):
-            st.session_state.vista_tappe = "dettaglio"
+    for idx, (vista_key, subtitle, title, img_url) in enumerate(cards_data):
+        is_active = st.session_state.vista_tappe == vista_key
+        with cols_cards[idx]:
+            st.markdown(f"""
+                <div style="position:relative;height:220px;
+                            background-image:url('{img_url}');
+                            background-size:cover;background-position:center;
+                            border-radius:4px 4px 0 0;overflow:hidden;">
+                    <div style="position:absolute;inset:0;
+                                background:linear-gradient(to top,rgba(0,0,0,{'0.92' if is_active else '0.75'}) 0%,
+                                rgba(0,0,0,0.2) 70%,transparent 100%);
+                                {'border-top:3px solid #FFCC00;' if is_active else ''}"></div>
+                    <div style="position:absolute;bottom:0;left:0;right:0;padding:14px;">
+                        <div style="font-size:9px;font-weight:700;color:#FFCC00;letter-spacing:2px;
+                                    text-transform:uppercase;font-family:Arial;margin-bottom:4px;">
+                            {subtitle}</div>
+                        <div style="font-size:17px;font-weight:900;line-height:1.1;
+                                    text-transform:uppercase;font-family:'Merriweather',serif;color:white;">
+                            {title}</div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            btn_type = "primary" if is_active else "secondary"
+            if st.button("EXPLORE →" if is_active else "OPEN", key=f"btn_{vista_key}",
+                         type=btn_type, use_container_width=True):
+                st.session_state.vista_tappe = vista_key
 
-    with col_card3:
-        st.markdown(create_image_card("SECTION 3 | GEOGRAPHY", "GEOGRAPHICAL<br>EXPLORATION", URL_CARD3), unsafe_allow_html=True)
-        if st.button("FIND OUT MORE", key="btn_mappa", type="primary", use_container_width=True):
-            st.session_state.vista_tappe = "mappa"
+    st.markdown("<hr class='s-rule'>", unsafe_allow_html=True)
 
-    st.markdown("<hr style='border: 1px solid #FFCC00; margin-top: 35px; margin-bottom: 30px;'>", unsafe_allow_html=True)
-
-
-    # ==========================================
-    # 5. GESTIONE DEL CONTENUTO "ZERO SCROLL"
-    # ==========================================
+    hr = "<hr class='s-rule'>"
     vista_corrente = st.session_state.vista_tappe
 
-    # ---------------------------------------------------------
-    # VISTA 1: STORICO 
-    # ---------------------------------------------------------
+    # ══════════════════════════════════════════════════════════
+    # VISTA 1 — HISTORICAL TRENDS (rinnovata)
+    # ══════════════════════════════════════════════════════════
     if vista_corrente == "storico":
-       
-        anno_min_assoluto = int(df_stage_h[df_stage_h['Year'] > 0]['Year'].min())
-        anno_max_assoluto = int(df_stage_h['Year'].max())
 
+        st.markdown("""
+            <span class="st-section-label-s">· Historical Overview ·</span>
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
+                       color:#1a1a1a;margin:4px 0 4px;">
+                A Century of Racing — Distance, Intensity & Composition
+            </h3>
+            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;
+                      font-style:italic;margin-bottom:16px;">
+                Drag the slider to filter the historical window. All charts update simultaneously.
+            </p>
+        """, unsafe_allow_html=True)
+
+        # Slider
+        anno_min_abs = int(df_stage_h_filtered['Year'].min())
+        anno_max_abs = int(df_stage_h_filtered['Year'].max())
         anno_min, anno_max = st.slider(
-            "Select the historical period to display in the charts below:",
-            min_value=anno_min_assoluto,
-            max_value=anno_max_assoluto,
-            value=(anno_min_assoluto, anno_max_assoluto), 
-            step=1
+            "Historical window:", min_value=anno_min_abs, max_value=anno_max_abs,
+            value=(anno_min_abs, anno_max_abs), step=1, key="slider_storico"
         )
+
+        df_filt = df_stage_h_filtered[(df_stage_h_filtered['Year'] >= anno_min) &
+                                       (df_stage_h_filtered['Year'] <= anno_max)]
+        df_coords_filt = df_coords_all[(df_coords_all['Year'] >= anno_min) &
+                                        (df_coords_all['Year'] <= anno_max)]
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        col_dist1, col_dist2 = st.columns(2)
+        # ── ROW 1: Distance + Avg Stage Distance ──
+        col1, col2 = st.columns(2, gap="medium")
 
-        with col_dist1:
-            df_dist_filtered = df_stage_h[(df_stage_h['Year'] >= anno_min) & (df_stage_h['Year'] <= anno_max)]
-            df_distanza = df_dist_filtered.groupby('Year')['TotalTDFDistance'].max().reset_index()
-            df_distanza = df_distanza.set_index('Year').reindex(range(anno_min, anno_max + 1)).reset_index()
-            
-            fig_dist = px.line(df_distanza, x='Year', y='TotalTDFDistance', 
-                               labels={'TotalTDFDistance': '', 'Year': 'Year'}, markers=True)
-            fig_dist.update_traces(line_color='#FFCC00', line_width=3, marker=dict(size=4, color='white'), connectgaps=False)
-            
-            fig_dist.add_vrect(x0=1914.5, x1=1918.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                               annotation_text="World War I", annotation_position="inside bottom left",
-                               annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
-            fig_dist.add_vrect(x0=1939.5, x1=1946.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                               annotation_text="World War II", annotation_position="inside bottom left",
-                               annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
+        with col1:
+            st.markdown("""
+                <span class="st-section-label-s">· Total Race Distance ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                           color:#1a1a1a;font-size:16px;margin:2px 0 8px;">
+                    Total km per Edition
+                </h4>
+            """, unsafe_allow_html=True)
 
+            df_dist = df_filt.groupby('Year')['TotalTDFDistance'].max().reset_index()
+            df_dist = df_dist.set_index('Year').reindex(range(anno_min, anno_max+1)).reset_index()
+            df_dist.columns = ['Year', 'TotalTDFDistance']
+
+            fig_dist = go.Figure()
+            fig_dist.add_trace(go.Scatter(
+                x=df_dist['Year'], y=df_dist['TotalTDFDistance'],
+                mode='lines', fill='tozeroy',
+                line=dict(color='#FFCC00', width=2.5),
+                fillcolor='rgba(255,204,0,0.12)',
+                hovertemplate='<b>%{x}</b><br>%{y:,.0f} km<extra></extra>',
+                connectgaps=False,
+            ))
+            # Record annotation
+            max_row = df_dist.dropna().loc[df_dist['TotalTDFDistance'].idxmax()]
+            fig_dist.add_annotation(
+                x=max_row['Year'], y=max_row['TotalTDFDistance'],
+                text=f"Record<br>{int(max_row['TotalTDFDistance']):,} km",
+                showarrow=True, arrowhead=2, arrowcolor='#888',
+                font=dict(size=9, color='#1a1a1a', family='Arial'),
+                bgcolor='rgba(255,204,0,0.8)', borderpad=4, ax=30, ay=-30,
+            )
+            for x0, x1, lbl in [(1914,1918,'WWI'),(1939,1947,'WWII')]:
+                if x0 >= anno_min and x1 <= anno_max:
+                    fig_dist.add_vrect(x0=x0, x1=x1, fillcolor='#888', opacity=0.15,
+                                       line_width=0, annotation_text=lbl,
+                                       annotation_font=dict(size=9, color='#888'))
             fig_dist.update_layout(
-                title=dict(text="<b>Total Distance (km)</b>", font=dict(color="white", size=18, family="sans-serif")),
-                plot_bgcolor="black", 
-                paper_bgcolor="black", 
-                font=dict(color="white", family="sans-serif"),
-                height=380, margin=dict(l=0, r=0, t=50, b=0), 
-                xaxis=dict(range=[anno_min, anno_max])
+                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                height=300, margin=dict(l=0,r=0,t=10,b=0),
+                xaxis=dict(showgrid=False, range=[anno_min, anno_max]),
+                yaxis=dict(showgrid=True, gridcolor='#e8e4da', title='km'),
+                showlegend=False,
             )
             st.plotly_chart(fig_dist, use_container_width=True)
 
-        with col_dist2:
-            df_dist_avg = df_dist_filtered.groupby('Year').agg({'TotalTDFDistance': 'max', 'Stages': 'count'}).reset_index()
-            df_dist_avg['Distanza_Media_Tappa'] = df_dist_avg['TotalTDFDistance'] / df_dist_avg['Stages']
-            df_dist_avg = df_dist_avg.set_index('Year').reindex(range(anno_min, anno_max + 1)).reset_index()
-            
-            fig_avg_dist = px.area(df_dist_avg, x='Year', y='Distanza_Media_Tappa',
-                                   labels={'Distanza_Media_Tappa': '', 'Year': 'Year'})
-            fig_avg_dist.update_traces(line_color='#FF6666', fillcolor='rgba(255, 102, 102, 0.3)', connectgaps=False)
-            
-            fig_avg_dist.add_vrect(x0=1914.5, x1=1918.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                                   annotation_text="World War I", annotation_position="inside bottom left",
-                                   annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
-            fig_avg_dist.add_vrect(x0=1939.5, x1=1946.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                                   annotation_text="World War II", annotation_position="inside bottom left",
-                                   annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
+        with col2:
+            st.markdown("""
+                <span class="st-section-label-s">· Stage Intensity ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                           color:#1a1a1a;font-size:16px;margin:2px 0 8px;">
+                    Average km per Stage
+                </h4>
+            """, unsafe_allow_html=True)
 
-            fig_avg_dist.update_layout(
-                title=dict(text="<b>Intensity: Average Km per Stage</b>", font=dict(color="white", size=18, family="sans-serif")),
-                plot_bgcolor="black", 
-                paper_bgcolor="black", 
-                font=dict(color="white", family="sans-serif"),
-                height=380, margin=dict(l=0, r=0, t=50, b=0),
-                xaxis=dict(range=[anno_min, anno_max])
+            df_avg = df_filt.groupby('Year').agg(
+                total=('TotalTDFDistance','max'), n=('Stages','count')
+            ).reset_index()
+            df_avg['avg_stage'] = df_avg['total'] / df_avg['n']
+            df_avg = df_avg.set_index('Year').reindex(range(anno_min, anno_max+1)).reset_index()
+
+            fig_avg = go.Figure()
+            fig_avg.add_trace(go.Scatter(
+                x=df_avg['Year'], y=df_avg['avg_stage'],
+                mode='lines', fill='tozeroy',
+                line=dict(color='#FF6B6B', width=2.5),
+                fillcolor='rgba(255,107,107,0.10)',
+                hovertemplate='<b>%{x}</b><br>%{y:.1f} km/stage<extra></extra>',
+                connectgaps=False,
+            ))
+            for x0, x1, lbl in [(1914,1918,'WWI'),(1939,1947,'WWII')]:
+                if x0 >= anno_min and x1 <= anno_max:
+                    fig_avg.add_vrect(x0=x0, x1=x1, fillcolor='#888', opacity=0.15,
+                                      line_width=0, annotation_text=lbl,
+                                      annotation_font=dict(size=9, color='#888'))
+            fig_avg.update_layout(
+                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                height=300, margin=dict(l=0,r=0,t=10,b=0),
+                xaxis=dict(showgrid=False, range=[anno_min, anno_max]),
+                yaxis=dict(showgrid=True, gridcolor='#e8e4da', title='km/stage'),
+                showlegend=False,
             )
-            st.plotly_chart(fig_avg_dist, use_container_width=True)
+            st.plotly_chart(fig_avg, use_container_width=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(hr, unsafe_allow_html=True)
 
-        df_vincitori = df_storico[(df_storico['Rank'] == 1) | (df_storico['Rank'] == '1')].copy()
-        df_vincitori = df_vincitori[df_vincitori['TotalSeconds'].notna() & (df_vincitori['TotalSeconds'] > 0)]
-        df_vincitori['Velocità Media (km/h)'] = df_vincitori['Distance (km)'] / (df_vincitori['TotalSeconds'] / 3600)
-        
-        df_vincitori_filtered = df_vincitori[(df_vincitori['Year'] >= anno_min) & (df_vincitori['Year'] <= anno_max)]
-        df_vincitori_chart = df_vincitori_filtered[['Year', 'Velocità Media (km/h)']].set_index('Year').reindex(range(anno_min, anno_max + 1)).reset_index()
+        # ── STACKED AREA: composizione tappe per decade ──
+        st.markdown("""
+            <span class="st-section-label-s">· Stage DNA ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                       color:#1a1a1a;font-size:18px;margin:2px 0 4px;">
+                The Changing DNA of the Tour — Stage Types Over Decades
+            </h4>
+            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                      font-style:italic;margin-bottom:8px;">
+                Stacked area: how the mix of flat, mountain, time trial stages evolved. 
+                More mountains, fewer epic flat stages.
+            </p>
+        """, unsafe_allow_html=True)
 
-        fig_vel = px.line(df_vincitori_chart, x='Year', y='Velocità Media (km/h)', 
-                          labels={'Velocità Media (km/h)': 'Average Speed (km/h)', 'Year': 'Year'}, markers=True)
-        fig_vel.update_traces(line_color='#FFCC00', line_width=3, marker=dict(size=5, color='white'), connectgaps=False)
-        
-        fig_vel.add_vrect(x0=1914.5, x1=1918.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                          annotation_text="World War I", annotation_position="inside bottom left",
-                          annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
-        fig_vel.add_vrect(x0=1939.5, x1=1946.5, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                          annotation_text="World War II", annotation_position="inside bottom left",
-                          annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
+        df_type_dec = df_coords_filt.groupby(['decade', 'Type_group']).size().reset_index(name='count')
+        TYPE_ORDER = ['Flat', 'Mountain', 'Hilly', 'Time Trial', 'Team TT', 'Other']
+        df_type_dec['Type_group'] = pd.Categorical(df_type_dec['Type_group'], categories=TYPE_ORDER, ordered=True)
+        df_type_dec = df_type_dec.sort_values(['decade', 'Type_group'])
 
-        try:
-            y_1998 = df_vincitori[df_vincitori['Year'] == 1998]['Velocità Media (km/h)'].iloc[0]
-            y_2006 = df_vincitori[df_vincitori['Year'] == 2006]['Velocità Media (km/h)'].iloc[0]
-
-            fig_vel.add_scatter(x=[1998, 2006], y=[y_1998, y_2006], mode='lines', line=dict(color='#FF3333', width=2, dash='dash'), hoverinfo='skip', showlegend=False)
-
-            anni_buco = list(range(1999, 2006))
-            step = (y_2006 - y_1998) / (2006 - 1998)
-            y_buco = [y_1998 + step * (anno - 1998) for anno in anni_buco]
-            testo_hover = ["<b>Doping Disqualifications</b><br>Titles of L. Armstrong (1999-2005) and F. Landis (2006)<br>were canceled and never reassigned."] * len(anni_buco)
-
-            fig_vel.add_scatter(x=anni_buco, y=y_buco, mode='markers', marker=dict(size=7, color='#FF3333', symbol='x', line=dict(width=2)),
-                                hoverinfo='text', hovertext=testo_hover, showlegend=False)
-            
-            fig_vel.add_vrect(x0=1998.5, x1=2006, fillcolor="#888888", opacity=0.2, layer="below", line_width=0,
-                              annotation_text="Revoked Titles", annotation_position="inside bottom left",
-                              annotation_font=dict(color="#AAAAAA", size=11, family="sans-serif"), annotation_textangle=-90)
-        except Exception as e:
-            pass 
-
-        fig_vel.update_layout(
-            title=dict(text="<b>Evolution of Average Speed</b>", font=dict(color="white", size=20, family="sans-serif")),
-            plot_bgcolor="black", 
-            paper_bgcolor="black", 
-            font=dict(color="white", family="sans-serif"),
-            height=450, margin=dict(l=0, r=0, t=60, b=0), 
-            xaxis=dict(range=[anno_min, anno_max])
+        fig_area = go.Figure()
+        for ttype in TYPE_ORDER:
+            df_t = df_type_dec[df_type_dec['Type_group'] == ttype]
+            if df_t.empty:
+                continue
+            fig_area.add_trace(go.Scatter(
+                x=df_t['decade'], y=df_t['count'],
+                name=ttype,
+                mode='lines',
+                stackgroup='one',
+                line=dict(width=0.5, color=TYPE_COLORS.get(ttype, '#888')),
+                fillcolor=TYPE_COLORS.get(ttype, '#888'),
+                opacity=0.85,
+                hovertemplate=f'<b>{ttype}</b><br>%{{x}}s: %{{y}} stages<extra></extra>',
+            ))
+        fig_area.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, serif', color='#1a1a1a'),
+            height=380, margin=dict(l=0, r=0, t=10, b=0),
+            legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center', font=dict(size=10)),
+            xaxis=dict(title='Decade', showgrid=False,
+                       tickvals=list(range(1900,2030,10)),
+                       ticktext=[f"{d}s" for d in range(1900,2030,10)]),
+            yaxis=dict(title='Number of stages', showgrid=True, gridcolor='#e8e4da'),
         )
-        st.plotly_chart(fig_vel, use_container_width=True)
+        st.plotly_chart(fig_area, use_container_width=True)
 
-    # ---------------------------------------------------------
-    # VISTA 2: DETTAGLIO 
-    # ---------------------------------------------------------
+        st.markdown(hr, unsafe_allow_html=True)
+
+        # ── SPEED EVOLUTION ──
+        st.markdown("""
+            <span class="st-section-label-s">· Speed of Champions ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                       color:#1a1a1a;font-size:18px;margin:2px 0 4px;">
+                Evolution of Average Winning Speed
+            </h4>
+            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                      font-style:italic;margin-bottom:8px;">
+                Dotted segment = doping era (1999–2005), titles revoked, no official winners.
+            </p>
+        """, unsafe_allow_html=True)
+
+        df_winners_speed = df_storico.copy()
+        df_winners_speed['Rank_Num'] = pd.to_numeric(df_winners_speed['Rank'], errors='coerce')
+        df_winners_speed = df_winners_speed[
+            (df_winners_speed['Rank_Num'] == 1) &
+            df_winners_speed['TotalSeconds'].notna() &
+            (df_winners_speed['TotalSeconds'] > 0) &
+            (df_winners_speed['Year'] >= anno_min) &
+            (df_winners_speed['Year'] <= anno_max)
+        ].copy()
+        df_winners_speed['avg_speed'] = df_winners_speed['Distance (km)'] / (df_winners_speed['TotalSeconds'] / 3600)
+
+        # Split: clean vs doping era
+        df_clean = df_winners_speed[~df_winners_speed['Year'].isin(range(1999,2006))]
+        df_doping = df_winners_speed[df_winners_speed['Year'].isin(range(1999,2006))]
+
+        fig_speed = go.Figure()
+        fig_speed.add_trace(go.Scatter(
+            x=df_clean['Year'], y=df_clean['avg_speed'],
+            mode='lines+markers',
+            line=dict(color='#1a1a1a', width=2.5),
+            marker=dict(size=5, color='#FFCC00', line=dict(width=1, color='#1a1a1a')),
+            hovertemplate='<b>%{x}</b><br>%{y:.2f} km/h<extra></extra>',
+            name='Official speed', showlegend=False,
+            connectgaps=False,
+        ))
+        if not df_doping.empty:
+            fig_speed.add_trace(go.Scatter(
+                x=df_doping['Year'], y=df_doping['avg_speed'],
+                mode='markers',
+                marker=dict(size=8, color='#FF6B6B', symbol='x', line=dict(width=2)),
+                hovertemplate='<b>%{x}</b> — Title subsequently revoked<br>%{y:.2f} km/h (unofficial)<extra></extra>',
+                name='Revoked title', showlegend=True,
+            ))
+            # Doping era vrect
+            if 1999 >= anno_min and 2005 <= anno_max:
+                fig_speed.add_vrect(x0=1998.5, x1=2005.5, fillcolor='#888', opacity=0.1,
+                                    line_width=0, annotation_text='Revoked era',
+                                    annotation_font=dict(size=9, color='#888'))
+        for x0, x1, lbl in [(1914,1918,'WWI'),(1939,1947,'WWII')]:
+            if x0 >= anno_min and x1 <= anno_max:
+                fig_speed.add_vrect(x0=x0, x1=x1, fillcolor='#888', opacity=0.15,
+                                    line_width=0, annotation_text=lbl,
+                                    annotation_font=dict(size=9, color='#888'))
+        fig_speed.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, serif', color='#1a1a1a'),
+            height=380, margin=dict(l=0, r=0, t=10, b=0),
+            xaxis=dict(showgrid=False, range=[anno_min, anno_max]),
+            yaxis=dict(title='Average speed (km/h)', showgrid=True, gridcolor='#e8e4da'),
+            legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center'),
+        )
+        st.plotly_chart(fig_speed, use_container_width=True)
+
+        st.markdown(hr, unsafe_allow_html=True)
+
+        # ── SCATTER: ogni singola tappa come punto ──
+        st.markdown("""
+            <span class="st-section-label-s">· All Stages Ever ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                       color:#1a1a1a;font-size:18px;margin:2px 0 4px;">
+                Every Stage in History — Distance by Type
+            </h4>
+            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                      font-style:italic;margin-bottom:8px;">
+                Each dot = one stage. Color = type. The early Tour's epic 400+ km stages stand out dramatically.
+            </p>
+        """, unsafe_allow_html=True)
+
+        df_scatter_all = df_coords_filt.copy()
+        fig_scatter = go.Figure()
+        for ttype in TYPE_ORDER:
+            df_t = df_scatter_all[df_scatter_all['Type_group'] == ttype]
+            if df_t.empty:
+                continue
+            fig_scatter.add_trace(go.Scatter(
+                x=df_t['Year'], y=df_t['Distance'],
+                mode='markers',
+                name=ttype,
+                marker=dict(size=5, color=TYPE_COLORS.get(ttype,'#888'),
+                            opacity=0.65, line=dict(width=0.3, color='white')),
+                hovertemplate=(
+                    f'<b>{ttype}</b><br>'
+                    'Year: %{x}<br>'
+                    'Distance: %{y} km<br>'
+                    '%{customdata}<extra></extra>'
+                ),
+                customdata=df_t['Origin'] + ' → ' + df_t['Destination'],
+            ))
+        fig_scatter.update_layout(
+            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+            font=dict(family='Merriweather, serif', color='#1a1a1a'),
+            height=380, margin=dict(l=0, r=0, t=10, b=0),
+            legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center', font=dict(size=10)),
+            xaxis=dict(title='Year', showgrid=False, range=[anno_min, anno_max]),
+            yaxis=dict(title='Stage distance (km)', showgrid=True, gridcolor='#e8e4da'),
+        )
+        # Annotazione tappe epiche
+        epic = df_scatter_all[df_scatter_all['Distance'] > 450]
+        if not epic.empty:
+            top_epic = epic.nlargest(1, 'Distance').iloc[0]
+            fig_scatter.add_annotation(
+                x=top_epic['Year'], y=top_epic['Distance'],
+                text=f"{top_epic['Origin']} → {top_epic['Destination']}<br>{top_epic['Distance']:.0f} km",
+                showarrow=True, arrowhead=2, arrowcolor='#888',
+                font=dict(size=9, color='#1a1a1a', family='Arial'),
+                bgcolor='rgba(255,204,0,0.85)', borderpad=4, ax=-60, ay=-20,
+            )
+        st.plotly_chart(fig_scatter, use_container_width=True)
+
+    # ══════════════════════════════════════════════════════════
+    # VISTA 2 — EDITION DETAILS (rinnovata, maglie preservate)
+    # ══════════════════════════════════════════════════════════
     elif vista_corrente == "dettaglio":
-        st.markdown("<p style='font-weight: bold; color: black; font-family: sans-serif; font-size: 1.2rem;'>Route Details and Leaderboard</p>", unsafe_allow_html=True)
 
-        lista_anni = sorted(df_stage_h['Year'].unique(), reverse=True)
-        lista_anni = [anno for anno in lista_anni if anno > 0]
-        # ✅ label "Select an edition to view details:" in NERO
-        anno_scelto = st.selectbox("Select an edition to view details:", lista_anni)
+        st.markdown("""
+            <span class="st-section-label-s">· Edition Details ·</span>
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
+                       color:#1a1a1a;margin:4px 0 4px;">
+                Route & Jerseys — Stage by Stage
+            </h3>
+        """, unsafe_allow_html=True)
 
-        df_anno = df_stage_h[df_stage_h['Year'] == anno_scelto].sort_values('Stages').copy()
+        lista_anni = sorted([a for a in df_stage_h_filtered['Year'].unique() if a > 0], reverse=True)
+        anno_scelto = st.selectbox("📅 Select an edition:", lista_anni)
+        df_anno = df_stage_h_filtered[df_stage_h_filtered['Year'] == anno_scelto].sort_values('Stages').copy()
 
-        if not df_anno.empty:
-            distanza_tot = df_anno['TotalTDFDistance'].iloc[0] if 'TotalTDFDistance' in df_anno.columns else "N/A"
-            num_tappe = len(df_anno)
-            
+        if df_anno.empty:
+            st.warning("No data for this edition.")
+        else:
+            # Winner parse
             df_anno['Vincitore_Clean'] = df_anno['Winner of stage'].apply(
                 lambda x: str(x).split('(')[0].strip() if pd.notnull(x) else "N/A"
             )
-            df_anno['Team'] = df_anno['Winner of stage'].str.extract(r'\((.*?)\)')
-            df_anno['Team'] = df_anno['Team'].fillna('Independent/Unknown')
+            df_anno['Team_Stage'] = df_anno['Winner of stage'].str.extract(r'\((.*?)\)')
+            df_anno['Team_Stage'] = df_anno['Team_Stage'].fillna('—')
 
+            distanza_tot = df_anno['TotalTDFDistance'].iloc[0] if 'TotalTDFDistance' in df_anno.columns else "N/A"
+            num_tappe = len(df_anno)
             vittorie_count = df_anno['Vincitore_Clean'].value_counts()
-            top_rider = vittorie_count.index[0] if not vittorie_count.empty and vittorie_count.index[0] != "N/A" else "N/A"
-            n_vittorie = vittorie_count.iloc[0] if not vittorie_count.empty else 0
+            top_rider = vittorie_count.index[0] if not vittorie_count.empty else "N/A"
+            n_vittorie_top = vittorie_count.iloc[0] if not vittorie_count.empty else 0
+            vincitore_finale = df_anno['Yellow Jersey'].dropna().iloc[-1] if df_anno['Yellow Jersey'].notna().any() else "N/A"
+            cambi_maglia = max(0, (df_anno['Yellow Jersey'] != df_anno['Yellow Jersey'].shift()).sum() - 1) if df_anno['Yellow Jersey'].notna().any() else "N/A"
 
-            vincitore_finale = "N/A"
-            cambi_maglia = "N/A"
-            colonna_leader = 'Yellow Jersey' 
-            
-            if colonna_leader in df_anno.columns:
-                leader_validi = df_anno[colonna_leader].dropna()
-                if not leader_validi.empty:
-                    vincitore_finale = leader_validi.iloc[-1]
-                    cambi_maglia = (df_anno[colonna_leader] != df_anno[colonna_leader].shift()).sum() - 1
-                    cambi_maglia = max(0, cambi_maglia)
+            # ── KPI HTML ──
+            kpi_html = f"""
+            <div style="display:flex;gap:12px;margin:16px 0 24px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
+                            border-top:3px solid #FFCC00;border-radius:4px;padding:14px 16px;
+                            font-family:'Merriweather',serif;">
+                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
+                                color:#888;font-family:Arial;margin-bottom:6px;">Total Distance</div>
+                    <div style="font-size:26px;font-weight:900;color:#f0ece4;">{distanza_tot} <span style="font-size:14px;color:#666;">km</span></div>
+                </div>
+                <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
+                            border-top:3px solid #FFCC00;border-radius:4px;padding:14px 16px;
+                            font-family:'Merriweather',serif;">
+                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
+                                color:#888;font-family:Arial;margin-bottom:6px;">Stages</div>
+                    <div style="font-size:26px;font-weight:900;color:#f0ece4;">{num_tappe}</div>
+                </div>
+                <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
+                            border-top:3px solid #4ECDC4;border-radius:4px;padding:14px 16px;
+                            font-family:'Merriweather',serif;">
+                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
+                                color:#888;font-family:Arial;margin-bottom:6px;">Stage Cannibal</div>
+                    <div style="font-size:16px;font-weight:900;color:#f0ece4;line-height:1.2;">{top_rider}</div>
+                    <div style="font-size:11px;color:#4ECDC4;margin-top:2px;">{n_vittorie_top} wins</div>
+                </div>
+                <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
+                            border-top:3px solid #FFCC00;border-radius:4px;padding:14px 16px;
+                            font-family:'Merriweather',serif;">
+                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
+                                color:#888;font-family:Arial;margin-bottom:6px;">Yellow Jersey Changes</div>
+                    <div style="font-size:26px;font-weight:900;color:#FFCC00;">{cambi_maglia}</div>
+                </div>
+                <div style="flex:1;min-width:140px;background:#0d0d0d;border:1px solid #222;
+                            border-top:3px solid #FFD700;border-radius:4px;padding:14px 16px;
+                            font-family:'Merriweather',serif;">
+                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
+                                color:#888;font-family:Arial;margin-bottom:6px;">Final Winner</div>
+                    <div style="font-size:15px;font-weight:900;color:#FFD700;line-height:1.2;">{vincitore_finale}</div>
+                </div>
+            </div>
+            """
+            st.markdown(kpi_html, unsafe_allow_html=True)
+            st.markdown(hr, unsafe_allow_html=True)
 
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Total Distance", f"{distanza_tot} km")
-            m2.metric("Final Winner", vincitore_finale)
-            m3.metric("Cannibal (Stage Wins)", top_rider, f"{n_vittorie} stages")
-            m4.metric("Yellow Jersey Changes", cambi_maglia)
+            # ── JERSEY EVOLUTION (conservata e migliorata) ──
+            st.markdown("""
+                <span class="st-section-label-s">· Leadership Race ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                           color:#1a1a1a;font-size:18px;margin:4px 0 4px;">
+                    Jersey Evolution — Stage by Stage
+                </h4>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                          font-style:italic;margin-bottom:12px;">
+                    Select a jersey to see who led the race at each stage. 
+                    Each icon marks a leadership change.
+                </p>
+            """, unsafe_allow_html=True)
 
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            st.markdown(f"<h3 style='color: black; margin-bottom: 10px;'>Leadership Evolution in {anno_scelto}</h3>", unsafe_allow_html=True)
-            
-            # Definizione del dizionario di configurazione delle maglie
-            maglie_config = {
-                "Yellow": {
-                    "col": "Yellow Jersey", 
-                    "color": "#FFCC00", 
+            MAGLIE_CONFIG = {
+                "🟡 Yellow": {
+                    "col": "Yellow Jersey", "color": "#FFD700",
                     "img": "https://www.bobshop.com/media/92/7a/02/1776411535/11346-1_1.png?ts=1776411535",
                     "anno_intro": 1919,
-                    "storia": "The Yellow Jersey was introduced in 1919. Before then, the leader was identified only by a green armband. It matches the yellow paper of the historical *L'Auto* newspaper."
+                    "storia": "Introduced in 1919 to reward the overall GC leader. The color matches *L'Auto* newspaper's yellow paper stock — a living advertisement.",
                 },
-                "Green": {
-                    "col": "Green jersey", 
-                    "color": "#009900", 
+                "🟢 Green": {
+                    "col": "Green jersey", "color": "#22c55e",
                     "img": "https://lh3.googleusercontent.com/d/1d1GLPgO6NHqt4bguSBdXjs8NowirbXAu",
                     "anno_intro": 1953,
-                    "storia": "The Green Jersey (points classification) was created in 1953 to celebrate the 50th anniversary of the Tour de France. It rewards the most consistent sprinters."
+                    "storia": "Created in 1953 for the 50th anniversary. It rewards the points classification — the sprinters' championship.",
                 },
-                "Polka-dot": {
-                    "col": "Polka-dot jersey", 
-                    "color": "#FF0000", 
+                "🔴 Polka-dot": {
+                    "col": "Polka-dot jersey", "color": "#ef4444",
                     "img": "https://lh3.googleusercontent.com/d/1sOEebeyDAuhP0Mt6I5L4poKbahfv3xky",
                     "anno_intro": 1975,
-                    "storia": "Although the Mountains Classification has existed since 1933, the famous red and white Polka-dot jersey was officially born only in 1975 to reward the King of the Mountains!"
+                    "storia": "Mountains classification since 1933, but the iconic jersey only appeared in 1975 — introduced by Chocolat Poulain, whose packaging had a similar pattern.",
                 },
-                "White": {
-                    "col": "White jersey", 
-                    "color": "#CCCCCC", 
+                "⚪ White": {
+                    "col": "White jersey", "color": "#d1d5db",
                     "img": "https://lh3.googleusercontent.com/d/1DAYUL8bk7eYxd83opOKJCkYT_afuKWdp",
                     "anno_intro": 1975,
-                    "storia": "The White Jersey, reserved for the best young rider (currently Under-25) in the General Classification, was established in 1975."
-                }
+                    "storia": "Best young rider (under 25) in the GC. Established in 1975.",
+                },
             }
 
-            # Il selettore radio nativo per le maglie
-            scelta_maglia = st.radio(
-                "Select the jersey:", 
-                list(maglie_config.keys()), 
-                horizontal=True
-            )
+            scelta_maglia = st.radio("Select jersey:", list(MAGLIE_CONFIG.keys()), horizontal=True)
+            cfg = MAGLIE_CONFIG[scelta_maglia]
 
-            # ==========================================
-            # ℹ️ NUOVO POPOVER DINAMICO E CONTESTUALE
-            # ==========================================
-            colore_testo_popup = maglie_config[scelta_maglia]["color"]
-            
-            with st.popover(f"ℹ️ Read about the {scelta_maglia} Jersey", use_container_width=True):
-                st.markdown(f"### <span style='color: {colore_testo_popup};'>{scelta_maglia} Jersey Classification</span>", unsafe_allow_html=True)
-                st.markdown(maglie_config[scelta_maglia]["storia"])
+            with st.expander(f"ℹ️ History of the {scelta_maglia.split()[-1]} Jersey"):
+                st.markdown(cfg['storia'])
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            col_selezionata = maglie_config[scelta_maglia]["col"]
-            colore_linea = maglie_config[scelta_maglia]["color"]
-            url_immagine = maglie_config[scelta_maglia]["img"]
-            anno_introduzione = maglie_config[scelta_maglia]["anno_intro"]
+            col_sel = cfg['col']
+            colore = cfg['color']
+            img_maglia = cfg['img']
+            anno_intro = cfg['anno_intro']
 
-            if anno_scelto < anno_introduzione:
-                testo_storia = f"🕰️ <b>A bit of history:</b> In {anno_scelto} this jersey did not exist yet. {maglie_config[scelta_maglia]['storia']}"
-                st.markdown(
-                    f"""
-                    <div style="background-color: #f5f0e6; border-left: 5px solid #FFCC00; padding: 15px; border-radius: 5px; color: black; font-family: sans-serif;">
-                        {testo_storia}
+            if anno_scelto < anno_intro:
+                st.markdown(f"""
+                    <div style="background:#f5f0e6;border-left:4px solid #FFCC00;
+                                padding:14px 18px;border-radius:3px;
+                                font-family:'Merriweather',serif;color:#666;
+                                font-style:italic;font-size:12px;">
+                        🕰️ In <strong>{anno_scelto}</strong> this jersey did not exist yet.
+                        {cfg['storia']}
                     </div>
-                    """, 
-                    unsafe_allow_html=True
+                """, unsafe_allow_html=True)
+
+            elif col_sel in df_anno.columns and df_anno[col_sel].notna().any():
+                df_leader = df_anno.dropna(subset=[col_sel]).copy()
+                ordine = df_leader[col_sel].drop_duplicates().tolist()
+
+                fig_jersey = px.line(df_leader, x='Stages', y=col_sel)
+                fig_jersey.update_traces(
+                    line=dict(color=colore, width=4),
+                    mode='lines+markers',
+                    marker=dict(size=10, color=colore, line=dict(width=2, color='white')),
                 )
-            elif col_selezionata in df_anno.columns and not df_anno[col_selezionata].dropna().empty:
-                df_leader = df_anno.dropna(subset=[col_selezionata]).copy()
-                ordine_cronologico = df_leader[col_selezionata].drop_duplicates().tolist()
-                
-                fig_leader = px.line(df_leader, x='Stages', y=col_selezionata)
-                fig_leader.update_traces(line=dict(color=colore_linea, width=3))
-                
-                for index, row in df_leader.iterrows():
-                    fig_leader.add_layout_image(
-                        dict(
-                            source=url_immagine, xref="x", yref="y",
-                            x=row['Stages'], y=row[col_selezionata],
-                            sizex=1.2, sizey=0.9,
+
+                # Icona maglia su ogni cambio di leader
+                prev = None
+                for _, row in df_leader.iterrows():
+                    if row[col_sel] != prev:
+                        fig_jersey.add_layout_image(dict(
+                            source=img_maglia, xref="x", yref="y",
+                            x=row['Stages'], y=row[col_sel],
+                            sizex=1.4, sizey=0.85,
                             xanchor="center", yanchor="middle", layer="above"
-                        )
-                    )
-                
-                min_tappa = df_leader['Stages'].min() - 1
-                max_tappa = df_leader['Stages'].max() + 1
-                num_corridori = len(ordine_cronologico)
-                
-                fig_leader.update_layout(
-                    yaxis=dict(
-                        title="", categoryorder='array', categoryarray=ordine_cronologico[::-1],
-                        range=[-0.5, max(0.5, num_corridori - 0.5)],
-                        showgrid=True, gridwidth=1, gridcolor='#333333'
-                    ), 
-                    xaxis=dict(
-                        title="Stage", tickmode='linear', dtick=1,
-                        range=[min_tappa, max_tappa],
-                        showgrid=True, gridwidth=1, gridcolor='#333333'
-                    ),
-                    height=max(300, num_corridori * 60), 
-                    showlegend=False, 
-                    paper_bgcolor="black",   
-                    plot_bgcolor="black",    
-                    font=dict(color="white"), 
-                    margin=dict(l=0, r=0, t=20, b=0)
+                        ))
+                        prev = row[col_sel]
+
+                fig_jersey.update_layout(
+                    plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d',
+                    font=dict(family='Merriweather, serif', color='#f0ece4'),
+                    height=max(280, len(ordine) * 55 + 60),
+                    margin=dict(l=0, r=0, t=20, b=0),
+                    xaxis=dict(title='Stage', tickmode='linear', dtick=1,
+                               showgrid=True, gridcolor='#1e1e1e',
+                               range=[df_leader['Stages'].min()-0.5, df_leader['Stages'].max()+0.5]),
+                    yaxis=dict(title='', categoryorder='array',
+                               categoryarray=ordine[::-1],
+                               showgrid=True, gridcolor='#1e1e1e',
+                               range=[-0.6, max(0.6, len(ordine)-0.4)]),
+                    showlegend=False,
                 )
-                st.plotly_chart(fig_leader, use_container_width=True)
-                
+                st.plotly_chart(fig_jersey, use_container_width=True)
             else:
-                st.warning(f"Data not available for the {scelta_maglia} jersey in the {anno_scelto} edition.")
-                
-            col_gialla = 'Yellow Jersey'
-            col_verde = 'Green' 
-            col_pois = 'Polka'  
-            col_bianca = 'White'
+                st.info(f"No data for the {scelta_maglia} jersey in {anno_scelto}.")
 
-            maglie_presenti = [col for col in [col_gialla, col_verde, col_pois, col_bianca] if col in df_anno.columns]
-            
-            if len(maglie_presenti) > 1:
-                st.markdown("<h3 style='color: black;'>👕 Jersey holders stage by stage</h3>", unsafe_allow_html=True)
-                df_maglie = df_anno[['Stages'] + maglie_presenti].copy()
-                st.dataframe(df_maglie, use_container_width=True, hide_index=True)
-                
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown(hr, unsafe_allow_html=True)
 
-            col_chart1, col_chart2, col_table = st.columns([1, 1, 1.5], gap="medium")
+            # ── BOTTOM ROW: stage wins bar + team donut + route table ──
+            col_b1, col_b2, col_b3 = st.columns([1.1, 1, 1.4], gap="medium")
 
-            with col_chart1:
-                # ✅ "Multiple Stage Winners" in BIANCO
-                st.markdown("<b style='color: white;'>Multiple Stage Winners</b>", unsafe_allow_html=True)
-                df_top10 = vittorie_count.reset_index()
-                df_top10.columns = ['Athlete', 'Victories']
-                df_top10 = df_top10[df_top10['Athlete'] != 'N/A'].head(8) 
-                
-                fig_vittorie = px.bar(df_top10, y='Athlete', x='Victories', orientation='h', color_discrete_sequence=['#FFCC00'])
-                fig_vittorie.update_layout(yaxis={'categoryorder':'total ascending', 'title':''}, xaxis={'title': 'Victories'},
-                                           height=350, margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-                st.plotly_chart(fig_vittorie, use_container_width=True)
+            with col_b1:
+                st.markdown("""
+                    <span class="st-section-label-s">· Stage Winners ·</span>
+                    <h5 style="font-family:'Merriweather',serif;font-weight:900;
+                               color:#1a1a1a;font-size:14px;margin:2px 0 6px;">
+                        Most Wins This Edition
+                    </h5>
+                """, unsafe_allow_html=True)
+                df_top_wins = vittorie_count.reset_index()
+                df_top_wins.columns = ['Rider', 'Wins']
+                df_top_wins = df_top_wins[df_top_wins['Rider'] != 'N/A'].head(8)
 
-            with col_chart2:
-                # ✅ "Team Dominance" in BIANCO
-                st.markdown("<b style='color: white;'>Team Dominance</b>", unsafe_allow_html=True)
-                team_counts = df_anno['Team'].value_counts().reset_index()
-                team_counts.columns = ['Team', 'Victories']
-                team_counts = team_counts[team_counts['Team'] != 'Independent/Unknown'].head(8) 
-                
-                fig_team = px.pie(
-                    team_counts, 
-                    values='Victories', 
-                    names='Team', 
-                    hole=0.6, 
-                    color_discrete_sequence=px.colors.sequential.YlOrBr[::-1] 
+                fig_wins = px.bar(df_top_wins, y='Rider', x='Wins', orientation='h',
+                                  color_discrete_sequence=['#FFCC00'])
+                fig_wins.update_layout(
+                    yaxis=dict(categoryorder='total ascending', title=''),
+                    xaxis=dict(title='Stage wins', showgrid=True, gridcolor='#e8e4da'),
+                    plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                    font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                    height=280, margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
                 )
-                
-                fig_team.update_traces(
-                    textposition='inside', 
-                    textinfo='label+value',
-                    hovertemplate='<b>%{label}</b><br>Victories: %{value}<extra></extra>',
-                    marker=dict(line=dict(color='#000000', width=2)) 
+                st.plotly_chart(fig_wins, use_container_width=True)
+
+            with col_b2:
+                st.markdown("""
+                    <span class="st-section-label-s">· Team Dominance ·</span>
+                    <h5 style="font-family:'Merriweather',serif;font-weight:900;
+                               color:#1a1a1a;font-size:14px;margin:2px 0 6px;">
+                        Wins by Team
+                    </h5>
+                """, unsafe_allow_html=True)
+                team_counts = df_anno['Team_Stage'].value_counts().reset_index()
+                team_counts.columns = ['Team', 'Wins']
+                team_counts = team_counts[team_counts['Team'] != '—'].head(8)
+
+                fig_teams = px.pie(team_counts, values='Wins', names='Team', hole=0.55,
+                                   color_discrete_sequence=['#FFCC00','#FF6B6B','#4ECDC4',
+                                                            '#A29BFE','#FD79A8','#FDCB6E',
+                                                            '#55efc4','#e17055'])
+                fig_teams.update_traces(
+                    textposition='inside', textinfo='label+value',
+                    hovertemplate='<b>%{label}</b><br>%{value} stages<extra></extra>',
+                    marker=dict(line=dict(color='#F4F1EA', width=2)),
                 )
-                fig_team.update_layout(
-                    showlegend=False, 
-                    height=350, 
-                    margin=dict(l=10, r=10, t=20, b=10), 
-                    paper_bgcolor="rgba(0,0,0,0)", 
-                    plot_bgcolor="rgba(0,0,0,0)"
+                fig_teams.update_layout(
+                    showlegend=False, plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                    font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                    height=280, margin=dict(l=0, r=0, t=0, b=0),
                 )
-                st.plotly_chart(fig_team, use_container_width=True)
-            
-            with col_table:
-                # ✅ "Route Details" in BIANCO
-                st.markdown("<b style='color: white;'>Route Details</b>", unsafe_allow_html=True)
-                cols_to_show = ['Stages', 'Start', 'End', 'Vincitore_Clean']
-                df_display = df_anno[cols_to_show].copy()
-                st.dataframe(df_display, use_container_width=True, hide_index=True, height=350)
-    # ---------------------------------------------------------
-    # VISTA 3: MAPPA INTERATTIVA 
-    # ---------------------------------------------------------
+                st.plotly_chart(fig_teams, use_container_width=True)
+
+            with col_b3:
+                st.markdown("""
+                    <span class="st-section-label-s">· Route ·</span>
+                    <h5 style="font-family:'Merriweather',serif;font-weight:900;
+                               color:#1a1a1a;font-size:14px;margin:2px 0 6px;">
+                        Stage-by-Stage Itinerary
+                    </h5>
+                """, unsafe_allow_html=True)
+                df_route = df_anno[['Stages','Start','End','Vincitore_Clean']].copy()
+                df_route.columns = ['#','Start','Finish','Stage Winner']
+                df_route['#'] = df_route['#'].apply(lambda x: int(x) if pd.notna(x) else '?')
+                st.dataframe(df_route, use_container_width=True, hide_index=True, height=280)
+
+    # ══════════════════════════════════════════════════════════
+    # VISTA 3 — GEOGRAPHIC MAP (completamente rinnovata)
+    # ══════════════════════════════════════════════════════════
     elif vista_corrente == "mappa":
-        
-        url_mappa = "https://preview.redd.it/map-of-all-the-stages-in-the-history-of-the-tour-de-france-v0-v1t2yrg7zzyf1.jpeg?width=1080&crop=smart&auto=webp&s=16442894182572aebe679320c02811e74f233f67"
-        
-        # --- SOLUZIONE 3: Titolo della sezione in stile Giornalistico ---
+
         st.markdown("""
-            <h3 style='text-align: center; color: #000000; font-family: "Merriweather", Georgia, serif; font-weight: 700; margin-top: 10px; margin-bottom: 25px;'>
-                 The Historical Network of Le Tour
+            <span class="st-section-label-s">· Geographic Archive ·</span>
+            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
+                       color:#1a1a1a;margin:4px 0 4px;">
+                The Geography of Le Tour
             </h3>
+            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;
+                      font-style:italic;margin-bottom:16px;">
+                Select an edition to visualize its route. Cities are geocoded from a curated dictionary
+                of the ~200 most historic Tour locations.
+            </p>
         """, unsafe_allow_html=True)
-                
-        # --- SOLUZIONE 2: Riquadro espositivo d'archivio con didascalia integrata (Centrato senza colonne per rimuovere lo sfondo nero) ---
+
+        lista_anni_mappa = sorted([a for a in df_coords_all['Year'].dropna().unique()
+                                   if a > 0], reverse=True)
+        anno_mappa = st.selectbox("📅 Select edition:", lista_anni_mappa, key="select_mappa")
+
+        df_mappa_anno = df_coords_all[df_coords_all['Year'] == anno_mappa].copy()
+
+        # Geocoding con dizionario hardcoded
+        def get_coords(city_name):
+            if pd.isna(city_name):
+                return None
+            city_clean = str(city_name).strip()
+            # Fix encoding
+            city_clean = city_clean.replace('Ã©','é').replace('Ã¨','è').replace('Ã\xaa','ê')
+            city_clean = city_clean.replace('Ã§','ç').replace('Ã®','î').replace('Ã´','ô')
+            city_clean = city_clean.replace('Ã»','û').replace('Ã ','à').replace('Ã¹','ù')
+            city_clean = city_clean.replace('Ã«','ë').replace('Ã¯','ï').replace('DÃ¼sseldorf','Düsseldorf')
+            # Lookup
+            if city_clean in CITY_COORDS:
+                return CITY_COORDS[city_clean]
+            # Partial match
+            for k, v in CITY_COORDS.items():
+                if city_clean.lower() in k.lower() or k.lower() in city_clean.lower():
+                    return v
+            return None
+
+        # Aggiungi coordinate
+        df_mappa_anno['start_coords'] = df_mappa_anno['Origin'].apply(get_coords)
+        df_mappa_anno['end_coords'] = df_mappa_anno['Destination'].apply(get_coords)
+        df_mappa_anno = df_mappa_anno.dropna(subset=['start_coords','end_coords'])
+        df_mappa_anno['start_lat'] = df_mappa_anno['start_coords'].apply(lambda x: x[0])
+        df_mappa_anno['start_lon'] = df_mappa_anno['start_coords'].apply(lambda x: x[1])
+        df_mappa_anno['end_lat']   = df_mappa_anno['end_coords'].apply(lambda x: x[0])
+        df_mappa_anno['end_lon']   = df_mappa_anno['end_coords'].apply(lambda x: x[1])
+
+        n_stages_found = len(df_mappa_anno)
+        n_stages_total = len(df_coords_all[df_coords_all['Year'] == anno_mappa])
+
+        coverage = int(n_stages_found / max(n_stages_total, 1) * 100)
+
+        # Banner copertura
+        banner_color = '#22c55e' if coverage >= 70 else '#FFCC00' if coverage >= 40 else '#FF6B6B'
         st.markdown(f"""
-            <div style="
-                background-color: #0F172A; 
-                padding: 22px; 
-                border-radius: 8px; 
-                box-shadow: 0px 10px 25px rgba(0,0,0,0.15);
-                border: 1px solid #E2E8F0;
-                text-align: center;
-                max-width: 650px;           /* Blocca la larghezza massima della card */
-                margin: 0 auto 30px auto;   /* Centra il blocco nella pagina ed elimina la banda nera */
-            ">
-                <img src="{url_mappa}" style="width: 100%; border-radius: 4px;">
-                <p style='color: #E2E8F0; text-align: center; font-size: 0.95rem; margin-top: 15px; font-style: italic; font-family: "Merriweather", serif; line-height: 1.4;'>
-                    The dense network of all stages raced in the history of the Tour de France: a journey through over a century of cycling.
-                </p>
+            <div style="background:#111;border:1px solid #2a2a2a;border-left:4px solid {banner_color};
+                        padding:10px 16px;border-radius:3px;margin-bottom:16px;
+                        font-family:'Merriweather',serif;display:flex;align-items:center;gap:12px;">
+                <span style="font-size:18px;font-weight:900;color:{banner_color};">{coverage}%</span>
+                <span style="font-size:11px;color:#888;">
+                    {n_stages_found} of {n_stages_total} stages geocoded from the Tour's 
+                    historic city dictionary · {int(anno_mappa)} edition
+                </span>
             </div>
         """, unsafe_allow_html=True)
-                
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("<p style='font-weight: bold; color: black; font-family: sans-serif; font-size: 1.2rem;'>Explore Historical Data</p>", unsafe_allow_html=True)
 
-        lista_anni = sorted(df_stage_h['Year'].unique(), reverse=True)
-        lista_anni = [anno for anno in lista_anni if anno > 0]
-        anno_scelto_mappa = st.selectbox("Select the edition to update the map:", lista_anni, key="select_mappa")
+        if n_stages_found == 0:
+            st.markdown("""
+                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:14px 18px;
+                            border-radius:3px;font-family:'Merriweather',serif;color:#666;
+                            font-style:italic;font-size:12px;">
+                    No stages could be geocoded for this edition. The cities may use historical
+                    spellings not yet in the dictionary.
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            # Mappa Plotly con linee tappa
+            fig_map = go.Figure()
 
-        if not df_coords.empty:
-            df_coords_anno = df_coords[df_coords['Year'] == anno_scelto_mappa].copy()
-            df_map_plot = df_coords_anno.dropna(subset=['start_lat', 'start_lon', 'end_lat', 'end_lon'])
+            # Linee di percorso colorate per tipo tappa
+            for _, row in df_mappa_anno.iterrows():
+                ttype = TYPE_MAP.get(row.get('Type','').strip(), 'Other')
+                color = TYPE_COLORS.get(ttype, '#888')
+                stage_num = row.get('Stage', '?')
+                origin = row.get('Origin','?')
+                dest = row.get('Destination','?')
+                dist = row.get('Distance', '?')
+                winner = row.get('Winner','?')
 
-            if not df_map_plot.empty:
-                view_state = pdk.ViewState(
-                    latitude=46.2276, 
-                    longitude=2.2137, 
-                    zoom=5, 
-                    pitch=0
-                )
-
-                line_layer = pdk.Layer(
-                    "LineLayer",
-                    df_map_plot,
-                    get_source_position="[start_lon, start_lat]",
-                    get_target_position="[end_lon, end_lat]",
-                    get_color="[255, 204, 0, 200]",
-                    get_width=5,
-                    pickable=True,
-                )
-
-                start_point_layer = pdk.Layer(
-                    "ScatterplotLayer",
-                    df_map_plot,
-                    get_position="[start_lon, start_lat]",
-                    get_color="[0, 0, 0, 255]",
-                    get_radius=8000,
-                    pickable=True,
-                )
-
-                end_point_layer = pdk.Layer(
-                    "ScatterplotLayer",
-                    df_map_plot,
-                    get_position="[end_lon, end_lat]",
-                    get_color="[0, 0, 0, 255]",
-                    get_radius=8000,
-                    pickable=True,
-                )
-
-                st.pydeck_chart(pdk.Deck(
-                    map_style="light", 
-                    initial_view_state=view_state,
-                    layers=[line_layer, start_point_layer, end_point_layer], 
-                    tooltip={
-                        "html": "<b>Stage {Stages}</b><br/>From: {Start}<br/>To: {End}",
-                        "style": {"color": "white", "backgroundColor": "black"}
-                    }
+                fig_map.add_trace(go.Scattergeo(
+                    lon=[row['start_lon'], row['end_lon']],
+                    lat=[row['start_lat'], row['end_lat']],
+                    mode='lines',
+                    line=dict(width=3, color=color),
+                    opacity=0.85,
+                    showlegend=False,
+                    hovertemplate=(
+                        f"<b>Stage {stage_num}</b> — {ttype}<br>"
+                        f"{origin} → {dest}<br>"
+                        f"Distance: {dist} km<br>"
+                        f"Winner: {winner}<extra></extra>"
+                    ),
                 ))
-            else:
-                st.info(f"No geographical data found for the year {anno_scelto_mappa}.")
+
+            # Punti di partenza (cerchi)
+            starts = df_mappa_anno.drop_duplicates(subset=['start_lat','start_lon'])
+            fig_map.add_trace(go.Scattergeo(
+                lon=starts['start_lon'], lat=starts['start_lat'],
+                mode='markers',
+                marker=dict(size=7, color='#1a1a1a', opacity=0.7,
+                            line=dict(width=1.5, color='white')),
+                showlegend=False,
+                hovertemplate='<b>%{customdata}</b><extra></extra>',
+                customdata=starts['Origin'],
+            ))
+
+            # Punto finale (stella) — ultimo arrivo
+            last = df_mappa_anno.iloc[-1]
+            fig_map.add_trace(go.Scattergeo(
+                lon=[last['end_lon']], lat=[last['end_lat']],
+                mode='markers+text',
+                marker=dict(size=16, color='#FFCC00', symbol='star',
+                            line=dict(width=2, color='#1a1a1a')),
+                text=[last['Destination']],
+                textposition='top center',
+                textfont=dict(size=10, color='#1a1a1a', family='Arial'),
+                showlegend=False,
+                hovertemplate=f"<b>Final Stage Finish</b><br>{last['Destination']}<extra></extra>",
+            ))
+
+            # Legenda manuale per tipo tappa
+            for ttype, color in TYPE_COLORS.items():
+                if ttype == 'Other':
+                    continue
+                df_t = df_mappa_anno[df_mappa_anno['Type_group'] == ttype]
+                if df_t.empty:
+                    continue
+                fig_map.add_trace(go.Scattergeo(
+                    lon=[None], lat=[None],
+                    mode='lines',
+                    line=dict(width=3, color=color),
+                    name=f"{ttype} ({len(df_t)})",
+                    showlegend=True,
+                ))
+
+            fig_map.update_geos(
+                showcoastlines=True, coastlinecolor='#c8bfad', coastlinewidth=1,
+                showland=True, landcolor='#F4F1EA',
+                showocean=True, oceancolor='#ddeeff',
+                showframe=False,
+                showborder=True, bordercolor='#e8e4da',
+                showcountries=True, countrycolor='#e8e4da',
+                projection_type='mercator',
+                center=dict(lat=46.5, lon=4.0),
+                lataxis_range=[40, 55],
+                lonaxis_range=[-6, 18],
+            )
+            fig_map.update_layout(
+                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                height=560, margin=dict(l=0, r=0, t=10, b=0),
+                legend=dict(
+                    orientation='v', x=0.01, y=0.99,
+                    bgcolor='rgba(244,241,234,0.92)',
+                    bordercolor='#c8bfad', borderwidth=1,
+                    font=dict(size=10),
+                ),
+                title=dict(
+                    text=f"<b>{int(anno_mappa)} Tour de France</b> — {n_stages_found} stages mapped",
+                    font=dict(size=13, family='Merriweather, serif', color='#1a1a1a'),
+                    x=0.01, xanchor='left',
+                ),
+            )
+            st.plotly_chart(fig_map, use_container_width=True)
+
+            st.markdown(hr, unsafe_allow_html=True)
+
+            # ── HEATMAP CITTÀ più visitate nella storia ──
+            st.markdown("""
+                <span class="st-section-label-s">· Most Historic Cities ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                           color:#1a1a1a;font-size:18px;margin:4px 0 4px;">
+                    The Tour's Most Visited Cities — All Time
+                </h4>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                          font-style:italic;margin-bottom:8px;">
+                    Combined count of starts and finishes in each city across all editions.
+                </p>
+            """, unsafe_allow_html=True)
+
+            all_cities_hist = pd.concat([
+                df_coords_all[['Origin']].rename(columns={'Origin':'city'}),
+                df_coords_all[['Destination']].rename(columns={'Destination':'city'}),
+            ])
+            # Normalizza encoding
+            all_cities_hist['city'] = all_cities_hist['city'].str.strip()
+            city_counts = all_cities_hist['city'].value_counts().head(20).reset_index()
+            city_counts.columns = ['City','Appearances']
+
+            fig_cities = px.bar(
+                city_counts, y='City', x='Appearances', orientation='h',
+                color='Appearances',
+                color_continuous_scale=[[0,'#FFF3CD'],[0.4,'#FFCC00'],[1,'#1a1a1a']],
+                labels={'Appearances': 'Starts + Finishes'},
+            )
+            fig_cities.update_layout(
+                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                height=480, margin=dict(l=0, r=0, t=10, b=0),
+                yaxis=dict(categoryorder='total ascending', title=''),
+                xaxis=dict(showgrid=True, gridcolor='#e8e4da'),
+                coloraxis_showscale=False,
+                showlegend=False,
+            )
+            # Annotazione Parigi
+            paris_row = city_counts[city_counts['City']=='Paris']
+            if not paris_row.empty:
+                fig_cities.add_annotation(
+                    x=paris_row['Appearances'].values[0], y='Paris',
+                    text="The eternal finish line",
+                    showarrow=True, arrowhead=2, arrowcolor='#888',
+                    font=dict(size=9, color='#1a1a1a', family='Arial'),
+                    bgcolor='rgba(255,204,0,0.85)', borderpad=4, ax=-80, ay=0,
+                )
+            st.plotly_chart(fig_cities, use_container_width=True)
 
 elif st.session_state.pagina_corrente == "teams":
         
