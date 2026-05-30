@@ -747,40 +747,103 @@ elif st.session_state.pagina_corrente == "classifica":
             st.warning("Podium data incomplete for this edition.")
 
         # ----------------------------------------------------------
-        # 5. METRICHE EDIZIONE
+        # 5. METRICHE EDIZIONE (Allineate ai margini)
         # ----------------------------------------------------------
         hr_style = "<hr class='st-section-rule'>"
         st.markdown(hr_style, unsafe_allow_html=True)
         vincitore_row = df_anno.iloc[0]
         tempi_validi = pd.notna(vincitore_row.get('TotalSeconds')) and vincitore_row.get('TotalSeconds', 0) > 0
 
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("📍 Distance", f"{vincitore_row.get('Distance (km)', 'N/A')} km")
-        c2.metric("🏁 Stages", vincitore_row.get('Number of stages', 'N/A'))
+        # 1. Prepariamo i valori (uguale a prima, ma salvati in variabili)
+        val_dist = f"{vincitore_row.get('Distance (km)', 'N/A')} km"
+        val_stages = str(vincitore_row.get('Number of stages', 'N/A'))
         if tempi_validi:
             ore = vincitore_row['TotalSeconds'] / 3600
             vel = vincitore_row['Distance (km)'] / ore
-            c3.metric("⚡ Avg Speed", f"{vel:.1f} km/h")
+            val_speed = f"{vel:.1f} km/h"
         else:
-            c3.metric("⚡ Avg Speed", "N/A")
-        # Calcola quanti corridori hanno concluso la gara
+            val_speed = "N/A"
+            
         finishers = df_anno[df_anno['ResultType'] == 'time']['Rank_Num'].count() if 'ResultType' in df_anno.columns else len(df_anno)
-        c4.metric("✅ Finishers", int(finishers) if finishers else "N/A")
+        val_fin = str(int(finishers)) if finishers else "N/A"
+
+        # 2. Costruiamo la riga delle metriche con HTML e CSS per margini perfetti
+        metrics_html = f"""
+        <style>
+        .metrics-container {{
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            /* 🪄 FIX: Margini identici al resto della dashboard */
+            margin: 16px auto 30px auto;
+            width: calc(100% - 32px);
+            box-sizing: border-box;
+        }}
+        .metric-box {{
+            flex: 1;
+            background-color: #0d0d0d;
+            border: 1px solid #222;
+            border-radius: 4px;
+            padding: 16px 20px;
+            font-family: 'Merriweather', Georgia, serif;
+        }}
+        .metric-title {{
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #888;
+            font-family: Arial, sans-serif;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }}
+        .metric-value {{
+            font-size: 28px;
+            font-weight: 700;
+            color: #f0ece4;
+        }}
+        </style>
+
+        <div class="metrics-container">
+            <div class="metric-box">
+                <div class="metric-title">📍 DISTANCE</div>
+                <div class="metric-value">{val_dist}</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">🏁 STAGES</div>
+                <div class="metric-value">{val_stages}</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">⚡ AVG SPEED</div>
+                <div class="metric-value">{val_speed}</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">✅ FINISHERS</div>
+                <div class="metric-value">{val_fin}</div>
+            </div>
+        </div>
+        """
+        st.markdown(metrics_html, unsafe_allow_html=True)
 
         # ----------------------------------------------------------
         # 7. PIRAMIDE DEL TEMPO
         # ----------------------------------------------------------
-        st.markdown(hr_style, unsafe_allow_html=True)
-        st.markdown('<span class="st-section-label">· Time Gap Anatomy ·</span>', unsafe_allow_html=True)
-        st.markdown(f"""
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:900;color:#1a1a1a;margin:0 0 4px;">
-                The Time Pyramid — {int(anno_selezionato)}
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
-                Each bar is a rider's gap from the winner. The wider the pyramid, the more dominant the victory.
-            </p>
-        """, unsafe_allow_html=True)
 
+        st.markdown(hr_style, unsafe_allow_html=True)
+        
+        # Inseriamo tutto in un div con margine sinistro per coerenza totale
+        st.markdown(f"""
+            <div style="margin-left: 16px;">
+                <span class="st-section-label">· Time Gap Anatomy ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:900;color:#1a1a1a;margin:8px 0 4px 0;">
+                    The Time Pyramid - {int(anno_selezionato)}
+                </h3>
+                <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
+                    Each bar is a rider's gap from the winner. The wider the pyramid, the more dominant the victory.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
         df_pyr = df_anno[df_anno['Rank_Num'].notna()].sort_values('Rank_Num').head(15).copy()
         df_pyr = df_pyr[df_pyr['GapSeconds'].notna()]
         gap_dati_disponibili = df_pyr[df_pyr['GapSeconds'] > 0]['GapSeconds'].count() >= 2
@@ -981,14 +1044,16 @@ elif st.session_state.pagina_corrente == "classifica":
         # 8. GRAFICO RADIALE STORICO (D3.js)
         # ----------------------------------------------------------
         st.markdown(hr_style, unsafe_allow_html=True)
-        st.markdown('<span class="st-section-label">· Historical Competitiveness ·</span>', unsafe_allow_html=True)
         st.markdown("""
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:900;color:#1a1a1a;margin:0 0 4px;">
-                The Ring of Suffering
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
-                A radial timeline of the Tour. Each arc is an edition; length represents the time gap between 1st and 2nd place.
-            </p>
+            <div style="margin-left: 16px;">
+                <span class="st-section-label">· Historical Competitiveness ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:900;color:#1a1a1a;margin:8px 0 4px 0;">
+                    The Ring of Suffering
+                </h3>
+                <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
+                    A radial timeline of the Tour. Each arc is an edition; length represents the time gap between 1st and 2nd place.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         RADIAL_HTML = """
@@ -1345,14 +1410,18 @@ arcs.on('mouseover',(ev,d)=>{
         # 8. LEADERBOARD ANIMATA — stile videogioco/archivio
         # ----------------------------------------------------------
         st.markdown(hr_style, unsafe_allow_html=True)
-        st.markdown('<span class="st-section-label">· Full Classification ·</span>', unsafe_allow_html=True)
+        
+        # Tutto racchiuso in un div con margine sinistro
         st.markdown(f"""
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:900;color:#1a1a1a;margin:0 0 4px;">
-                General Classification — {int(anno_selezionato)}
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
-                Hover a row to highlight. Click a column header to sort.
-            </p>
+            <div style="margin-left: 16px;">
+                <span class="st-section-label">· Full Classification ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:900;color:#1a1a1a;margin:8px 0 4px 0;">
+                    General Classification - {int(anno_selezionato)}
+                </h3>
+                <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
+                    Hover a row to highlight. Click a column header to sort.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         # Prepariamo i dati
