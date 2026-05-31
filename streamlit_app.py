@@ -3287,7 +3287,7 @@ elif st.session_state.pagina_corrente == "tappe":
 
         st.markdown(hr, unsafe_allow_html=True)
 
-        # ── SCATTER: ogni singola tappa come punto ──
+# ── SCATTER: ogni singola tappa come punto ──
         st.markdown("""
             <span class="st-section-label-s">· All Stages Ever ·</span>
             <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
@@ -3301,46 +3301,56 @@ elif st.session_state.pagina_corrente == "tappe":
         """, unsafe_allow_html=True)
 
         df_scatter_all = df_coords_filt.copy()
-        fig_scatter = go.Figure()
-        for ttype in TYPE_ORDER:
-            df_t = df_scatter_all[df_scatter_all['Type_group'] == ttype]
-            if df_t.empty:
-                continue
-            fig_scatter.add_trace(go.Scatter(
-                x=df_t['Year'], y=df_t['Distance'],
-                mode='markers',
-                name=ttype,
-                marker=dict(size=5, color=TYPE_COLORS.get(ttype,'#888'),
-                            opacity=0.65, line=dict(width=0.3, color='white')),
-                hovertemplate=(
-                    f'<b>{ttype}</b><br>'
-                    'Year: %{x}<br>'
-                    'Distance: %{y} km<br>'
-                    '%{customdata}<extra></extra>'
-                ),
-                customdata=df_t['Origin'] + ' → ' + df_t['Destination'],
-            ))
-        fig_scatter.update_layout(
-            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-            font=dict(family='Merriweather, serif', color='#1a1a1a'),
-            height=380, margin=dict(l=0, r=0, t=10, b=0),
-            legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center', font=dict(size=10)),
-            xaxis=dict(title='Year', showgrid=False, range=[anno_min, anno_max]),
-            yaxis=dict(title='Stage distance (km)', showgrid=True, gridcolor='#e8e4da'),
-        )
-        # Annotazione tappe epiche
-        epic = df_scatter_all[df_scatter_all['Distance'] > 450]
-        if not epic.empty:
-            top_epic = epic.nlargest(1, 'Distance').iloc[0]
-            fig_scatter.add_annotation(
-                x=top_epic['Year'], y=top_epic['Distance'],
-                text=f"{top_epic['Origin']} → {top_epic['Destination']}<br>{top_epic['Distance']:.0f} km",
-                showarrow=True, arrowhead=2, arrowcolor='#888',
-                font=dict(size=9, color='#1a1a1a', family='Arial'),
-                bgcolor='rgba(255,204,0,0.85)', borderpad=4, ax=-60, ay=-20,
+        st.write("Colonne trovate nel dataset:", df_scatter_all.columns.tolist())        
+       
+        # 🪄 FIX: Trova automaticamente il nome corretto della colonna distanza
+        dist_col = next((col for col in ['Distance', 'Distance (km)', 'distance', 'Distance '] if col in df_scatter_all.columns), None)
+        
+        if dist_col is None:
+            st.warning("⚠️ Impossibile trovare la colonna della distanza nel dataset. Verifica che si chiami 'Distance' o 'Distance (km)'.")
+        else:
+            # Assicuriamoci che sia numerica per evitare altri errori
+            df_scatter_all[dist_col] = pd.to_numeric(df_scatter_all[dist_col], errors='coerce')
+            
+            fig_scatter = go.Figure()
+            for ttype in TYPE_ORDER:
+                df_t = df_scatter_all[df_scatter_all['Type_group'] == ttype]
+                if df_t.empty:
+                    continue
+                fig_scatter.add_trace(go.Scatter(
+                    x=df_t['Year'], y=df_t[dist_col],
+                    mode='markers',
+                    name=ttype,
+                    marker=dict(size=5, color=TYPE_COLORS.get(ttype,'#888'),
+                                opacity=0.65, line=dict(width=0.3, color='white')),
+                    hovertemplate=(
+                        f'<b>{ttype}</b><br>'
+                        'Year: %{x}<br>'
+                        f'Distance: %{{y}} km<br>'
+                        '%{customdata}<extra></extra>'
+                    ),
+                    customdata=df_t['Origin'].astype(str) + ' → ' + df_t['Destination'].astype(str),
+                ))
+            fig_scatter.update_layout(
+                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                height=380, margin=dict(l=0, r=0, t=10, b=0),
+                legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center', font=dict(size=10)),
+                xaxis=dict(title='Year', showgrid=False, range=[anno_min, anno_max]),
+                yaxis=dict(title='Stage distance (km)', showgrid=True, gridcolor='#e8e4da'),
             )
-        st.plotly_chart(fig_scatter, use_container_width=True)
-
+            # Annotazione tappe epiche
+            epic = df_scatter_all[df_scatter_all[dist_col] > 450]
+            if not epic.empty:
+                top_epic = epic.nlargest(1, dist_col).iloc[0]
+                fig_scatter.add_annotation(
+                    x=top_epic['Year'], y=top_epic[dist_col],
+                    text=f"{top_epic['Origin']} → {top_epic['Destination']}<br>{top_epic[dist_col]:.0f} km",
+                    showarrow=True, arrowhead=2, arrowcolor='#888',
+                    font=dict(size=9, color='#1a1a1a', family='Arial'),
+                    bgcolor='rgba(255,204,0,0.85)', borderpad=4, ax=-60, ay=-20,
+                )
+            st.plotly_chart(fig_scatter, use_container_width=True)
     # ══════════════════════════════════════════════════════════
     # VISTA 2 — EDITION DETAILS (rinnovata, maglie preservate)
     # ══════════════════════════════════════════════════════════
@@ -3498,15 +3508,17 @@ elif st.session_state.pagina_corrente == "tappe":
 
                 # Icona maglia su ogni cambio di leader
                 prev = None
+                
+               # ── ICONE MAGLIA SU OGNI SINGOLO PALLINO ──
                 for _, row in df_leader.iterrows():
-                    if row[col_sel] != prev:
-                        fig_jersey.add_layout_image(dict(
-                            source=img_maglia, xref="x", yref="y",
-                            x=row['Stages'], y=row[col_sel],
-                            sizex=1.4, sizey=0.85,
-                            xanchor="center", yanchor="middle", layer="above"
-                        ))
-                        prev = row[col_sel]
+                    # Rimosso il controllo del resto (%), ora inserisce l'immagine per ogni riga
+                    fig_jersey.add_layout_image(dict(
+                        source=img_maglia, xref="x", yref="y",
+                        x=row['Stages'], y=row[col_sel],
+                        sizex=1.4, sizey=0.85, 
+                        xanchor="center", yanchor="middle", layer="above"
+                    ))
+                prev = row[col_sel]
 
                 fig_jersey.update_layout(
                     plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d',
