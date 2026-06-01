@@ -71,9 +71,6 @@ def load_all_datasets():
 # 3. CHIAMATA 
 df_storico, df_stage_h, df_tour_w, df_coords = load_all_datasets()
 
-# 1. Configurazione della pagina
-st.set_page_config(layout="wide", page_title="App Tour de France")
-
 # ==========================================
 # 2. GESTIONE DELLA NAVIGAZIONE (CORE LOGIC)
 # ==========================================
@@ -1702,10 +1699,11 @@ elif st.session_state.pagina_corrente == "corridori":
     """, unsafe_allow_html=True)
 
 # ----------------------------------------------------------
-    # 3. TAB NAVIGATION
-    # ----------------------------------------------------------
+# 3. TAB NAVIGATION
+# ----------------------------------------------------------
+    # 🪄 FIX STATO INIZIALE: Impostiamo a None (nessun tab attivo) alla prima apertura della pagina
     if "riders_tab" not in st.session_state:
-        st.session_state.riders_tab = "champions"
+        st.session_state.riders_tab = None
 
     col_t1, col_t2, col_t3, col_t4 = st.columns(4)
     with col_t1:
@@ -1728,25 +1726,57 @@ elif st.session_state.pagina_corrente == "corridori":
     st.markdown("<br>", unsafe_allow_html=True)
     hr = "<hr class='r-rule'>"
 
-    # ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
     # TAB 1 — THE CHAMPIONS
     # ══════════════════════════════════════════════════════════
     if st.session_state.riders_tab == "champions":
 
+        # Margini di respiro per i testi e i titoli
         st.markdown("""
-            <span class="r-section-label">· The Golden Age ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Age of Glory — When Champions Conquered the Tour
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:8px;">
-                Each dot is a Tour winner. Position on Y-axis = age at victory. Color = nation. Hover to explore.
-            </p>
+            <div style="padding: 0 2rem;">
+                <span class="r-section-label">· The Golden Age ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                    Age of Glory — When Champions Conquered the Tour
+                </h3>
+                <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
+                    Each dot is a Tour winner. Position on Y-axis = age at victory. Color = nation. Hover to explore.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         # ── BEESWARM: età vincitori per anno ──
         df_bee = df_w_clean.dropna(subset=['age']).copy()
+        
+        # Normalizzazione delle stringhe delle nazioni per evitare sdoppiamenti in legenda
+        df_bee['Country_clean'] = df_bee['Country_clean'].astype(str).str.strip().str.title()
+        df_bee['Country_clean'] = df_bee['Country_clean'].replace({
+            'United Kingdom': 'Great Britain',
+            'Great Britain': 'Great Britain',
+            'Usa': 'USA',
+            'United States': 'USA'
+        })
+
         df_bee['Winner_display'] = df_bee['Winner'].str.title()
         df_bee['rt_display'] = df_bee['rt_clean'].str.title()
+
+        # 🪄 FIX TAVOLOZZA: Un colore unico ed esclusivo per CIASCUNA nazione (niente più doppioni)
+        COLORI_NAZIONI_UNICI = {
+            'France': '#0055A4',         # Blu Reale
+            'Belgium': '#E5A93C',        # Oro Antico (staccato dal giallo brillante della Colombia)
+            'Italy': '#009246',          # Verde prato
+            'Spain': '#AA151B',          # Rosso scuro
+            'USA': '#7A1E44',            # Amaranto / Vinaccia (staccato dai rossi europei)
+            'Great Britain': '#4A90E2',  # Celeste / Carta da zucchero
+            'Luxembourg': '#44DBFF',     # Turchese acceso
+            'Denmark': '#C60C30',        # Rosso bandiera
+            'Slovenia': '#3F51B5',       # Indaco / Blu scuro
+            'Netherlands': '#FF6600',    # Arancione accesa
+            'Switzerland': '#E63946',    # Rosso corallo vibrante
+            'Colombia': '#FFD700',       # Giallo brillante ed esclusivo
+            'Australia': '#1B5E20',      # Verde foresta scuro (staccato dal verde Italia)
+            'Germany': '#1A1A1A',        # Nero grafite
+            'Ireland': '#81C784'         # Verde menta chiaro
+        }
 
         fig_bee = px.strip(
             df_bee, x='Year', y='age',
@@ -1754,7 +1784,7 @@ elif st.session_state.pagina_corrente == "corridori":
             hover_name='Winner_display',
             hover_data={'Country_clean': True, 'rt_display': True, 'age': True, 'Year': True},
             labels={'age': 'Age at Victory', 'Year': 'Edition', 'Country_clean': 'Nation', 'rt_display': 'Rider Type'},
-            color_discrete_map=COUNTRY_COLORS,
+            color_discrete_map=COLORI_NAZIONI_UNICI,
             stripmode='overlay'
         )
         fig_bee.update_traces(marker=dict(size=11, opacity=0.85, line=dict(width=1, color='rgba(0,0,0,0.3)')), jitter=0.3)
@@ -1766,6 +1796,7 @@ elif st.session_state.pagina_corrente == "corridori":
             mode='lines', line=dict(color='#1a1a1a', width=1.5, dash='dot'),
             name='Average age', hoverinfo='skip'
         )
+        
         # Annotazione Pogacar
         fig_bee.add_annotation(
             x=2020, y=21, text="Pogacar, 21<br>youngest modern winner",
@@ -1773,10 +1804,12 @@ elif st.session_state.pagina_corrente == "corridori":
             font=dict(size=10, color='#1a1a1a', family='Arial'),
             bgcolor='rgba(255,204,0,0.85)', borderpad=4, ax=60, ay=-30
         )
+        
         fig_bee.update_layout(
             plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
             font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=420, margin=dict(l=0, r=0, t=10, b=0),
+            height=420, 
+            margin=dict(l=40, r=40, t=10, b=0),
             legend=dict(
                 title='Nation', orientation='v', x=1.01, y=1,
                 font=dict(size=10), bgcolor='rgba(244,241,234,0.9)',
@@ -1785,93 +1818,202 @@ elif st.session_state.pagina_corrente == "corridori":
             xaxis=dict(title='Edition', showgrid=False, tickfont=dict(size=10)),
             yaxis=dict(title='Age', showgrid=True, gridcolor='#e8e4da', gridwidth=1),
         )
+
+        # Margini esterni per incapsulare il grafico
+        st.markdown('<div style="padding: 0 2rem;">', unsafe_allow_html=True)
         st.plotly_chart(fig_bee, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown(hr, unsafe_allow_html=True)
 
-        # ── BUMP CHART: dominanza nazioni per decade ──
+       # ── BUMP CHART: dominanza nazioni per decade ──
+        # ---> AGGIUNTA MARGINI: Blocco di respiro per i testi e i titoli <---
         st.markdown("""
-            <span class="r-section-label">· National Dynasties ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                The Rise & Fall of Nations — A Century of Dominance
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:8px;">
-                Victories per decade for the top 8 nations. Hover each line to track the shift of power.
-            </p>
+            <div style="padding: 0 2rem;">
+                <span class="r-section-label">· National Dynasties ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                    The Rise & Fall of Nations — A Century of Dominance
+                </h3>
+                <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:8px;">
+                    Victories per decade for the top 8 nations. Hover each line to track the shift of power.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         TOP_NATIONS = ['France', 'Belgium', 'Spain', 'Italy', 'USA', 'United Kingdom', 'Luxembourg', 'Denmark']
-        df_bump = df_w_clean[df_w_clean['Country_clean'].isin(TOP_NATIONS)].groupby(['decade', 'Country_clean']).size().reset_index(name='wins')
+        
+        # Allineiamo i nomi del dataset per far combaciare perfettamente le chiavi colore
+        df_w_clean['Country_bump'] = df_w_clean['Country_clean'].astype(str).str.strip().str.title()
+        df_w_clean['Country_bump'] = df_w_clean['Country_bump'].replace({
+            'United Kingdom': 'Great Britain',
+            'Great Britain': 'Great Britain',
+            'Usa': 'USA',
+            'United States': 'USA'
+        })
+        
+        # Ri-mappiamo TOP_NATIONS per coerenza con le stringhe normalizzate
+        TOP_NATIONS_NORM = ['France', 'Belgium', 'Spain', 'Italy', 'USA', 'Great Britain', 'Luxembourg', 'Denmark']
+
+        df_bump = df_w_clean[df_w_clean['Country_bump'].isin(TOP_NATIONS_NORM)].groupby(['decade', 'Country_bump']).size().reset_index(name='wins')
+
+        # Tavolozza coerente identica al grafico superiore
+        COLORI_BUMP_COERENTI = {
+            'France': '#0055A4',         # Blu Reale
+            'Belgium': '#E5A93C',        # Oro Antico
+            'Italy': '#009246',          # Verde prato
+            'Spain': '#AA151B',          # Rosso scuro
+            'USA': '#7A1E44',            # Amaranto / Vinaccia
+            'Great Britain': '#4A90E2',  # Celeste (ex United Kingdom)
+            'Luxembourg': '#44DBFF',     # Turchese acceso
+            'Denmark': '#C60C30'         # Rosso bandiera
+        }
 
         fig_bump = go.Figure()
-        for nation in TOP_NATIONS:
-            df_n = df_bump[df_bump['Country_clean'] == nation].sort_values('decade')
+        for nation in TOP_NATIONS_NORM:
+            df_n = df_bump[df_bump['Country_bump'] == nation].sort_values('decade')
             if df_n.empty:
                 continue
-            color = COUNTRY_COLORS.get(nation, '#888')
+            color = COLORI_BUMP_COERENTI.get(nation, '#888')
+            
+            # Label corretta per la legenda
+            legend_name = "Great Britain" if nation == "Great Britain" else nation
+            
             fig_bump.add_trace(go.Scatter(
                 x=df_n['decade'], y=df_n['wins'],
                 mode='lines+markers+text',
-                name=nation,
+                name=legend_name,
                 line=dict(color=color, width=2.5),
                 marker=dict(size=8, color=color, line=dict(width=1.5, color='white')),
                 text=df_n['wins'].astype(str),
                 textposition='top center',
                 textfont=dict(size=9, color=color),
-                hovertemplate=f'<b>{nation}</b><br>Decade: %{{x}}s<br>Victories: %{{y}}<extra></extra>'
+                hovertemplate=f'<b>{legend_name}</b><br>Decade: %{{x}}s<br>Victories: %{{y}}<extra></extra>'
             ))
+            
         fig_bump.update_layout(
             plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
             font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=400, margin=dict(l=0, r=0, t=10, b=0),
+            height=400, 
+            # Margini interni del grafico coordinati
+            margin=dict(l=40, r=40, t=10, b=0),
             legend=dict(orientation='h', y=-0.15, x=0.5, xanchor='center', font=dict(size=10)),
             xaxis=dict(title='Decade', tickvals=list(range(1900, 2030, 10)),
                        ticktext=[f"{d}s" for d in range(1900, 2030, 10)],
                        showgrid=False),
             yaxis=dict(title='Victories', showgrid=True, gridcolor='#e8e4da'),
         )
-        # Annotazioni ere storiche
-        for x0, x1, label in [(1914, 1918, 'WWI'), (1939, 1947, 'WWII')]:
-            fig_bump.add_vrect(x0=x0, x1=x1, fillcolor='#888', opacity=0.12, line_width=0,
-                               annotation_text=label, annotation_position='inside top',
-                               annotation_font=dict(size=9, color='#666'))
+        
+       # Annotazioni ere storiche (WWI, WWII) + Era Doping allineate sul pavimento dell'asse X
+        for x0, x1, label in [(1914, 1918, 'WWI'), (1939, 1947, 'WWII'), (1995, 2005, 'Doping Era (1999-2005)')]:
+            is_doping = 'Doping' in label
+            
+            # Disegniamo la banda verticale colorata di sfondo
+            fig_bump.add_vrect(
+                x0=x0, x1=x1, 
+                fillcolor='#cc0000' if is_doping else '#888', 
+                opacity=0.07 if is_doping else 0.12, 
+                line_width=0
+            )
+            
+            # Colore e peso del font differenziati per l'era del doping
+            testo_colore = '#cc0000' if is_doping else '#666'
+            testo_peso = 'bold' if is_doping else 'normal'
+            
+            # Inseriamo il testo ancorato sul fondo del grafico (quota 0 dell'asse Y)
+            fig_bump.add_annotation(
+                x=(x0 + x1) / 2, y=0,         # Centrato nella banda, ancorato a quota 0 sull'asse Y (il pavimento)
+                xref="x", yref="y",           # Usiamo il riferimento reale dell'asse Y per evitare sovrapposizioni
+                text=label,
+                showarrow=False,
+                xanchor="center",
+                yanchor="bottom",             # Appoggia la base del testo sopra la linea dello 0
+                yshift=4,                     # Distanza di sicurezza dalla linea dell'asse X
+                font=dict(size=9, color=testo_colore, weight=testo_peso, family='Arial'),
+                bgcolor='#F4F1EA',            # Maschera le linee piatte di nazioni a zero vittorie
+                borderpad=2
+            )
+            
+        # Margini esterni per incapsulare il grafico
+        st.markdown('<div style="padding: 0 2rem;">', unsafe_allow_html=True)
         st.plotly_chart(fig_bump, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown(hr, unsafe_allow_html=True)
-
-        # ── RIDER TYPE HEATMAP per decade ──
+        
+      # ── RIDER TYPE HEATMAP per decade ──
+        # ---> AGGIUNTA MARGINI: Blocco di respiro per i testi e i titoli <---
         st.markdown("""
-            <span class="r-section-label">· Tactical Evolution ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Who Wins the Tour? — The Rider Type Revolution
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:8px;">
-                Heatmap of winning rider types per decade. From the early sprinters to the modern pure climbers.
-            </p>
+            <div style="padding: 0 2rem;">
+                <span class="r-section-label">· Tactical Evolution ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                    Who Wins the Tour? - The Rider Type Revolution
+                </h3>
+                <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:8px;">
+                    Heatmap of winning rider types per decade. From the early sprinters to the modern pure climbers.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         df_heat = df_w_clean.groupby(['decade', 'rt_clean']).size().reset_index(name='count')
+        
+        # 🪄 FIX 1: Ordiniamo esplicitamente le decadi in modo incrementale dal 1910 al 2020
+        df_heat = df_heat.sort_values('decade')
         df_heat_pivot = df_heat.pivot(index='rt_clean', columns='decade', values='count').fillna(0)
 
-        fig_heat = go.Figure(data=go.Heatmap(
-            z=df_heat_pivot.values,
-            x=[f"{int(c)}s" for c in df_heat_pivot.columns],
-            y=[t.title() for t in df_heat_pivot.index],
-            colorscale=[[0, '#F4F1EA'], [0.01, '#FFF3CD'], [0.4, '#FFCC00'], [0.7, '#FF8C00'], [1, '#1a1a1a']],
-            text=df_heat_pivot.values.astype(int),
-            texttemplate='%{text}',
-            textfont=dict(size=13, family='Merriweather, serif'),
-            hovertemplate='<b>%{y}</b><br>%{x}<br>Victories: %{z}<extra></extra>',
-            showscale=False,
-        ))
+        # Forziamo l'ordine corretto delle righe (Rider Type) sulle ordinate
+        ordine_fissato = ['Climber', 'Sprinter', 'Time Trial']
+        df_heat_pivot = df_heat_pivot.reindex([r for r in ordine_fissato if r in df_heat_pivot.index])
+
+        # Prepariamo le etichette pulite per gli assi
+        x_labels = [f"{int(c)}s" for c in df_heat_pivot.columns]
+        y_labels = [str(t).title() for t in df_heat_pivot.index]
+        z_values = df_heat_pivot.values.astype(int).tolist()
+
+        # 🪄 FIX COLORI FISSI SULLA GRIGLIA: Mappa categorica bloccata
+        # Ogni riga si aggancia alla sua sfumatura fissa: Climber=Rosso, Sprinter=Verde, Time Trial=Blu
+        scala_colori_fissi = [
+            [0.0, '#F4F1EA'],    # Valore 0: colore neutro del fondo dell'app
+            [0.1, '#FFCDD2'],    # Climber (Fascia bassa): Rosso Pois leggero
+            [0.3, '#E53935'],    # Climber: Rosso Pois solido
+            [0.4, '#C8E6C9'],    # Sprinter (Fascia media): Verde leggero
+            [0.6, '#2E7D32'],    # Sprinter: Verde Maglia Punti solido
+            [0.7, '#C5CAE9'],    # Time Trial (Fascia alta): Blu leggero
+            [1.0, '#1A237E']     # Time Trial: Blu Crono solido
+        ]
+
+        # Creiamo la griglia originale con i numeri dentro usando lo strumento nativo di Plotly
+        import plotly.figure_factory as ff
+        fig_heat = ff.create_annotated_heatmap(
+            z=z_values,
+            x=x_labels,
+            y=y_labels,
+            colorscale=scala_colori_fissi,
+            showscale=False
+        )
+
+        # Configurazione del testo dentro i quadrati e dei margini
+        fig_heat.update_traces(
+            textfont=dict(size=13, family='Merriweather, serif', color='#1A1A1A'),
+            hovertemplate='<b>% {y}</b><br>% {x}<br>Victories: % {z}<extra></extra>'
+        )
+
         fig_heat.update_layout(
             plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
             font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=220, margin=dict(l=0, r=0, t=10, b=0),
-            xaxis=dict(side='bottom', tickfont=dict(size=10)),
-            yaxis=dict(tickfont=dict(size=11)),
+            height=240, 
+            # 🪄 FIX MARGINI INTERNI: Allineamento orizzontale coerente della griglia
+            margin=dict(l=40, r=40, t=20, b=0),
+            xaxis=dict(side='bottom', tickfont=dict(size=10), showgrid=False, zeroline=False),
+            yaxis=dict(tickfont=dict(size=11), showgrid=False, zeroline=False),
         )
+        
+        # ---> AGGIUNTA MARGINI ESTERNI: Contenitore con padding laterale per il grafico <---
+        st.markdown('<div style="padding: 0 2rem;">', unsafe_allow_html=True)
         st.plotly_chart(fig_heat, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown(hr, unsafe_allow_html=True)
+        
 
 
     # ══════════════════════════════════════════════════════════
