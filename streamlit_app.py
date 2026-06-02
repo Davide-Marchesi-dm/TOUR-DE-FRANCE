@@ -8,6 +8,7 @@ from geopy.extra.rate_limiter import RateLimiter
 import time
 import pydeck as pdk
 import streamlit.components.v1 as components
+import numpy as np
 
 
 # 1. Configurazione della pagina
@@ -1719,7 +1720,7 @@ elif st.session_state.pagina_corrente == "corridori":
             st.session_state.riders_tab = "h2h"
             st.rerun()
     with col_t4:
-        if st.button("🌍  NATIONS", use_container_width=True, type="primary" if st.session_state.riders_tab == "nations" else "secondary"):
+        if st.button("🌍  GEOGRAPHY", use_container_width=True, type="primary" if st.session_state.riders_tab == "nations" else "secondary"):
             st.session_state.riders_tab = "nations"
             st.rerun()
 
@@ -1941,12 +1942,11 @@ elif st.session_state.pagina_corrente == "corridori":
         st.markdown(hr, unsafe_allow_html=True)
         
       # ── RIDER TYPE HEATMAP per decade ──
-        # ---> AGGIUNTA MARGINI: Blocco di respiro per i testi e i titoli <---
         st.markdown("""
             <div style="padding: 0 2rem;">
                 <span class="r-section-label">· Tactical Evolution ·</span>
                 <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                    Who Wins the Tour? - The Rider Type Revolution
+                    Who Wins the Tour? — The Rider Type Revolution
                 </h3>
                 <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:8px;">
                     Heatmap of winning rider types per decade. From the early sprinters to the modern pure climbers.
@@ -1955,65 +1955,255 @@ elif st.session_state.pagina_corrente == "corridori":
         """, unsafe_allow_html=True)
 
         df_heat = df_w_clean.groupby(['decade', 'rt_clean']).size().reset_index(name='count')
-        
-        # 🪄 FIX 1: Ordiniamo esplicitamente le decadi in modo incrementale dal 1910 al 2020
         df_heat = df_heat.sort_values('decade')
         df_heat_pivot = df_heat.pivot(index='rt_clean', columns='decade', values='count').fillna(0)
 
-        # Forziamo l'ordine corretto delle righe (Rider Type) sulle ordinate
+        # Normalizza a Title Case
+        df_heat_pivot.index = df_heat_pivot.index.str.strip().str.title()
+
         ordine_fissato = ['Climber', 'Sprinter', 'Time Trial']
-        df_heat_pivot = df_heat_pivot.reindex([r for r in ordine_fissato if r in df_heat_pivot.index])
+        righe_presenti = [r for r in ordine_fissato if r in df_heat_pivot.index]
+        righe_extra = [r for r in df_heat_pivot.index if r not in ordine_fissato]
+        df_heat_pivot = df_heat_pivot.reindex(righe_presenti + righe_extra)
 
-        # Prepariamo le etichette pulite per gli assi
-        x_labels = [f"{int(c)}s" for c in df_heat_pivot.columns]
-        y_labels = [str(t).title() for t in df_heat_pivot.index]
-        z_values = df_heat_pivot.values.astype(int).tolist()
+        if df_heat_pivot.empty or df_heat_pivot.values.size == 0:
+            st.warning("Nessun dato disponibile per la heatmap dei rider type.")
+        else:
+            RIDER_COLORS_HEX = {
+                'climber':     (198, 40,  40),   # rosso
+                'sprinter':    (46,  125, 50),   # verde
+                'time trial':  (21,  101, 192),  # blu
+                'all rounder': (106, 27,  154),  # viola
+            }
+            DEFAULT_RGB = (84, 110, 122)
 
-        # 🪄 FIX COLORI FISSI SULLA GRIGLIA: Mappa categorica bloccata
-        # Ogni riga si aggancia alla sua sfumatura fissa: Climber=Rosso, Sprinter=Verde, Time Trial=Blu
-        scala_colori_fissi = [
-            [0.0, '#F4F1EA'],    # Valore 0: colore neutro del fondo dell'app
-            [0.1, '#FFCDD2'],    # Climber (Fascia bassa): Rosso Pois leggero
-            [0.3, '#E53935'],    # Climber: Rosso Pois solido
-            [0.4, '#C8E6C9'],    # Sprinter (Fascia media): Verde leggero
-            [0.6, '#2E7D32'],    # Sprinter: Verde Maglia Punti solido
-            [0.7, '#C5CAE9'],    # Time Trial (Fascia alta): Blu leggero
-            [1.0, '#1A237E']     # Time Trial: Blu Crono solido
-        ]
+            def get_rider_rgb(rider_type: str):
+                key = rider_type.lower().strip()
+                for k, v in RIDER_COLORS_HEX.items():
+                    if k in key:
+                        return v
+                return DEFAULT_RGB
 
-        # Creiamo la griglia originale con i numeri dentro usando lo strumento nativo di Plotly
-        import plotly.figure_factory as ff
-        fig_heat = ff.create_annotated_heatmap(
-            z=z_values,
-            x=x_labels,
-            y=y_labels,
-            colorscale=scala_colori_fissi,
-            showscale=False
-        )
+            max_val = df_heat_pivot.values.max() or 1
 
-        # Configurazione del testo dentro i quadrati e dei margini
-        fig_heat.update_traces(
-            textfont=dict(size=13, family='Merriweather, serif', color='#1A1A1A'),
-            hovertemplate='<b>% {y}</b><br>% {x}<br>Victories: % {z}<extra></extra>'
-        )
+            # ── Costruiamo matrici di colori e testi ──
+            color_matrix = []   # ogni cella: colore rgba stringa
+            text_matrix  = []
+            z_matrix     = []   # valori numerici per hover
 
-        fig_heat.update_layout(
-            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=240, 
-            # 🪄 FIX MARGINI INTERNI: Allineamento orizzontale coerente della griglia
-            margin=dict(l=40, r=40, t=20, b=0),
-            xaxis=dict(side='bottom', tickfont=dict(size=10), showgrid=False, zeroline=False),
-            yaxis=dict(tickfont=dict(size=11), showgrid=False, zeroline=False),
-        )
-        
-        # ---> AGGIUNTA MARGINI ESTERNI: Contenitore con padding laterale per il grafico <---
-        st.markdown('<div style="padding: 0 2rem;">', unsafe_allow_html=True)
-        st.plotly_chart(fig_heat, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+            riders = list(df_heat_pivot.index)
+            decades = list(df_heat_pivot.columns)
 
-        st.markdown(hr, unsafe_allow_html=True)
-        
+            for rider in riders:
+                rgb = get_rider_rgb(rider)
+                row_colors = []
+                row_text   = []
+                row_z      = []
+                for decade in decades:
+                    v = df_heat_pivot.loc[rider, decade]
+                    if v == 0:
+                        row_colors.append('rgba(244,241,234,1)')  # beige neutro
+                    else:
+                        alpha = 0.20 + 0.80 * (v / max_val)
+                        row_colors.append(f'rgba({rgb[0]},{rgb[1]},{rgb[2]},{alpha:.2f})')
+                    row_text.append(str(int(v)) if v > 0 else '0')
+                    row_z.append(int(v))
+                color_matrix.append(row_colors)
+                text_matrix.append(row_text)
+                z_matrix.append(row_z)
+
+            # ── Usiamo go.Figure con shapes + annotations invece di Heatmap ──
+            # per avere controllo totale sui colori cella per cella
+            fig_heat = go.Figure()
+
+            n_rows = len(riders)
+            n_cols = len(decades)
+            cell_h = 1.0 / n_rows  # altezza normalizzata per cella
+
+            decade_labels = [f"{int(d)}s" for d in decades]
+
+            for ri, rider in enumerate(riders):
+                rgb = get_rider_rgb(rider)
+                for ci, decade in enumerate(decades):
+                    v = df_heat_pivot.loc[rider, decade]
+                    if v == 0:
+                        fill = 'rgba(244,241,234,1)'
+                    else:
+                        alpha = 0.20 + 0.80 * (v / max_val)
+                        fill = f'rgba({rgb[0]},{rgb[1]},{rgb[2]},{alpha:.2f})'
+
+                    # Shape per la cella
+                    fig_heat.add_shape(
+                        type='rect',
+                        x0=ci - 0.5, x1=ci + 0.5,
+                        y0=ri - 0.5, y1=ri + 0.5,
+                        fillcolor=fill,
+                        line=dict(color='#F4F1EA', width=2),
+                    )
+                    # Testo dentro la cella
+                    fig_heat.add_annotation(
+                        x=ci, y=ri,
+                        text=str(int(v)),
+                        showarrow=False,
+                        font=dict(size=13, family='Merriweather, serif', color='#1a1a1a'),
+                        xref='x', yref='y',
+                    )
+
+            # Asse X: decadi
+            fig_heat.update_xaxes(
+                tickmode='array',
+                tickvals=list(range(n_cols)),
+                ticktext=decade_labels,
+                side='bottom',
+                tickfont=dict(size=10, family='Merriweather, serif'),
+                showgrid=False, zeroline=False,
+                range=[-0.5, n_cols - 0.5],
+            )
+
+            # Asse Y: rider con colore
+            def rider_color_hex(rider):
+                rgb = get_rider_rgb(rider)
+                return '#{:02x}{:02x}{:02x}'.format(*rgb)
+
+            fig_heat.update_yaxes(
+                tickmode='array',
+                tickvals=list(range(n_rows)),
+                ticktext=[
+                    f'<span style="color:{rider_color_hex(r)};font-weight:bold">{r}</span>'
+                    for r in riders
+                ],
+                tickfont=dict(size=11, family='Merriweather, serif'),
+                showgrid=False, zeroline=False,
+                range=[-0.5, n_rows - 0.5],
+            )
+
+            fig_heat.update_layout(
+                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+                height=220,
+                margin=dict(l=90, r=40, t=10, b=30),
+            )
+
+            st.markdown('<div style="padding: 0 2rem;">', unsafe_allow_html=True)
+            st.plotly_chart(fig_heat, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # ── RIDER TYPE EXPLAINER CARDS ──
+            rider_cards_html = """
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:0 2rem 1.5rem;font-family:'Merriweather',Georgia,serif;">
+
+            <!-- CLIMBER -->
+            <div style="background:#fff8f8;border:1.5px solid #C62828;border-radius:10px;padding:14px 16px;cursor:pointer;"
+                onclick="toggleCard(this,'climber')">
+                <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:11px;height:11px;border-radius:50%;background:#C62828;flex-shrink:0"></div>
+                <div style="flex:1">
+                    <p style="margin:0;font-size:14px;font-weight:700;color:#C62828;">Climber</p>
+                    <p style="margin:2px 0 0;font-size:11px;color:#666;font-style:italic;line-height:1.4;">Light, powerful, relentless uphill</p>
+                </div>
+                <span id="chev-climber" style="font-size:13px;color:#999;transition:transform 0.2s;display:inline-block;">▼</span>
+                </div>
+                <div id="body-climber" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;">
+                <div style="border-top:1px solid #f5c6c6;margin-top:10px;padding-top:10px;">
+                    <p style="margin:0;font-size:12px;color:#444;line-height:1.7;">
+                    A climber excels due to an exceptional power-to-weight ratio — high watts per kilogram of body mass,
+                    typically under 65 kg. They dominate Alpine and Pyrenean stages where gravity penalises every extra gram,
+                    and are the primary GC contenders on summit finishes. Their relative weakness is flat terrain and time trials.
+                    </p>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+                    <span style="background:#FFEBEE;color:#C62828;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">Low body weight</span>
+                    <span style="background:#FFEBEE;color:#C62828;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">High W/kg</span>
+                    <span style="background:#FFEBEE;color:#C62828;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">GC contender</span>
+                    </div>
+                    <p style="font-size:10px;color:#999;margin:10px 0 2px;text-transform:uppercase;letter-spacing:0.05em;">Iconic riders</p>
+                    <p style="font-size:12px;color:#1a1a1a;font-weight:600;margin:0;">Pantani · Gaul · Pogačar · Sastre</p>
+                </div>
+                </div>
+            </div>
+
+            <!-- SPRINTER -->
+            <div style="background:#f6faf6;border:1.5px solid #2E7D32;border-radius:10px;padding:14px 16px;cursor:pointer;"
+                onclick="toggleCard(this,'sprinter')">
+                <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:11px;height:11px;border-radius:50%;background:#2E7D32;flex-shrink:0"></div>
+                <div style="flex:1">
+                    <p style="margin:0;font-size:14px;font-weight:700;color:#2E7D32;">Sprinter</p>
+                    <p style="margin:2px 0 0;font-size:11px;color:#666;font-style:italic;line-height:1.4;">Explosive speed in the final 200 metres</p>
+                </div>
+                <span id="chev-sprinter" style="font-size:13px;color:#999;transition:transform 0.2s;display:inline-block;">▼</span>
+                </div>
+                <div id="body-sprinter" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;">
+                <div style="border-top:1px solid #c8e6c9;margin-top:10px;padding-top:10px;">
+                    <p style="margin:0;font-size:12px;color:#444;line-height:1.7;">
+                    A sprinter produces a massive surge of power — often over 1,500 watts — for a short window at the end
+                    of a flat stage. Heavier and more muscular than climbers, with fast-twitch fibres built for explosive output.
+                    They survive mountain stages by staying sheltered in the peloton, then unleash their acceleration in the
+                    chaotic final sprint for stage glory.
+                    </p>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+                    <span style="background:#E8F5E9;color:#2E7D32;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">Explosive power</span>
+                    <span style="background:#E8F5E9;color:#2E7D32;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">Fast-twitch muscles</span>
+                    <span style="background:#E8F5E9;color:#2E7D32;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">Green jersey</span>
+                    </div>
+                    <p style="font-size:10px;color:#999;margin:10px 0 2px;text-transform:uppercase;letter-spacing:0.05em;">Iconic riders</p>
+                    <p style="font-size:12px;color:#1a1a1a;font-weight:600;margin:0;">Cavendish · Cipollini · Greipel · Kittel</p>
+                </div>
+                </div>
+            </div>
+
+            <!-- TIME TRIALIST -->
+            <div style="background:#f5f8ff;border:1.5px solid #1565C0;border-radius:10px;padding:14px 16px;cursor:pointer;"
+                onclick="toggleCard(this,'tt')">
+                <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:11px;height:11px;border-radius:50%;background:#1565C0;flex-shrink:0"></div>
+                <div style="flex:1">
+                    <p style="margin:0;font-size:14px;font-weight:700;color:#1565C0;">Time trialist</p>
+                    <p style="margin:2px 0 0;font-size:11px;color:#666;font-style:italic;line-height:1.4;">Alone against the clock</p>
+                </div>
+                <span id="chev-tt" style="font-size:13px;color:#999;transition:transform 0.2s;display:inline-block;">▼</span>
+                </div>
+                <div id="body-tt" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;">
+                <div style="border-top:1px solid #bbdefb;margin-top:10px;padding-top:10px;">
+                    <p style="margin:0;font-size:12px;color:#444;line-height:1.7;">
+                    A time trialist excels when each rider races alone against the clock — no drafting, no tactics, pure effort.
+                    They have very high sustained power output (FTP) and an aerodynamic position on the bike. Larger and more
+                    powerful than climbers, they can swing the GC by minutes on flat TT stages. The most complete GC champions
+                    often combine this with climbing ability.
+                    </p>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+                    <span style="background:#E3F2FD;color:#1565C0;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">High sustained power</span>
+                    <span style="background:#E3F2FD;color:#1565C0;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">Aerodynamic</span>
+                    <span style="background:#E3F2FD;color:#1565C0;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">GC time gains</span>
+                    </div>
+                    <p style="font-size:10px;color:#999;margin:10px 0 2px;text-transform:uppercase;letter-spacing:0.05em;">Iconic riders</p>
+                    <p style="font-size:12px;color:#1a1a1a;font-weight:600;margin:0;">Induráin · Cancellara · Froome · Ullrich</p>
+                </div>
+                </div>
+            </div>
+
+            </div>
+
+            <script>
+            function toggleCard(card, id) {
+            var body = document.getElementById('body-' + id);
+            var chev = document.getElementById('chev-' + id);
+            var isOpen = body.style.maxHeight && body.style.maxHeight !== '0px';
+            var allIds = ['climber','sprinter','tt'];
+            allIds.forEach(function(i) {
+                document.getElementById('body-' + i).style.maxHeight = '0px';
+                document.getElementById('chev-' + i).style.transform = 'rotate(0deg)';
+            });
+            if (!isOpen) {
+                body.style.maxHeight = '400px';
+                chev.style.transform = 'rotate(180deg)';
+            }
+            }
+            </script>
+            """
+
+            st.components.v1.html(rider_cards_html, height=130, scrolling=False)
+
+        st.markdown(hr, unsafe_allow_html=True) 
 
 
     # ══════════════════════════════════════════════════════════
@@ -2044,84 +2234,18 @@ elif st.session_state.pagina_corrente == "corridori":
         riders_sel = [rider_main] + riders_extra
         PALETTE = ['#FFCC00', '#FF6B6B', '#4ECDC4']
 
-        # ── CAREER ARC normalizzato ──
-        st.markdown(hr, unsafe_allow_html=True)
-        st.markdown(f"""
-            <span class="r-section-label">· Normalized Career Arc ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Final GC Rank — Tour #1, #2, #3... (Career-Normalized)
-            </h4>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
-                X-axis = participation number in career, not the calendar year. Allows true peer comparison.
-            </p>
-        """, unsafe_allow_html=True)
-
-        fig_arc = go.Figure()
-        for i, rider in enumerate(riders_sel):
-            df_rd = df_r_norm[df_r_norm['Rider'] == rider].dropna(subset=['Rank_Num']).sort_values('anno_carriera')
-            if df_rd.empty:
-                continue
-            color = PALETTE[i]
-            fig_arc.add_trace(go.Scatter(
-                x=df_rd['anno_carriera'],
-                y=df_rd['Rank_Num'],
-                mode='lines+markers',
-                name=rider.title(),
-                line=dict(color=color, width=3),
-                marker=dict(size=10, color=color, line=dict(width=2, color='white')),
-                hovertemplate=(
-                    f'<b>{rider.title()}</b><br>'
-                    'Tour #%{x} of career<br>'
-                    'GC Rank: #%{y}<br>'
-                    '<extra></extra>'
-                ),
-                customdata=df_rd[['Year', 'Team']].values,
-            ))
-            # Annotazione anno reale sui punti
-            for _, row in df_rd.iterrows():
-                fig_arc.add_annotation(
-                    x=row['anno_carriera'], y=row['Rank_Num'],
-                    text=str(int(row['Year'])),
-                    showarrow=False,
-                    font=dict(size=8, color=color, family='Arial'),
-                    yshift=14, xshift=0,
-                )
-
-        fig_arc.update_layout(
-            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=420, margin=dict(l=0, r=0, t=10, b=0),
-            legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center', font=dict(size=11)),
-            xaxis=dict(
-                title='Tour participation in career',
-                tickmode='linear', dtick=1,
-                tickvals=list(range(1, 17)),
-                ticktext=[f'Tour #{n}' for n in range(1, 17)],
-                showgrid=False, tickfont=dict(size=9),
-            ),
-            yaxis=dict(
-                title='GC Final Rank', autorange='reversed',
-                showgrid=True, gridcolor='#e8e4da',
-                tickmode='linear', dtick=5,
-            ),
-        )
-        # Fascia top-10
-        fig_arc.add_hrect(y0=1, y1=10, fillcolor='rgba(255,204,0,0.06)',
-                          line_width=0, annotation_text='Top 10 zone',
-                          annotation_position='right', annotation_font=dict(size=9, color='#aaa'))
-        st.plotly_chart(fig_arc, use_container_width=True)
-
-        st.markdown(hr, unsafe_allow_html=True)
-
-        # ── PHYSICAL OUTLIER STRIP (solo per vincitori) ──
+    
+        # ── PHYSICAL OUTLIER STRIP (Confronto Multiplo Vincitori) ──
         st.markdown("""
-            <span class="r-section-label">· Physical Profile ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Physical Outlier Detector — Is This Champion Atypical?
-            </h4>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
-                Distribution of all Tour winners (grey). Red dot = selected rider. Only available for GC winners.
-            </p>
+            <div style="padding: 0 16px;">
+                <span class="r-section-label">· Physical Profile ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                    Physical Outlier Detector - Are These Champions Atypical?
+                </h4>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
+                    Distribution of all Tour winners (grey). Colored markers = selected riders. Only available for GC winners.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         PHYSICAL_COLS = {
@@ -2132,61 +2256,78 @@ elif st.session_state.pagina_corrente == "corridori":
 
         df_phys = df_w_clean.dropna(subset=['age', 'BMI', 'weight_(Kg)'])
 
-        # Cerca se il rider principale è un vincitore
-        rider_main_norm = rider_main.title().lower()
-        winner_match = df_phys[df_phys['Winner'].str.lower().str.strip() == rider_main_norm.strip()]
-        if winner_match.empty:
-            # Prova parziale
-            winner_match = df_phys[df_phys['Winner'].str.lower().str.contains(rider_main.split()[0].lower())]
-
         fig_strips = go.Figure()
         metrics_list = list(PHYSICAL_COLS.items())
         y_positions = [3, 2, 1]
 
+        # Liste per tenere traccia di chi ha i dati e chi no
+        not_winners = []
+        winners_found = []
+
+        # Primo ciclo di controllo sui rider selezionati
+        for rider in riders_sel:
+            rider_norm = rider.title().lower().strip()
+            winner_match = df_phys[df_phys['Winner'].str.lower().str.strip() == rider_norm]
+            
+            if winner_match.empty:
+                # Tentativo con ricerca parziale
+                winner_match = df_phys[df_phys['Winner'].str.lower().str.contains(rider.split()[0].lower())]
+            
+            if winner_match.empty:
+                not_winners.append(rider.title())
+            else:
+                winners_found.append((rider.title(), winner_match.iloc[0]))
+
+        # Disegno lo sfondo e i punti dei vincitori validi
         for idx, (col, (label, unit)) in enumerate(metrics_list):
             y_val = y_positions[idx]
             vals = df_phys[col].dropna()
 
             # Jitter per i punti di sfondo
-            import numpy as np
             jitter = np.random.uniform(-0.18, 0.18, size=len(vals))
 
+            # Background (tutti i vincitori storici)
             fig_strips.add_trace(go.Scatter(
                 x=vals, y=[y_val + j for j in jitter],
                 mode='markers',
-                marker=dict(size=7, color='#c8bfad', opacity=0.6,
+                marker=dict(size=7, color='#c8bfad', opacity=0.4,
                             line=dict(width=0.5, color='#888')),
                 showlegend=False,
                 hovertemplate=f'<b>{label}</b>: %{{x}} {unit}<extra></extra>',
                 name=label,
             ))
 
-            # Mediana
+            # Mediana storica
             median_val = vals.median()
             fig_strips.add_shape(type='line',
                 x0=median_val, x1=median_val,
                 y0=y_val - 0.25, y1=y_val + 0.25,
                 line=dict(color='#888', width=2, dash='dot'))
 
-            # Punto del rider selezionato
-            if not winner_match.empty and pd.notna(winner_match[col].values[0]):
-                rider_val = winner_match[col].values[0]
-                fig_strips.add_trace(go.Scatter(
-                    x=[rider_val], y=[y_val],
-                    mode='markers+text',
-                    marker=dict(size=16, color='#FFCC00',
-                                line=dict(width=2, color='#1a1a1a'), symbol='diamond'),
-                    text=[f'{rider_val:.1f}'], textposition='top center',
-                    textfont=dict(size=10, color='#1a1a1a'),
-                    showlegend=False,
-                    hovertemplate=f'<b>{rider_main.title()}</b><br>{label}: {rider_val:.1f} {unit}<extra></extra>',
-                    name=f'{rider_main.title()} — {label}',
-                ))
+            # Aggiungo i punti colorati per ciascun rider selezionato che ha vinto il Tour
+            for i, (rider_title, row_data) in enumerate(winners_found):
+                if pd.notna(row_data[col]):
+                    rider_val = row_data[col]
+                    
+                    # Usiamo la PALETTE globale per differenziare i ciclisti selezionati
+                    rider_color = PALETTE[i % len(PALETTE)]
+                    
+                    fig_strips.add_trace(go.Scatter(
+                        x=[rider_val], y=[y_val],
+                        mode='markers+text',
+                        marker=dict(size=14, color=rider_color,
+                                    line=dict(width=1.5, color='#1a1a1a'), symbol='diamond'),
+                        text=[f'{rider_val:.1f}'], textposition='top center',
+                        textfont=dict(size=9, color='#1a1a1a', family='Arial'),
+                        showlegend=(idx == 0), # Mostra in legenda solo al primo ciclo per non duplicare
+                        name=rider_title,
+                        hovertemplate=f'<b>{rider_title}</b><br>{label}: {rider_val:.1f} {unit}<extra></extra>',
+                    ))
 
         fig_strips.update_layout(
             plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
             font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=300, margin=dict(l=120, r=20, t=20, b=20),
+            height=320, margin=dict(l=120, r=20, t=20, b=20),
             xaxis=dict(title='Value', showgrid=True, gridcolor='#e8e4da'),
             yaxis=dict(
                 tickmode='array',
@@ -2194,48 +2335,58 @@ elif st.session_state.pagina_corrente == "corridori":
                 ticktext=[v[0] for v in PHYSICAL_COLS.values()],
                 showgrid=False,
             ),
-            showlegend=False,
+            legend=dict(orientation='h', y=-0.2, x=0.5, xanchor='center'),
+            showlegend=True if winners_found else False
         )
 
-        if winner_match.empty:
+        st.plotly_chart(fig_strips, use_container_width=True)
+
+        # Messaggio dinamico per chi non ha mai vinto il Tour
+        if not_winners:
+            riders_str = ", ".join([f"<strong>{r}</strong>" for r in not_winners])
             st.markdown(f"""
-                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:12px 16px;
-                            border-radius:3px;font-family:'Merriweather',serif;color:#666;font-style:italic;font-size:12px;">
-                    Physical data available only for GC winners. <strong>{rider_main.title()}</strong> is shown in context with all champions.
+                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:12px 16px; margin: 0 16px;
+                            border-radius:3px;font-family:'Merriweather',serif;color:#666;font-style:italic;font-size:12px;margin-bottom:15px;">
+                    Physical data available only for GC winners. {riders_str} did not win the Tour de France GC and cannot be highlighted.
                 </div>
             """, unsafe_allow_html=True)
-
-        st.plotly_chart(fig_strips, use_container_width=True)
 
         st.markdown(hr, unsafe_allow_html=True)
 
         # ── LONGEVITY vs PEAK ──
+        st.markdown(hr, unsafe_allow_html=True)
         st.markdown("""
-            <span class="r-section-label">· Longevity vs Peak ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Career Longevity vs Peak Performance
-            </h4>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
-                Each dot = a rider with 3+ participations. X = best GC rank ever. Y = total Tours ridden. Selected riders highlighted.
-            </p>
+            <div style="padding: 0 16px;">
+                <span class="r-section-label">· Longevity vs Peak ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                    Career Longevity vs Peak Performance
+                </h4>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;line-height:1.5;">
+                    Each dot represents a rider (with at least 3 participations). The X-axis shows their all-time best career result, while the Y-axis represents their total Tours ridden. Selected riders are highlighted.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         df_longevity = df_r_norm.groupby('Rider').agg(
             partecipazioni=('Year', 'count'),
             best_rank=('Rank_Num', 'min')
         ).reset_index()
-        df_longevity = df_longevity[df_longevity['partecipazioni'] >= 3]
-        df_longevity['is_selected'] = df_longevity['Rider'].isin(riders_sel)
-        df_longevity['size'] = df_longevity['is_selected'].map({True: 16, False: 6})
-        df_longevity['color'] = '#c8bfad'
 
-        for i, rider in enumerate(riders_sel):
-            df_longevity.loc[df_longevity['Rider'] == rider, 'color'] = PALETTE[i]
+        # Teniamo traccia di chi escludiamo perché ha meno di 3 partecipazioni
+        low_participations = []
+        for rider in riders_sel:
+            rider_row = df_longevity[df_longevity['Rider'].str.lower().str.strip() == rider.lower().strip()]
+            if rider_row.empty or rider_row['partecipazioni'].values[0] < 3:
+                low_participations.append(rider.title())
+
+        # Filtro del dataset principale per la visualizzazione dello sfondo
+        df_longevity_filtered = df_longevity[df_longevity['partecipazioni'] >= 3].copy()
+        df_longevity_filtered['is_selected'] = df_longevity_filtered['Rider'].isin(riders_sel)
 
         fig_long = go.Figure()
 
         # Background dots
-        df_bg = df_longevity[~df_longevity['is_selected']]
+        df_bg = df_longevity_filtered[~df_longevity_filtered['is_selected']]
         fig_long.add_trace(go.Scatter(
             x=df_bg['best_rank'], y=df_bg['partecipazioni'],
             mode='markers',
@@ -2245,18 +2396,18 @@ elif st.session_state.pagina_corrente == "corridori":
             customdata=df_bg[['Rider']].values,
         ))
 
-        # Selected riders
+        # Selected riders (Evidenziati come stelle)
         for i, rider in enumerate(riders_sel):
-            df_sel = df_longevity[df_longevity['Rider'] == rider]
+            df_sel = df_longevity_filtered[df_longevity_filtered['Rider'].str.lower().str.strip() == rider.lower().strip()]
             if df_sel.empty:
                 continue
             fig_long.add_trace(go.Scatter(
                 x=df_sel['best_rank'], y=df_sel['partecipazioni'],
                 mode='markers+text',
-                marker=dict(size=18, color=PALETTE[i], line=dict(width=2, color='white'), symbol='star'),
+                marker=dict(size=18, color=PALETTE[i % len(PALETTE)], line=dict(width=2, color='white'), symbol='star'),
                 text=[rider.title()],
                 textposition='top center',
-                textfont=dict(size=10, color=PALETTE[i]),
+                textfont=dict(size=10, color=PALETTE[i % len(PALETTE)]),
                 name=rider.title(),
                 hovertemplate=f'<b>{rider.title()}</b><br>Best GC: #%{{x}}<br>Tours ridden: %{{y}}<extra></extra>',
             ))
@@ -2264,17 +2415,30 @@ elif st.session_state.pagina_corrente == "corridori":
         fig_long.update_layout(
             plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
             font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=380, margin=dict(l=0, r=0, t=10, b=0),
+            height=380, margin=dict(l=40, r=20, t=20, b=20),
             xaxis=dict(title='Best GC Rank (lower = better)', showgrid=True, gridcolor='#e8e4da'),
             yaxis=dict(title='Total Tour participations', showgrid=True, gridcolor='#e8e4da'),
             legend=dict(orientation='h', y=-0.15, x=0.5, xanchor='center'),
+            showlegend=True
         )
-        # Quadrant labels
-        fig_long.add_annotation(x=2, y=14, text='🏆 Elite Champions', showarrow=False,
-                                font=dict(size=10, color='#888', family='Arial'), opacity=0.7)
+
+        # Quadrant labels 
+        fig_long.add_annotation(x=2, y=14, text='🏆 Legends & Long Careers', showarrow=False,
+                                font=dict(size=10, color='#888', family='Arial', weight='bold'), opacity=0.8)
         fig_long.add_annotation(x=50, y=14, text='🐢 Loyal Domestiques', showarrow=False,
                                 font=dict(size=10, color='#888', family='Arial'), opacity=0.7)
+
         st.plotly_chart(fig_long, use_container_width=True)
+
+        # Messaggio dinamico per chi ha meno di 3 partecipazioni nel secondo grafico
+        if low_participations:
+            low_riders_str = ", ".join([f"<strong>{r}</strong>" for r in low_participations])
+            st.markdown(f"""
+                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:12px 16px;margin: 0 16px;
+                            border-radius:3px;font-family:'Merriweather',serif;color:#666;font-style:italic;font-size:12px;">
+                    Longevity criteria notice: {low_riders_str} has/have fewer than 3 total Tour de France participations and cannot be plotted.
+                </div>
+            """, unsafe_allow_html=True)
 
 
     # ══════════════════════════════════════════════════════════
@@ -2418,13 +2582,15 @@ elif st.session_state.pagina_corrente == "corridori":
 
         # ── CAREER ARC normalizzato H2H ──
         st.markdown("""
-            <span class="r-section-label">· The Race Through Careers ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Career Arc — Side by Side, Tour by Tour
-            </h4>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
-                X = career participation number. Both start from Tour #1. Year labels shown on each point.
-            </p>
+            <div style="padding: 0 16px;">
+                <span class="r-section-label">· The Race Through Careers ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                    Career Arc - Side by Side, Tour by Tour
+                </h4>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;line-height:1.5;">
+                    X = career participation number. Both start from Tour #1. Year labels shown on each point.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         fig_h2h_arc = go.Figure()
@@ -2458,7 +2624,9 @@ elif st.session_state.pagina_corrente == "corridori":
         fig_h2h_arc.update_layout(
             plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
             font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=400, margin=dict(l=0, r=0, t=10, b=0),
+            height=400, 
+            # 🪄 FIX: Margini interni calibrati per far respirare i numeri dell'asse Y e allinearli
+            margin=dict(l=40, r=16, t=20, b=20), 
             legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center', font=dict(size=11)),
             xaxis=dict(
                 title='Tour participation in career',
@@ -2473,22 +2641,28 @@ elif st.session_state.pagina_corrente == "corridori":
         fig_h2h_arc.add_hrect(y0=1, y1=3, fillcolor='rgba(255,204,0,0.08)',
                               line_width=0, annotation_text='Podium zone',
                               annotation_position='right', annotation_font=dict(size=9, color='#aaa'))
+        
+        # 🪄 FIX: Avvolgiamo il grafico nello stesso allineamento del titolo
+        st.markdown('<div style="margin: 0 16px;">', unsafe_allow_html=True)
         st.plotly_chart(fig_h2h_arc, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown(hr, unsafe_allow_html=True)
 
         # ── WIN/LOSS DOTS per anni condivisi ──
         st.markdown("""
-            <span class="r-section-label">· Direct Duels ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Head-to-Head Record — Shared Editions
-            </h4>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:16px;">
-                Each column = an edition where both competed. Color = who finished higher.
-            </p>
+            <div style="padding: 0 16px;">
+                <span class="r-section-label">· Direct Duels ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                    Head-to-Head Record - Shared Editions
+                </h4>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:16px;line-height:1.5;">
+                    Each column = an edition where both competed. Color = who finished higher.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
-        # Shared years between rider 1 and 2
+       # ── WIN/LOSS DOTS per anni condivisi ──
         years_r1 = set(df_r_norm[df_r_norm['Rider'] == h2h_r1]['Year'].values)
         years_r2 = set(df_r_norm[df_r_norm['Rider'] == h2h_r2]['Year'].values)
         shared_years = sorted(years_r1 & years_r2)
@@ -2515,22 +2689,31 @@ elif st.session_state.pagina_corrente == "corridori":
                 wins_r1 = (df_duel['Winner'] == h2h_r1).sum()
                 wins_r2 = (df_duel['Winner'] == h2h_r2).sum()
 
-                # Scoreboard
+                # 1. Scoreboard Principale
                 st.markdown(f"""
                     <div style="display:flex;align-items:center;justify-content:center;gap:32px;
-                                margin:16px 0;font-family:'Merriweather',serif;">
-                        <div style="text-align:center;">
+                                margin:16px 0 0 0;font-family:'Merriweather',serif;">
+                        <div style="text-align:center; min-width: 150px;">
                             <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#888;">{h2h_r1.title()}</div>
                             <div style="font-size:52px;font-weight:900;color:{PALETTE_H2H[0]};line-height:1;">{wins_r1}</div>
                         </div>
                         <div style="text-align:center;">
-                            <div style="font-size:11px;color:#888;">shared<br>editions</div>
-                            <div style="font-size:28px;font-weight:700;color:#1a1a1a;">{len(df_duel)}</div>
+                            <div style="font-size:11px;color:#888;line-height:1.2;">shared<br>editions</div>
+                            <div style="font-size:28px;font-weight:700;color:#1a1a1a;margin-top:4px;">{len(df_duel)}</div>
                         </div>
-                        <div style="text-align:center;">
+                        <div style="text-align:center; min-width: 150px;">
                             <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#888;">{h2h_r2.title()}</div>
                             <div style="font-size:52px;font-weight:900;color:{PALETTE_H2H[1]};line-height:1;">{wins_r2}</div>
                         </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+                # 2. Nuova Legenda Originale Centrata in mezzo
+                st.markdown(f"""
+                    <div style="display:flex;align-items:center;justify-content:center;gap:24px;
+                                margin:10px 0 16px 0;font-family:Arial,sans-serif;font-size:12px;">
+                        <span style="color:{PALETTE_H2H[0]};font-weight:bold;">● {h2h_r1.title()} wins</span>
+                        <span style="color:{PALETTE_H2H[1]};font-weight:bold;">● {h2h_r2.title()} wins</span>
                     </div>
                 """, unsafe_allow_html=True)
 
@@ -2559,26 +2742,28 @@ elif st.session_state.pagina_corrente == "corridori":
 
                 fig_duel.update_layout(
                     plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                    height=160, margin=dict(l=0, r=0, t=40, b=20),
-                    xaxis=dict(showgrid=False, zeroline=False, tickfont=dict(size=10)),
-                    yaxis=dict(visible=False, range=[-0.5, 0.8]),
-                    showlegend=False,
+                    height=130, margin=dict(l=40, r=40, t=10, b=20),
+                    xaxis=dict(
+                        showgrid=False, 
+                        zeroline=False, 
+                        tickfont=dict(size=10, family='Arial'),
+                        # 🪄 FIX: Forza l'asse a non mostrare i decimali ed evita la virgola delle migliaia (es. 2,024 -> 2024)
+                        tickmode='array',
+                        tickvals=shared_years,
+                        tickformat='d'
+                    ),
+                    yaxis=dict(visible=False, range=[-0.5, 0.6]),
+                    showlegend=False, # Disattiva la legenda nativa decentrata di Plotly
                 )
 
-                # Legend manuale
-                for i, (rider, color) in enumerate([(h2h_r1, PALETTE_H2H[0]), (h2h_r2, PALETTE_H2H[1])]):
-                    fig_duel.add_annotation(
-                        x=0.02 + i * 0.35, y=1.15, xref='paper', yref='paper',
-                        text=f'● {rider.title()} wins',
-                        showarrow=False, font=dict(size=10, color=color, family='Arial'),
-                    )
-
+                st.markdown('<div style="margin: 0 16px;">', unsafe_allow_html=True)
                 st.plotly_chart(fig_duel, use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
             else:
                 st.info("No direct duel data available for these riders in shared editions.")
         else:
             st.markdown(f"""
-                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:12px 16px;
+                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:12px 16px; margin: 0 16px;
                             border-radius:3px;font-family:'Merriweather',serif;color:#666;font-style:italic;font-size:12px;">
                     {h2h_r1.title()} and {h2h_r2.title()} never raced the Tour in the same year.
                 </div>
@@ -2587,13 +2772,15 @@ elif st.session_state.pagina_corrente == "corridori":
         # ── BEST RANK COMPARISON BAR CHART ──
         st.markdown(hr, unsafe_allow_html=True)
         st.markdown("""
-            <span class="r-section-label">· Career Stats Breakdown ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Career Breakdown — Rank Distribution by Zone
-            </h4>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
-                For each rider: how many Tours ended in the Win / Podium / Top-10 / Rest zone.
-            </p>
+            <div style="padding: 0 16px;">
+                <span class="r-section-label">· Career Stats Breakdown ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                    Career Breakdown — Rank Distribution by Zone
+                </h4>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
+                    For each rider: how many Tours ended in the Win / Podium / Top-10 / Rest zone.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         breakdown_rows = []
@@ -2620,46 +2807,65 @@ elif st.session_state.pagina_corrente == "corridori":
             df_breakdown = pd.DataFrame(breakdown_rows)
             ZONE_OPACITY = {'Win': 1.0, 'Podium (2-3)': 0.82, 'Top 10 (4-10)': 0.55, 'Rest (11+)': 0.28}
             fig_bkd = go.Figure()
-            for zone in zones:
-                df_z = df_breakdown[df_breakdown['Zone'] == zone]
-                for _, row in df_z.iterrows():
-                    rider_idx = h2h_riders.index(row['Rider'].upper()) if row['Rider'].upper() in h2h_riders else 0
-                    base_color = PALETTE_H2H[rider_idx]
-                    # Converti hex in rgba
-                    r_hex = base_color.lstrip('#')
-                    r, g, b = int(r_hex[0:2],16), int(r_hex[2:4],16), int(r_hex[4:6],16)
-                    alpha = ZONE_OPACITY[zone]
-                    rgba = f"rgba({r},{g},{b},{alpha})"
-                    fig_bkd.add_trace(go.Bar(
-                        name=zone, x=[row['Rider']], y=[row['Count']],
-                        marker_color=rgba,
-                        marker_line=dict(width=0),
-                        text=[f"{row['Count']}<br>({row['Pct']}%)"],
-                        textposition='inside',
-                        textfont=dict(size=11, color='white' if alpha > 0.5 else '#888', family='Arial'),
-                        hovertemplate=f"<b>{row['Rider']}</b><br>{zone}: {row['Count']} Tours ({row['Pct']}%)<extra></extra>",
-                        showlegend=(list(df_breakdown[df_breakdown['Zone']==zone]['Rider'])[0] == row['Rider']),
-                        legendgroup=zone,
-                        legendgrouptitle_text=zone if rider_idx == 0 else None,
-                    ))
+            
+            # Cicliamo prima per corridore in modo da creare una serie di colonne unica per atleta
+            for i, rider in enumerate(h2h_riders):
+                rider_title = rider.title()
+                df_rider = df_breakdown[df_breakdown['Rider'] == rider_title]
+                
+                if df_rider.empty:
+                    continue
+                
+                base_color = PALETTE_H2H[i]
+                r_hex = base_color.lstrip('#')
+                r, g, b = int(r_hex[0:2], 16), int(r_hex[2:4], 16), int(r_hex[4:6], 16)
+                
+                # Creiamo le liste ordinate per le 4 zone per questo specifico corridore
+                y_counts = []
+                text_labels = []
+                marker_colors = []
+                
+                for zone in zones:
+                    row_zone = df_rider[df_rider['Zone'] == zone]
+                    if not row_zone.empty:
+                        cnt = int(row_zone['Count'].values[0])
+                        pct = row_zone['Pct'].values[0]
+                        alpha = ZONE_OPACITY[zone]
+                        
+                        y_counts.append(cnt)
+                        text_labels.append(f"{cnt}<br>({pct}%)" if cnt > 0 else "")
+                        marker_colors.append(f"rgba({r},{g},{b},{alpha})")
+                    else:
+                        y_counts.append(0)
+                        text_labels.append("")
+                        marker_colors.append(f"rgba({r},{g},{b},0.1)")
+                
+                # Aggiungiamo la traccia per il corridore attuale
+                fig_bkd.add_trace(go.Bar(
+                    name=rider_title,
+                    x=zones,
+                    y=y_counts,
+                    text=text_labels,
+                    textposition='outside',
+                    marker_color=marker_colors,
+                    marker_line=dict(width=0),
+                    hovertemplate=f"<b>{rider_title}</b><br>%{{x}}: %{{y}} Tours<extra></extra>",
+                ))
 
             fig_bkd.update_layout(
-                barmode='stack',
+                barmode='group',
                 plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
                 font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-                height=340, margin=dict(l=0, r=0, t=10, b=0),
+                height=380, margin=dict(l=40, r=20, t=30, b=20),
                 showlegend=True,
                 legend=dict(
                     orientation='h', y=-0.15, x=0.5, xanchor='center',
                     font=dict(size=10),
-                    traceorder='normal',
                 ),
                 xaxis=dict(title='', tickfont=dict(size=12, family='Merriweather, serif')),
                 yaxis=dict(title='Number of Tours', showgrid=True, gridcolor='#e8e4da'),
             )
 
-            # Linea separatrice tra zone con annotazioni
-            zone_labels = {'Win': '🏆 Win', 'Podium (2-3)': '🥈 Podium', 'Top 10 (4-10)': 'Top 10', 'Rest (11+)': 'Rest'}
             st.plotly_chart(fig_bkd, use_container_width=True)
 
 
@@ -2669,16 +2875,17 @@ elif st.session_state.pagina_corrente == "corridori":
     elif st.session_state.riders_tab == "nations":
 
         st.markdown("""
-            <span class="r-section-label">· Geographic Analysis ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Nations of the Tour — Where Champions Are Born
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
-                Choropleth map of Tour de France GC victories by country. Hover for details.
-            </p>
-        """, unsafe_allow_html=True)
-
-        # ── CHOROPLETH ──
+    <div style="padding: 0 16px;">
+        <span class="r-section-label">· Geographic Analysis ·</span>
+        <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+            Nations of the Tour - Where Champions Are Born
+        </h3>
+        <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;line-height:1.5;">
+            Choropleth map of Tour de France GC victories by country. Hover for details.
+        </p>
+    </div>
+""", unsafe_allow_html=True)
+       # ── CHOROPLETH ──
         df_choro = df_w_clean.groupby(['Country_clean', 'ISO']).size().reset_index(name='victories')
         # Merge USA
         df_choro.loc[df_choro['Country_clean'] == 'USA', 'ISO'] = 'USA'
@@ -2689,19 +2896,19 @@ elif st.session_state.pagina_corrente == "corridori":
             color='victories',
             hover_name='Country_clean',
             hover_data={'victories': True, 'ISO': False},
+            # 🪄 FIX: Scala di soli gialli (dal crema chiaro al giallo saturo/ocra intenso)
             color_continuous_scale=[
-                [0, '#F4F1EA'],
-                [0.05, '#FFF3CD'],
-                [0.2, '#FFDD57'],
-                [0.5, '#FFCC00'],
-                [0.8, '#FF8C00'],
-                [1.0, '#1a1a1a']
+                [0.0, '#FFF3CD'],   # 1 vittoria (giallo crema, ben visibile sul fondo carta)
+                [0.2, '#FFE066'],   # Giallo tenue
+                [0.5, '#FFCC00'],   # Giallo classico Tour de France
+                [0.8, '#E6B800'],   # Giallo scuro / dorato
+                [1.0, '#B38F00']    # Giallo ocra intenso per il picco massimo (Francia)
             ],
             labels={'victories': 'GC Victories'},
         )
         fig_choro.update_geos(
             showcoastlines=True, coastlinecolor='#c8bfad',
-            showland=True, landcolor='#F4F1EA',
+            showland=True, landcolor='#F4F1EA', # I paesi a zero vittorie rimangono neutri del colore dello sfondo
             showocean=True, oceancolor='#e8f4f8',
             showframe=False,
             projection_type='natural earth',
@@ -2718,19 +2925,25 @@ elif st.session_state.pagina_corrente == "corridori":
                 len=0.6, thickness=12,
             ),
         )
+        
+        st.markdown('<div style="margin: 0 16px;">', unsafe_allow_html=True)
         st.plotly_chart(fig_choro, use_container_width=True)
-
-        st.markdown(hr, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         # ── SUNBURST: Continente → Nazione ──
+        # ── SUNBURST: Continente → Nazione ──
+# ── SUNBURST: Continente → Nazione ──
+# ── SUNBURST: Continente → Nazione ──
         st.markdown("""
-            <span class="r-section-label">· Victory Share ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Sunburst — The Dynasties of the Tour
-            </h4>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
-                Inner ring = continent. Outer ring = nation. Size = GC victories. Hover or click to explore.
-            </p>
+            <div style="padding: 0 16px;">
+                <span class="r-section-label">· Victory Share ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                    The Geography of Glory — Victory Share by Region
+                </h4>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;line-height:1.5;">
+                    Inner ring = continent region. Outer ring = specific nation. Segment size represents the volume of GC victories. Click on a region to zoom.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         CONTINENT_MAP = {
@@ -2804,14 +3017,15 @@ elif st.session_state.pagina_corrente == "corridori":
         )
         st.plotly_chart(fig_sun, use_container_width=True)
 
-        st.markdown(hr, unsafe_allow_html=True)
-
+        st.markdown(hr, unsafe_allow_html=True)                
         # ── DECADE DOMINANCE TABLE ──
         st.markdown("""
-            <span class="r-section-label">· Era by Era ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Who Ruled Each Decade?
-            </h4>
+            <div style="padding: 0 16px;">
+                <span class="r-section-label">· Era by Era ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                    Who Ruled Each Decade?
+                </h4>
+            </div>
         """, unsafe_allow_html=True)
 
         df_dec = df_w_clean.groupby(['decade', 'Country_clean']).size().reset_index(name='wins')
@@ -2826,24 +3040,20 @@ elif st.session_state.pagina_corrente == "corridori":
 
         def cell_bg(val, is_total=False):
             if is_total:
-                return "#1a1a1a", "#FFCC00"
+                return "#1a1a1a", "#FFCC00"  # Colore fisso distintivo per la colonna TOTAL
             if val == 0:
-                return "#F4F1EA", "#bbb"
-            intensity = val / max_val  # 0→1
-            # Scala: basso=#FFF3CD, alto=#1a1a1a
-            if intensity < 0.3:
-                r, g, b = 255, int(243 - intensity/0.3*80), int(205 - intensity/0.3*100)
-            elif intensity < 0.7:
-                t = (intensity - 0.3) / 0.4
-                r = int(255 - t*115)
-                g = int(163 - t*83)
-                b = int(105 - t*85)
-            else:
-                t = (intensity - 0.7) / 0.3
-                r = int(140 - t*114)
-                g = int(80 - t*54)
-                b = int(20 - t*6)
-            txt = "#f0ece4" if intensity > 0.55 else "#1a1a1a"
+                return "#F4F1EA", "#bbb"     # Sfondo neutro per i valori a zero
+            
+            # Calcolo intensità normalizzata (0 a 1)
+            intensity = val / max_val if max_val > 0 else 0
+            
+            # Scala lineare di soli gialli (RGB di #FFF3CD -> RGB di #B38F00)
+            r = int(255 - (intensity * (255 - 179)))
+            g = int(243 - (intensity * (243 - 143)))
+            b = int(205 - (intensity * (205 - 0)))
+            
+            # Contrasto dinamico del testo basato sull'intensità del giallo
+            txt = "#ffffff" if intensity > 0.75 else "#1a1a1a"
             return f"rgb({r},{g},{b})", txt
 
         cols_decade = ["Nation"] + list(df_dec_pivot.columns)
@@ -2872,14 +3082,27 @@ elif st.session_state.pagina_corrente == "corridori":
                 )
             body_rows += f'<tr style="border-bottom:1px solid #e8e4da;">{cells}</tr>'
 
+        # ── COSTRUZIONE DELLA LEGENDA CROMATICA ──
+        # Una barra sfumata orizzontale con indicatori per il valore minimo (1 win) e massimo
+        legend_html = f"""
+        <div style="margin: 12px 16px 0 16px; font-family: Arial, sans-serif; font-size: 11px; color: #666; display: flex; align-items: center; gap: 10px;">
+            <span style="white-space: nowrap;">0 wins: <span style="display:inline-block; width:12px; height:12px; background:#F4F1EA; border:1px solid #c8bfad; vertical-align:middle; margin-left:2px; border-radius:2px;"></span></span>
+            <span style="margin-left: 8px;">1 win</span>
+            <div style="flex-grow: 1; max-width: 180px; height: 10px; background: linear-gradient(to right, #FFF3CD, #FFE066, #FFCC00, #E6B800, #B38F00); border-radius: 2px;"></div>
+            <span>{max_val} wins (Max)</span>
+        </div>
+        """
+
         decade_table_html = f"""
-        <div style="overflow-x:auto;margin-top:8px;">
+        <div style="overflow-x:auto; margin: 8px 16px 0 16px;">
         <table style="width:100%;border-collapse:collapse;font-family:'Merriweather',serif;
                       background:#F4F1EA;border:1px solid #c8bfad;border-radius:4px;overflow:hidden;">
             <thead><tr style="background:#1a1a1a;">{header_cells}</tr></thead>
             <tbody>{body_rows}</tbody>
         </table>
-        </div>"""
+        </div>
+        {legend_html}
+        """
         st.markdown(decade_table_html, unsafe_allow_html=True)
 
         
@@ -4449,7 +4672,6 @@ elif st.session_state.pagina_corrente == "teams":
             df_strip['Selected'] = df_strip['Year'] == anno_sel
 
             fig_strip = go.Figure()
-            import numpy as np
             for is_sel, color, size, opacity in [(False,'#c8bfad',7,0.4),(True,'#FFCC00',12,1.0)]:
                 df_s_ = df_strip[df_strip['Selected'] == is_sel]
                 if df_s_.empty: continue
