@@ -4341,6 +4341,7 @@ elif st.session_state.pagina_corrente == "teams":
     # ──────────────────────────────────────────────────────────
     # 2. CSS
     # ──────────────────────────────────────────────────────────
+    
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
@@ -4354,20 +4355,75 @@ elif st.session_state.pagina_corrente == "teams":
             font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
             color: #888; font-family: Arial, sans-serif; display: block; margin-bottom: 4px;
         }
+
+        /* ── SFONDO CARTA: SOLO IL CONTENUTO, NON LA NAVBAR ── */
+        section[data-testid="stMain"],
+        section[data-testid="stMain"] > div,
+        div[data-testid="stVerticalBlock"],
+        div[data-testid="stVerticalBlockBorderWrapper"],
+        div[data-testid="column"],
+        div[data-testid="stHorizontalBlock"] {
+            background-color: #F4F1EA !important;
+        }
+
+        /* ── PLOTLY WRAPPER ── */
+        div[data-testid="stPlotlyChart"] > div,
+        div[data-testid="stPlotlyChart"] iframe {
+            background-color: #F4F1EA !important;
+            border: none !important;
+        }
+
+        /* ── SELECTBOX ── */
         div[data-testid="stSelectbox"] label p {
-            color: #1a1a1a !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important;
+            color: #1a1a1a !important;
+            font-family: 'Merriweather', serif !important;
+            font-weight: 700 !important;
         }
         div[data-baseweb="select"] > div {
-            background-color: #111 !important; color: #fff !important;
-            border: 1px solid #444 !important; border-radius: 3px !important;
+            background-color: #F4F1EA !important;
+            color: #1a1a1a !important;
+            border: 1px solid #c8bfad !important;
+            border-radius: 3px !important;
         }
-        div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111 !important; }
-        div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li { color: #fff !important; background-color: #111 !important; }
-        div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover { background-color: #2a2a2a !important; }
-        ul[role="listbox"] li[aria-selected="true"] { color: #FFCC00 !important; }
+        div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] {
+            background-color: #F4F1EA !important;
+        }
+        div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li {
+            color: #1a1a1a !important;
+            background-color: #F4F1EA !important;
+        }
+        div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover {
+            background-color: #ede9e0 !important;
+        }
+        ul[role="listbox"] li[aria-selected="true"] {
+            color: #854F0B !important;
+            font-weight: 700 !important;
+        }
+
+        /* ── BOTTONE ROLES EXPLAINER ── */
+        div[data-testid="stButton"] button[kind="secondary"] {
+            background: #F4F1EA !important;
+            border-top: 2px solid #1a1a1a !important;
+            border-bottom: 1px solid #c8bfad !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-radius: 0 !important;
+            padding: 9px 20px !important;
+            box-shadow: none !important;
+            color: #1a1a1a !important;
+            font-family: 'Merriweather', Georgia, serif !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+        }
+        div[data-testid="stButton"] button[kind="secondary"]:hover {
+            background: #ede9e0 !important;
+            border-top: 2px solid #1a1a1a !important;
+            border-bottom: 1px solid #c8bfad !important;
+            border-left: none !important;
+            border-right: none !important;
+        }
         </style>
     """, unsafe_allow_html=True)
-
     # ──────────────────────────────────────────────────────────
     # 3. TESTATA
     # ──────────────────────────────────────────────────────────
@@ -4470,16 +4526,18 @@ elif st.session_state.pagina_corrente == "teams":
         # SEZIONE A: DYNASTY TIMELINE
         # ──────────────────────────────────────────────────────
         st.markdown("""
+        <div style="padding: 0 16px;">
             <span class="t-section-label">· Season by Season ·</span>
             <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
-                       color:#1a1a1a;margin:4px 0 4px;">
+                    color:#1a1a1a;margin:4px 0 4px;">
                 Dynasty Timeline — Every Edition at a Glance
             </h3>
             <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
-                      font-style:italic;margin-bottom:8px;">
+                    font-style:italic;margin-bottom:8px;line-height:1.5;">
                 Each dot = one edition. Color = best GC result that year. Hover for details.
             </p>
-        """, unsafe_allow_html=True)
+        </div>
+    """, unsafe_allow_html=True)
 
         df_by_year = df_team.dropna(subset=['Rank_Num']).groupby('Year').agg(
             best_rank=('Rank_Num','min'),
@@ -4563,20 +4621,169 @@ elif st.session_state.pagina_corrente == "teams":
         st.plotly_chart(fig_timeline, use_container_width=True)
         st.markdown(hr, unsafe_allow_html=True)
 
+   # ── TEAM ROLES EXPLAINER ──
+# ── TEAM ROLES EXPLAINER ──
+# ── TEAM ROLES EXPLAINER ──
+        if 'roles_open' not in st.session_state:
+            st.session_state.roles_open = False
+
+        arrow = "▲" if st.session_state.roles_open else "▼"
+
+        st.markdown(f"""
+            <style>
+            div[data-testid="stButton"]:has(button[kind="secondary"]#roles_toggle_btn) button,
+            div[data-testid="stBaseButton-secondary"]:has(#roles_toggle_btn) {{
+                background: #F4F1EA !important;
+                border-top: 2px solid #1a1a1a !important;
+                border-bottom: 1px solid #c8bfad !important;
+                border-left: none !important;
+                border-right: none !important;
+                border-radius: 0 !important;
+                padding: 9px 20px !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                color: #1a1a1a !important;
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-size: 12px !important;
+                font-weight: 700 !important;
+                letter-spacing: 0px !important;
+                text-transform: none !important;
+            }}
+            
+            /* 🪄 FIX: Forza in nero qualsiasi testo interno (paragrafi/span) generato da Streamlit nel bottone */
+            div[data-testid="stButton"] button[kind="secondary"]#roles_toggle_btn p,
+            div[data-testid="stButton"] button[kind="secondary"]#roles_toggle_btn div,
+            div[data-testid="stButton"] button[kind="secondary"]#roles_toggle_btn span {{
+                color: #1a1a1a !important;
+            }}
+
+            /* Selettore più largo come fallback */
+            div[data-testid="stButton"] button[kind="secondary"] {{
+                background: #F4F1EA !important;
+                border-top: 2px solid #1a1a1a !important;
+                border-bottom: 1px solid #c8bfad !important;
+                border-left: none !important;
+                border-right: none !important;
+                border-radius: 0 !important;
+                padding: 9px 20px !important;
+                box-shadow: none !important;
+                color: #1a1a1a !important;
+                font-family: 'Merriweather', Georgia, serif !important;
+                font-size: 12px !important;
+                font-weight: 700 !important;
+            }}
+            
+            div[data-testid="stButton"] button[kind="secondary"] p {{
+                color: #1a1a1a !important;
+            }}
+
+            div[data-testid="stButton"] button[kind="secondary"]:hover {{
+                background: #ede9e0 !important;
+                border-top: 2px solid #1a1a1a !important;
+                border-bottom: 1px solid #c8bfad !important;
+                border-left: none !important;
+                border-right: none !important;
+            }}
+            </style>
+        """, unsafe_allow_html=True)
+
+        # Testo pulito senza tag HTML che confondono Streamlit
+        if st.button(
+            f"· Team Roles ·   Who does what inside a Tour de France squad?   {arrow}",
+            key="roles_toggle_btn",
+            use_container_width=True
+        ):
+            st.session_state.roles_open = not st.session_state.roles_open
+            st.rerun()
+
+        if st.session_state.roles_open:
+            roles_content_html = """
+            <div style="background:#F4F1EA;border-bottom:1px solid #c8bfad;padding:16px 20px;
+                        font-family:'Merriweather',Georgia,serif;margin-top:-8px;">
+            <p style="font-size:12px;color:#555;line-height:1.7;margin:0 0 14px">
+                A professional cycling team is not a collection of solo athletes — it is a precisely structured unit
+                where every rider has a defined function. Understanding these roles transforms how you read the roster heatmap below.
+            </p>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+
+                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <div style="width:9px;height:9px;border-radius:50%;background:#FFCC00;flex-shrink:0"></div>
+                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Team captain</span>
+                </div>
+                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">The designated GC leader. The entire team rides in service of this rider on key mountain stages and time trials. All tactical decisions revolve around protecting and advancing the captain's result.</p>
+                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#FFF8DC;color:#854F0B;">GC leader</span>
+                </div>
+
+                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <div style="width:9px;height:9px;border-radius:50%;background:#4ECDC4;flex-shrink:0"></div>
+                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Domestique</span>
+                </div>
+                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">The backbone of any team. Domestiques sacrifice their own race to serve the captain — fetching water bottles, chasing attacks, setting tempo on climbs, and shielding the leader from wind. Rarely in results, but indispensable.</p>
+                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#e0f7f5;color:#0a6b65;">selfless worker</span>
+                </div>
+
+                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <div style="width:9px;height:9px;border-radius:50%;background:#FF6B6B;flex-shrink:0"></div>
+                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Climbing domestique</span>
+                </div>
+                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">A specialist capable of maintaining pace on steep mountain passes. Sets a relentless rhythm that cracks rival teams, then peels off deep in the climb to let the captain race alone to the summit.</p>
+                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#FFEBEE;color:#A32D2D;">mountain worker</span>
+                </div>
+
+                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <div style="width:9px;height:9px;border-radius:50%;background:#aaa;flex-shrink:0"></div>
+                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Lead-out man</span>
+                </div>
+                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">Critical for sprinter teams. Drives at maximum speed in the final kilometres directly in front of the sprinter, clearing a path and delivering them to the perfect launch point. One of cycling's most technically demanding roles.</p>
+                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#f0ece4;color:#555;">sprint train</span>
+                </div>
+
+                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <div style="width:9px;height:9px;border-radius:50%;background:#7F77DD;flex-shrink:0"></div>
+                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Super-domestique</span>
+                </div>
+                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">Talented enough to be a captain elsewhere, but supports a stronger teammate. Takes secondary leadership if the captain abandons, and can be unleashed on breakaways to secure bonus time or stage wins.</p>
+                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#EEEDFE;color:#3C3489;">versatile asset</span>
+                </div>
+
+                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <div style="width:9px;height:9px;border-radius:50%;background:#D85A30;flex-shrink:0"></div>
+                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Breakaway specialist</span>
+                </div>
+                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">Given freedom to join early escapes. Since they don't threaten the GC, rivals let them go. This earns the team stage wins, polka-dot points, and crucial television exposure for sponsors throughout the race.</p>
+                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#FAECE7;color:#712B13;">stage hunter</span>
+                </div>
+
+            </div>
+            <p style="font-size:11px;color:#888;margin:14px 0 0;line-height:1.6;font-style:italic;">
+                In the roster heatmap below, brighter cells often indicate captains or super-domestiques. Long streaks of dark cells are the hallmark of a loyal domestique who rode in the shadows of the team's success.
+            </p>
+            </div>
+            """
+            st.components.v1.html(roles_content_html, height=420, scrolling=False)
         # ──────────────────────────────────────────────────────
         # SEZIONE B: ROSTER HEATMAP "WHO RODE WHEN"
         # ──────────────────────────────────────────────────────
+
         st.markdown("""
-            <span class="t-section-label">· Roster DNA ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
-                       color:#1a1a1a;margin:4px 0 4px;">
-                Who Rode When — The Full Team Roster
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
-                      font-style:italic;margin-bottom:8px;">
-                Each cell = one Tour. Color intensity = GC rank (brighter = better). 
-                Reveals captains, loyal domestiques, and transitions.
-            </p>
+            <div style="padding: 0 16px;">
+                <span class="t-section-label">· Roster DNA ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
+                        color:#1a1a1a;margin:4px 0 4px;">
+                    Who Rode When — The Full Team Roster
+                </h3>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                        font-style:italic;margin-bottom:8px;line-height:1.5;">
+                    Each cell = one Tour. Color intensity = GC rank (brighter = better). 
+                    Reveals captains, loyal domestiques, and transitions.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         df_heatmap = df_team.dropna(subset=['Rank_Num']).copy()
@@ -4589,56 +4796,158 @@ elif st.session_state.pagina_corrente == "teams":
 
         if not df_hm.empty:
             pivot = df_hm.pivot_table(index='Rider', columns='Year', values='Rank_Num', aggfunc='min')
-            # Ordina per media rank (i migliori in cima)
-            pivot = pivot.loc[pivot.mean(axis=1).sort_values().index]
+            
+            # Ordina al contrario (ascending=False) per contrastare l'inversione dell'asse Y di Plotly. 
+            pivot = pivot.loc[pivot.mean(axis=1).sort_values(ascending=False).index]
+            
             # Limita a 30 corridori max
             pivot = pivot.head(30)
-            # Inverti scala: rank 1 = valore alto (appare luminoso), rank 100 = basso
+            
+            # Inverti scala: rank 1 = valore alto (appare luminoso)
             pivot_inv = pivot.copy()
             for col in pivot_inv.columns:
-                pivot_inv[col] = pivot_inv[col].apply(lambda x: max(0, 110-x) if pd.notna(x) else None)
+                pivot_inv[col] = pivot_inv[col].apply(lambda x: max(0, 180-x) if pd.notna(x) else None)
+
+            # Creiamo una matrice di testi formattata a mano per eliminare la scritta 'NaN' dalle celle vuote
+            text_matrix = []
+            for rider_idx in pivot.index:
+                row_text = []
+                for year_col in pivot.columns:
+                    val = pivot.loc[rider_idx, year_col]
+                    if pd.isna(val):
+                        row_text.append("") 
+                    else:
+                        row_text.append(f"{int(val)}")
+                text_matrix.append(row_text)
 
             fig_hm = go.Figure(data=go.Heatmap(
                 z=pivot_inv.values,
                 x=[int(c) for c in pivot_inv.columns],
                 y=[r.title() for r in pivot_inv.index],
-                colorscale=[[0,'#0d0d0d'],[0.3,'#1e3a2f'],[0.6,'#FFCC00'],[1,'#FFD700']],
-                text=pivot.values,
-                texttemplate='%{text:.0f}',
-                textfont=dict(size=9, family='Arial'),
-                hovertemplate='<b>%{y}</b><br>%{x}<br>GC Rank: #%{text:.0f}<extra></extra>',
+                # 🪄 FIX COLORS: Ricalibrata la distribuzione per isolare il picco di luce (1.0) solo per la vittoria
+                colorscale=[
+                    [0.0, '#F4F1EA'],    # Assente (colore sfondo app)
+                    [0.01, '#0d0d0d'],   # Fondo classifica (>100) -> Nero profondo
+                    [0.4, '#193326'],    # Gruppo (Rank 50-100) -> Verde scuro opaco
+                    [0.75, '#D4A373'],   # Top 20-30 -> Ocra / Bronzo spento
+                    [0.88, '#FF9F1C'],   # Top 10 (Rank 4-10) -> Arancione/Giallo caldo intenso
+                    [0.96, '#FFCC00'],   # Podio (Rank 2-3) -> Giallo iconico Tour
+                    [1.0, '#FFFFFF']     # Vittoria (#1 Win) -> Oro bianco / Luce purissima per staccare al massimo
+                ],
+                text=text_matrix, 
+                texttemplate='%{text}',
+                textfont=dict(size=9, family='Arial', weight='bold'), # Messo in bold per leggere meglio i numeri chiari
+                hovertemplate='<b>%{y}</b><br>%{x}<br>GC Rank: #%{text}<extra></extra>',
                 showscale=False,
-                zmin=0, zmax=110,
+                zmin=0, 
+                zmax=180, 
+                xgap=2,
+                ygap=2,
             ))
             fig_hm.update_layout(
-                plot_bgcolor='#0d0d0d', paper_bgcolor='#F4F1EA',
+                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
                 font=dict(family='Merriweather, serif', color='#1a1a1a'),
                 height=max(300, len(pivot)*22 + 60),
-                margin=dict(l=0, r=0, t=10, b=0),
+                margin=dict(l=40, r=20, t=10, b=20), 
                 xaxis=dict(title='', tickmode='linear', dtick=max(1,len(pivot.columns)//15),
-                           tickfont=dict(size=9), side='bottom'),
+                        tickfont=dict(size=9), side='bottom'),
                 yaxis=dict(title='', tickfont=dict(size=10)),
             )
+            
+            st.markdown('<div style="margin: 0 16px;">', unsafe_allow_html=True)
             st.plotly_chart(fig_hm, use_container_width=True)
-            st.markdown("""
-                <p style="font-size:10px;color:#888;font-style:italic;font-family:Arial;text-align:right;margin-top:-8px;">
+            
+            # ── LEGENDA AGGIORNATA CON I NUOVI LIVELLI ──
+            legend_hm_html = """
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+                        margin-top: 8px; padding: 8px 12px; background: #F4F1EA; border: 1px solid #c8bfad; border-radius: 4px; font-family: Arial, sans-serif; font-size: 11px; color: #555;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #FFFFFF; border-radius: 2px; border: 1px solid #c8bfad;"></span>
+                        <strong>#1 Win</strong>
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #FFCC00; border-radius: 2px; border: 1px solid #c8bfad;"></span>
+                        Podium (2-3)
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #FF9F1C; border-radius: 2px;"></span>
+                        Top 10
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #193326; border-radius: 2px;"></span>
+                        Mid Pack
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #0d0d0d; border-radius: 2px;"></span>
+                        Back Pack / DNF
+                    </span>
+                </div>
+                <div style="color: #888; font-style: italic;">
                     Numbers = GC rank · Brighter = better result · Only riders with 2+ appearances or top-20 finish shown
-                </p>
-            """, unsafe_allow_html=True)
+                </div>
+            </div>
+            </div>
+            """
+            st.markdown(legend_hm_html, unsafe_allow_html=True)
         else:
             st.info("Not enough data to build the roster heatmap.")
 
-        st.markdown(hr, unsafe_allow_html=True)
-
-        # ──────────────────────────────────────────────────────
+        st.markdown(hr, unsafe_allow_html=True)        
+        
+            # ──────────────────────────────────────────────────────
         # SEZIONE C: HISTORICAL PERFORMANCE
         # ──────────────────────────────────────────────────────
         st.markdown("""
-            <span class="t-section-label">· Historical Performance ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
-                       color:#1a1a1a;margin:4px 0 4px;">
-                All-Time Placements & Edition Spotlight
-            </h3>
+            <style>
+            /* Selectbox chiara */
+            div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+                background-color: #F4F1EA !important;
+                border: 1px solid #c8bfad !important;
+                color: #1a1a1a !important;
+            }
+            div[data-testid="stSelectbox"] label p {
+                color: #1a1a1a !important;
+                font-family: 'Merriweather', serif !important;
+                font-size: 12px !important;
+                font-weight: 700 !important;
+            }
+            /* Dropdown menu chiaro */
+            div[data-baseweb="popover"] ul, ul[role="listbox"] {
+                background-color: #F4F1EA !important;
+            }
+            div[data-baseweb="popover"] li, ul[role="listbox"] li {
+                color: #1a1a1a !important;
+                background-color: #F4F1EA !important;
+            }
+            div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover {
+                background-color: #ede9e0 !important;
+            }
+            /* Dataframe: sfondo carta, niente bordi neri */
+            div[data-testid="stDataFrame"] > div {
+                background-color: #F4F1EA !important;
+                border: 1px solid #c8bfad !important;
+                border-radius: 4px !important;
+            }
+            div[data-testid="stDataFrame"] iframe {
+                background-color: #F4F1EA !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+            <div style="padding: 0 16px 8px;">
+                <span class="t-section-label">· Historical Performance ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
+                        color:#1a1a1a;margin:4px 0 4px;">
+                    All-Time Placements & Edition Spotlight
+                </h3>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                        font-style:italic;margin-bottom:8px;line-height:1.5;">
+                    Select an edition on the left to spotlight that year in the scatter plot.
+                    Each dot = one rider. Yellow = selected year. The red dotted line tracks the team's average GC rank over time.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         col_p1, col_p2 = st.columns([1.2, 1], gap="medium")
@@ -4646,73 +4955,169 @@ elif st.session_state.pagina_corrente == "teams":
         with col_p1:
             anni_team = sorted(df_team['Year'].dropna().unique(), reverse=True)
             anno_sel = st.selectbox("📅 Focus on edition:", [int(a) for a in anni_team], key="team_anno")
-            df_anno_team = df_team[df_team['Year'] == anno_sel][['Rider','Rank_Num']].sort_values('Rank_Num')
+
+            df_anno_team = df_team[df_team['Year'] == anno_sel][['Rider', 'Rank_Num']].sort_values('Rank_Num').copy()
             df_anno_team['Rank_Num'] = df_anno_team['Rank_Num'].apply(
                 lambda x: int(x) if pd.notna(x) else "DNF"
             )
             df_anno_team.columns = ['Rider', 'Final GC']
             df_anno_team['Rider'] = df_anno_team['Rider'].str.title()
 
-            # Best edition highlight
             best_yr_row = df_by_year.loc[df_by_year['best_rank'].idxmin()] if not df_by_year.empty else None
             if best_yr_row is not None and int(best_yr_row['Year']) == anno_sel:
-                st.markdown(f"""
-                    <div style="background:rgba(255,215,0,0.1);border:1px solid #FFD700;
-                                border-radius:4px;padding:8px 12px;margin-bottom:8px;
-                                font-family:'Merriweather',serif;font-size:11px;color:#1a1a1a;">
-                        ⭐ <strong>Best edition in franchise history</strong>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.markdown(
+                    '<div style="background:rgba(255,215,0,0.08);border:1px solid #FFD700;'
+                    'border-radius:4px;padding:8px 12px;margin-bottom:8px;'
+                    'font-family:Merriweather,serif;font-size:11px;color:#1a1a1a;">'
+                    '⭐ <strong>Best edition in franchise history</strong></div>',
+                    unsafe_allow_html=True
+                )
 
-            st.dataframe(df_anno_team, use_container_width=True, hide_index=True, height=300)
+            rows_html = ""
+            for _, row in df_anno_team.iterrows():
+                gc = row['Final GC']
+                if gc == "DNF":
+                    bg, col, pre = "#FFEBEE", "#A32D2D", ""
+                else:
+                    n = int(gc)
+                    if n == 1:
+                        bg, col, pre = "#FFF8DC", "#854F0B", "🏆 "
+                    elif n <= 3:
+                        bg, col, pre = "#f0ece4", "#444444", ""
+                    elif n <= 10:
+                        bg, col, pre = "#e0f7f5", "#0a6b65", ""
+                    else:
+                        bg, col, pre = "#F4F1EA", "#888888", ""
+
+                rows_html += (
+                    '<tr style="border-bottom:1px solid #e8e4da;">'
+                    '<td style="padding:7px 12px;font-family:Merriweather,serif;'
+                    'font-size:12px;color:#1a1a1a;">' + str(row['Rider']) + '</td>'
+                    '<td style="padding:7px 12px;text-align:center;">'
+                    '<span style="background:' + bg + ';color:' + col + ';font-size:11px;'
+                    'font-weight:700;padding:2px 10px;border-radius:20px;'
+                    'font-family:Arial,sans-serif;">' + pre + str(gc) + '</span>'
+                    '</td></tr>'
+                )
+
+            table_html = (
+                '<div style="background:#F4F1EA;border:1px solid #c8bfad;border-radius:6px;'
+                'overflow:hidden;margin-top:4px;max-height:320px;overflow-y:auto;">'
+                '<table style="width:100%;border-collapse:collapse;">'
+                '<thead>'
+                '<tr style="background:#ede9e0;border-bottom:2px solid #c8bfad;">'
+                '<th style="padding:8px 12px;text-align:left;font-family:Arial,sans-serif;'
+                'font-size:10px;letter-spacing:2px;text-transform:uppercase;'
+                'color:#888;font-weight:600;">Rider</th>'
+                '<th style="padding:8px 12px;text-align:center;font-family:Arial,sans-serif;'
+                'font-size:10px;letter-spacing:2px;text-transform:uppercase;'
+                'color:#888;font-weight:600;">Final GC</th>'
+                '</tr>'
+                '</thead>'
+                '<tbody>' + rows_html + '</tbody>'
+                '</table>'
+                '</div>'
+            )
+
+            st.markdown(table_html, unsafe_allow_html=True)
 
         with col_p2:
-            # Strip plot migliorato
             df_strip = df_team.dropna(subset=['Rank_Num']).copy()
             df_strip['Selected'] = df_strip['Year'] == anno_sel
 
             fig_strip = go.Figure()
-            for is_sel, color, size, opacity in [(False,'#c8bfad',7,0.4),(True,'#FFCC00',12,1.0)]:
-                df_s_ = df_strip[df_strip['Selected'] == is_sel]
-                if df_s_.empty: continue
-                jitter = np.random.uniform(-0.25, 0.25, size=len(df_s_))
+
+            # Tutti gli altri anni — grigio
+            df_other = df_strip[~df_strip['Selected']]
+            if not df_other.empty:
+                jitter = np.random.uniform(-0.18, 0.18, size=len(df_other))
                 fig_strip.add_trace(go.Scatter(
-                    x=df_s_['Year'] + jitter,
-                    y=df_s_['Rank_Num'],
+                    x=df_other['Year'] + jitter,
+                    y=df_other['Rank_Num'],
                     mode='markers',
-                    marker=dict(size=size, color=color, opacity=opacity,
-                                line=dict(width=1, color='white')),
-                    showlegend=False,
-                    hovertemplate='<b>%{customdata[0]}</b><br>%{customdata[1]}<br>GC: #%{y:.0f}<extra></extra>',
+                    name='Other editions',
+                    marker=dict(size=6, color='#c8bfad', opacity=0.5,
+                                line=dict(width=0)),
+                    hovertemplate='<b>%{customdata[0]}</b><br>%{customdata[1]}<br>GC rank: #%{y:.0f}<extra></extra>',
                     customdata=list(zip(
-                        df_s_['Rider'].str.title(),
-                        df_s_['Year'].astype(int),
+                        df_other['Rider'].str.title(),
+                        df_other['Year'].astype(int),
                     )),
                 ))
+
+            # Anno selezionato — giallo evidenziato
+            df_sel = df_strip[df_strip['Selected']]
+            if not df_sel.empty:
+                jitter_sel = np.random.uniform(-0.18, 0.18, size=len(df_sel))
+                fig_strip.add_trace(go.Scatter(
+                    x=df_sel['Year'] + jitter_sel,
+                    y=df_sel['Rank_Num'],
+                    mode='markers',
+                    name=f'{anno_sel} edition',
+                    marker=dict(size=11, color='#FFCC00', opacity=1.0,
+                                line=dict(width=1.5, color='#1a1a1a')),
+                    hovertemplate='<b>%{customdata[0]}</b><br>%{customdata[1]}<br>GC rank: #%{y:.0f}<extra></extra>',
+                    customdata=list(zip(
+                        df_sel['Rider'].str.title(),
+                        df_sel['Year'].astype(int),
+                    )),
+                ))
+
             # Linea media per anno
             avg_by_year = df_strip.groupby('Year')['Rank_Num'].mean().reset_index()
             fig_strip.add_trace(go.Scatter(
-                x=avg_by_year['Year'], y=avg_by_year['Rank_Num'],
-                mode='lines', line=dict(color='#FF6B6B', width=1.5, dash='dot'),
-                name='Avg rank', showlegend=False, hoverinfo='skip',
+                x=avg_by_year['Year'],
+                y=avg_by_year['Rank_Num'],
+                mode='lines',
+                name='Team avg rank',
+                line=dict(color='#FF6B6B', width=1.5, dash='dot'),
+                hovertemplate='<b>%{x}</b><br>Avg GC rank: #%{y:.1f}<extra></extra>',
             ))
+
             fig_strip.update_layout(
-                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                plot_bgcolor='#F4F1EA',
+                paper_bgcolor='#F4F1EA',
                 font=dict(family='Merriweather, serif', color='#1a1a1a'),
-                height=300, margin=dict(l=0,r=0,t=10,b=0),
-                xaxis=dict(title='Year', showgrid=False),
-                yaxis=dict(title='GC Rank', autorange='reversed',
-                           showgrid=True, gridcolor='#e8e4da'),
-                title=dict(text='All-Time Placements', font=dict(size=13, color='#1a1a1a')),
+                height=360,
+                margin=dict(l=40, r=20, t=20, b=40),
+                xaxis=dict(
+                    title='Year',
+                    showgrid=False,
+                    tickmode='linear',
+                    dtick=max(1, (df_strip['Year'].max() - df_strip['Year'].min()) // 8),
+                    tickfont=dict(size=10),
+                    title_font=dict(size=11),
+                ),
+                yaxis=dict(
+                    title='GC rank (lower = better)',
+                    autorange='reversed',
+                    showgrid=True,
+                    gridcolor='#e8e4da',
+                    tickfont=dict(size=10),
+                    title_font=dict(size=11),
+                ),
+                legend=dict(
+                    orientation='h',
+                    y=-0.18, x=0.5, xanchor='center',
+                    font=dict(size=10, family='Arial'),
+                    bgcolor='rgba(0,0,0,0)',
+                ),
+                showlegend=True,
             )
-            fig_strip.add_hrect(y0=1, y1=10, fillcolor='rgba(255,204,0,0.06)',
-                                line_width=0, annotation_text='Top 10',
-                                annotation_font=dict(size=9, color='#aaa'),
-                                annotation_position='right')
+
+            # Fascia top 10
+            fig_strip.add_hrect(
+                y0=0.5, y1=10.5,
+                fillcolor='rgba(255,204,0,0.06)',
+                line_width=0,
+                annotation_text='Top 10 zone',
+                annotation_font=dict(size=9, color='#854F0B', family='Arial'),
+                annotation_position='top right',
+            )
+
             st.plotly_chart(fig_strip, use_container_width=True)
 
         st.markdown(hr, unsafe_allow_html=True)
-
         # ──────────────────────────────────────────────────────
         # SEZIONE D: PALMARÈS
         # ──────────────────────────────────────────────────────
