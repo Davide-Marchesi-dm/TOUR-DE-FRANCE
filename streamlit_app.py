@@ -4341,7 +4341,6 @@ elif st.session_state.pagina_corrente == "teams":
     # ──────────────────────────────────────────────────────────
     # 2. CSS
     # ──────────────────────────────────────────────────────────
-    
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
@@ -4355,72 +4354,29 @@ elif st.session_state.pagina_corrente == "teams":
             font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
             color: #888; font-family: Arial, sans-serif; display: block; margin-bottom: 4px;
         }
-
-        /* ── SFONDO CARTA: SOLO IL CONTENUTO, NON LA NAVBAR ── */
-        section[data-testid="stMain"],
-        section[data-testid="stMain"] > div,
-        div[data-testid="stVerticalBlock"],
-        div[data-testid="stVerticalBlockBorderWrapper"],
-        div[data-testid="column"],
-        div[data-testid="stHorizontalBlock"] {
-            background-color: #F4F1EA !important;
+        div[data-testid="stSelectbox"] {
+            background-color: transparent !important;
         }
-
-        /* ── PLOTLY WRAPPER ── */
-        div[data-testid="stPlotlyChart"] > div,
-        div[data-testid="stPlotlyChart"] iframe {
-            background-color: #F4F1EA !important;
-            border: none !important;
-        }
-
-        /* ── SELECTBOX ── */
         div[data-testid="stSelectbox"] label p {
-            color: #1a1a1a !important;
-            font-family: 'Merriweather', serif !important;
-            font-weight: 700 !important;
+            color: #1a1a1a !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important;
         }
         div[data-baseweb="select"] > div {
-            background-color: #F4F1EA !important;
-            color: #1a1a1a !important;
-            border: 1px solid #c8bfad !important;
-            border-radius: 3px !important;
+            background-color: #F4F1EA !important; color: #1a1a1a !important;
+            border: 1px solid #c8bfad !important; border-radius: 3px !important;
         }
-        div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] {
-            background-color: #F4F1EA !important;
-        }
-        div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li {
-            color: #1a1a1a !important;
-            background-color: #F4F1EA !important;
-        }
-        div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover {
-            background-color: #ede9e0 !important;
-        }
-        ul[role="listbox"] li[aria-selected="true"] {
-            color: #854F0B !important;
-            font-weight: 700 !important;
-        }
-
-        /* ── BOTTONE ROLES EXPLAINER ── */
-        div[data-testid="stButton"] button[kind="secondary"] {
-            background: #F4F1EA !important;
-            border-top: 2px solid #1a1a1a !important;
-            border-bottom: 1px solid #c8bfad !important;
-            border-left: none !important;
-            border-right: none !important;
-            border-radius: 0 !important;
-            padding: 9px 20px !important;
+        div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111 !important; }
+        div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li { color: #fff !important; background-color: #111 !important; }
+        div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover { background-color: #2a2a2a !important; }
+        ul[role="listbox"] li[aria-selected="true"] { color: #FFCC00 !important; }
+        div[data-testid="stPlotlyChart"] > div {
+            background-color: transparent !important;
+            border: none !important;
             box-shadow: none !important;
-            color: #1a1a1a !important;
-            font-family: 'Merriweather', Georgia, serif !important;
-            font-size: 12px !important;
-            font-weight: 700 !important;
         }
-        div[data-testid="stButton"] button[kind="secondary"]:hover {
-            background: #ede9e0 !important;
-            border-top: 2px solid #1a1a1a !important;
-            border-bottom: 1px solid #c8bfad !important;
-            border-left: none !important;
-            border-right: none !important;
+        div[data-testid="column"],
+        div[data-testid="stVerticalBlock"],
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            background-color: transparent !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -4895,12 +4851,26 @@ elif st.session_state.pagina_corrente == "teams":
 
         st.markdown(hr, unsafe_allow_html=True)        
         
-            # ──────────────────────────────────────────────────────
+        # ──────────────────────────────────────────────────────
+        # SEZIONE C: HISTORICAL PERFORMANCE
+        # ──────────────────────────────────────────────────────
+        # ──────────────────────────────────────────────────────
+        # SEZIONE C: HISTORICAL PERFORMANCE
+        # ──────────────────────────────────────────────────────
+        # ──────────────────────────────────────────────────────
         # SEZIONE C: HISTORICAL PERFORMANCE
         # ──────────────────────────────────────────────────────
         st.markdown("""
             <style>
-            /* Selectbox chiara */
+            /* 1. Forza lo sfondo chiaro su TUTTO il blocco delle colonne di questa sezione */
+            div[data-testid="stHorizontalBlock"] {
+                background-color: #F4F1EA !important;
+            }
+            div[data-testid="column"] {
+                background-color: #F4F1EA !important;
+            }
+            
+            /* 2. Selectbox chiara */
             div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
                 background-color: #F4F1EA !important;
                 border: 1px solid #c8bfad !important;
@@ -4912,25 +4882,21 @@ elif st.session_state.pagina_corrente == "teams":
                 font-size: 12px !important;
                 font-weight: 700 !important;
             }
-            /* Dropdown menu chiaro */
+            
+            /* 3. Dropdown menu chiaro e 🪄 FIX: Testo degli anni forzato in NERO */
             div[data-baseweb="popover"] ul, ul[role="listbox"] {
                 background-color: #F4F1EA !important;
             }
-            div[data-baseweb="popover"] li, ul[role="listbox"] li {
+            div[data-baseweb="popover"] li, ul[role="listbox"] li, div[role="option"] {
                 color: #1a1a1a !important;
                 background-color: #F4F1EA !important;
             }
-            div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover {
+            /* Colpisce i singoli span di testo annidati dentro la tendina per sovrascrivere il bianco */
+            div[data-baseweb="popover"] span, ul[role="listbox"] span, div[role="option"] span {
+                color: #1a1a1a !important;
+            }
+            div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover, div[role="option"]:hover {
                 background-color: #ede9e0 !important;
-            }
-            /* Dataframe: sfondo carta, niente bordi neri */
-            div[data-testid="stDataFrame"] > div {
-                background-color: #F4F1EA !important;
-                border: 1px solid #c8bfad !important;
-                border-radius: 4px !important;
-            }
-            div[data-testid="stDataFrame"] iframe {
-                background-color: #F4F1EA !important;
             }
             </style>
         """, unsafe_allow_html=True)
@@ -4939,7 +4905,7 @@ elif st.session_state.pagina_corrente == "teams":
             <div style="padding: 0 16px 8px;">
                 <span class="t-section-label">· Historical Performance ·</span>
                 <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
-                        color:#1a1a1a;margin:4px 0 4px;">
+                            color:#1a1a1a;margin:4px 0 4px;">
                     All-Time Placements & Edition Spotlight
                 </h3>
                 <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
@@ -4953,6 +4919,7 @@ elif st.session_state.pagina_corrente == "teams":
         col_p1, col_p2 = st.columns([1.2, 1], gap="medium")
 
         with col_p1:
+            st.markdown('<div style="padding-left: 16px; background:#F4F1EA;">', unsafe_allow_html=True)
             anni_team = sorted(df_team['Year'].dropna().unique(), reverse=True)
             anno_sel = st.selectbox("📅 Focus on edition:", [int(a) for a in anni_team], key="team_anno")
 
@@ -4990,10 +4957,10 @@ elif st.session_state.pagina_corrente == "teams":
                         bg, col, pre = "#F4F1EA", "#888888", ""
 
                 rows_html += (
-                    '<tr style="border-bottom:1px solid #e8e4da;">'
-                    '<td style="padding:7px 12px;font-family:Merriweather,serif;'
+                    '<tr style="border-bottom:1px solid #c8bfad;">'
+                    '<td style="padding:8px 12px;font-family:Merriweather,serif;'
                     'font-size:12px;color:#1a1a1a;">' + str(row['Rider']) + '</td>'
-                    '<td style="padding:7px 12px;text-align:center;">'
+                    '<td style="padding:8px 12px;text-align:center;">'
                     '<span style="background:' + bg + ';color:' + col + ';font-size:11px;'
                     'font-weight:700;padding:2px 10px;border-radius:20px;'
                     'font-family:Arial,sans-serif;">' + pre + str(gc) + '</span>'
@@ -5001,17 +4968,17 @@ elif st.session_state.pagina_corrente == "teams":
                 )
 
             table_html = (
-                '<div style="background:#F4F1EA;border:1px solid #c8bfad;border-radius:6px;'
+                '<div style="background:#F4F1EA;border:1px solid #c8bfad;border-radius:4px;'
                 'overflow:hidden;margin-top:4px;max-height:320px;overflow-y:auto;">'
-                '<table style="width:100%;border-collapse:collapse;">'
+                '<table style="width:100%;border-collapse:collapse;background:#F4F1EA;">'
                 '<thead>'
-                '<tr style="background:#ede9e0;border-bottom:2px solid #c8bfad;">'
-                '<th style="padding:8px 12px;text-align:left;font-family:Arial,sans-serif;'
+                '<tr style="background:#F4F1EA;border-bottom:2px solid #1a1a1a;">'
+                '<th style="padding:10px 12px;text-align:left;font-family:Arial,sans-serif;'
                 'font-size:10px;letter-spacing:2px;text-transform:uppercase;'
-                'color:#888;font-weight:600;">Rider</th>'
-                '<th style="padding:8px 12px;text-align:center;font-family:Arial,sans-serif;'
+                'color:#1a1a1a;font-weight:700;">Rider</th>'
+                '<th style="padding:10px 12px;text-align:center;font-family:Arial,sans-serif;'
                 'font-size:10px;letter-spacing:2px;text-transform:uppercase;'
-                'color:#888;font-weight:600;">Final GC</th>'
+                'color:#1a1a1a;font-weight:700;">Final GC</th>'
                 '</tr>'
                 '</thead>'
                 '<tbody>' + rows_html + '</tbody>'
@@ -5020,8 +4987,10 @@ elif st.session_state.pagina_corrente == "teams":
             )
 
             st.markdown(table_html, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
         with col_p2:
+            st.markdown('<div style="padding-right: 16px; background:#F4F1EA;">', unsafe_allow_html=True)
             df_strip = df_team.dropna(subset=['Rank_Num']).copy()
             df_strip['Selected'] = df_strip['Year'] == anno_sel
 
@@ -5079,7 +5048,7 @@ elif st.session_state.pagina_corrente == "teams":
                 paper_bgcolor='#F4F1EA',
                 font=dict(family='Merriweather, serif', color='#1a1a1a'),
                 height=360,
-                margin=dict(l=40, r=20, t=20, b=40),
+                margin=dict(l=50, r=20, t=10, b=50),
                 xaxis=dict(
                     title='Year',
                     showgrid=False,
@@ -5098,24 +5067,25 @@ elif st.session_state.pagina_corrente == "teams":
                 ),
                 legend=dict(
                     orientation='h',
-                    y=-0.18, x=0.5, xanchor='center',
+                    y=-0.22, x=0.5, xanchor='center',
                     font=dict(size=10, family='Arial'),
                     bgcolor='rgba(0,0,0,0)',
                 ),
                 showlegend=True,
             )
 
-            # Fascia top 10
+            # Fascia top 10 ricalibrata
             fig_strip.add_hrect(
                 y0=0.5, y1=10.5,
                 fillcolor='rgba(255,204,0,0.06)',
                 line_width=0,
                 annotation_text='Top 10 zone',
-                annotation_font=dict(size=9, color='#854F0B', family='Arial'),
+                annotation_font=dict(size=9, color='#854F0B', family='Arial', weight='bold'),
                 annotation_position='top right',
             )
 
             st.plotly_chart(fig_strip, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown(hr, unsafe_allow_html=True)
         # ──────────────────────────────────────────────────────
