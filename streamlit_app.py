@@ -2376,7 +2376,7 @@ elif st.session_state.pagina_corrente == "corridori":
 
         st.markdown(hr, unsafe_allow_html=True)
 
-        # ── LONGEVITY VS PEAK ──
+      # ── LONGEVITY VS PEAK ──
         st.markdown("""
             <div style="padding: 0 16px;">
                 <span class="r-section-label">· Longevity vs Peak ·</span>
@@ -2474,35 +2474,32 @@ elif st.session_state.pagina_corrente == "corridori":
         st.plotly_chart(fig_long, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # ── GUIDA ALLA LETTURA DEI QUADRANTI SOTTO IL GRAFICO ──
+        # ── 🪄 DIDASCALIA MINIMALE IN INGLESE SOTTO IL GRAFICO ──
         st.markdown("""
             <div style="margin: 4px 16px 16px 16px; padding: 14px 16px; background: #fdfdfb; border: 1px solid #e8e4da; border-radius: 6px; font-family: Arial, sans-serif;">
-                <h5 style="font-family:'Merriweather',serif; font-size:12px; font-weight:900; color:#1a1a1a; margin:0 0 10px 0; text-transform:uppercase; letter-spacing:0.5px;">
-                    💡 Come leggere i quattro quadranti della carriera
-                </h5>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 11px; line-height: 1.6; color: #444;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; font-size: 11px; line-height: 1.6; color: #444;">
                     <div>
                         <p style="margin: 0 0 10px 0;">
-                            <strong style="color: #854F0B; font-size: 12px;">🏆 Legends / Leaders</strong><br>
-                            <em>(Alta Longevità + Alta Performance)</em><br>
-                            I grandi campioni del Tour. Atleti che vantano una carriera lunghissima (più di 10 partecipazioni) e che sono stati in grado di artigliare la zona nobile della classifica generale (Rank ≤ 50) o la vittoria.
+                            <strong style="color: #854F0B; font-size: 11px; uppercase; letter-spacing:0.3px;">🏆 Legends / Leaders</strong><br>
+                            <em>(High Longevity + High Performance)</em><br>
+                            Elite riders with extended careers at the Tour (10+ participations) who managed to secure top-tier general classification spots or outright victories (Best Rank ≤ 50).
                         </p>
                         <p style="margin: 0;">
-                            <strong style="color: #555; font-size: 12px;">⚡ Short Peaks</strong><br>
-                            <em>(Bassa Longevità + Alta Performance)</em><br>
-                            Atleti con fiammate straordinarie ma un minor numero di presenze totali (meno di 10 edizioni), come astri nascenti della classifica generale, o capitani le cui carriere sono state abbreviate.
+                            <strong style="color: #555; font-size: 11px; uppercase; letter-spacing:0.3px;">⚡ Short Peaks</strong><br>
+                            <em>(Low Longevity + High Performance)</em><br>
+                            Riders who achieved extraordinary peaks but had shorter trajectories at the Tour (fewer than 10 ed.), including rising GC stars or captains whose careers were cut short.
                         </p>
                     </div>
                     <div>
                         <p style="margin: 0 0 10px 0;">
-                            <strong style="color: #555; font-size: 12px;">🛡️ Loyal Domestiques</strong><br>
-                            <em>(Alta Longevità + Piazzamenti di Gruppo)</em><br>
-                            Le colonne portanti del ciclismo. Atleti rimasti al Tour per oltre 10 edizioni svolgendo un lavoro di supporto totale. Non hanno mai curato la classifica personale, terminando sempre oltre la 50ª posizione.
+                            <strong style="color: #555; font-size: 11px; uppercase; letter-spacing:0.3px;">🛡️ Loyal Domestiques</strong><br>
+                            <em>(High Longevity + Group Placement)</em><br>
+                            The engine room of the peloton. Riders who stayed in the circuit for over 10 editions carrying out protective team duties, never targeting personal rank (Best Rank > 50).
                         </p>
                         <p style="margin: 0;">
-                            <strong style="color: #888; font-size: 12px;">🐢 Pack Finishers</strong><br>
-                            <em>(Bassa Longevità + Piazzamenti di Gruppo)</em><br>
-                            Corridori passati dal Tour de France per poche edizioni (meno di 10 presenze), i cui compiti o caratteristiche li hanno portati a concludere le corse stabilmente nella pancia del gruppo.
+                            <strong style="color: #888; font-size: 11px; uppercase; letter-spacing:0.3px;">🐢 Pack Finishers</strong><br>
+                            <em>(Low Longevity + Group Placement)</em><br>
+                            Riders who took part in fewer than 10 Tours, whose roles or physical attributes led them to consistently conclude their experiences embedded deep within the main bunch.
                         </p>
                     </div>
                 </div>
