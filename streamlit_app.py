@@ -2242,7 +2242,7 @@ elif st.session_state.pagina_corrente == "corridori":
                 <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
                     Physical Outlier Detector - Are These Champions Atypical?
                 </h4>
-                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:12px;">
                     Distribution of all Tour winners (grey). Colored markers = selected riders. Only available for GC winners.
                 </p>
             </div>
@@ -2256,15 +2256,11 @@ elif st.session_state.pagina_corrente == "corridori":
 
         df_phys = df_w_clean.dropna(subset=['age', 'BMI', 'weight_(Kg)'])
 
-        fig_strips = go.Figure()
-        metrics_list = list(PHYSICAL_COLS.items())
-        y_positions = [3, 2, 1]
-
         # Liste per tenere traccia di chi ha i dati e chi no
         not_winners = []
         winners_found = []
 
-        # Primo ciclo di controllo sui rider selezionati
+        # Ciclo di controllo sui rider selezionati
         for rider in riders_sel:
             rider_norm = rider.title().lower().strip()
             winner_match = df_phys[df_phys['Winner'].str.lower().str.strip() == rider_norm]
@@ -2278,17 +2274,18 @@ elif st.session_state.pagina_corrente == "corridori":
             else:
                 winners_found.append((rider.title(), winner_match.iloc[0]))
 
-        # Disegno lo sfondo e i punti dei vincitori validi
-        for idx, (col, (label, unit)) in enumerate(metrics_list):
-            y_val = y_positions[idx]
-            vals = df_phys[col].dropna()
+        # Ciclo verticale per generare i tre grafici impilati
+        for idx, (col_name, (label, unit)) in enumerate(PHYSICAL_COLS.items()):
+            fig_metric = go.Figure()
+            vals = df_phys[col_name].dropna()
+            median_val = vals.median()
 
-            # Jitter per i punti di sfondo
-            jitter = np.random.uniform(-0.18, 0.18, size=len(vals))
+            # Jitter verticale per i punti di sfondo
+            jitter = np.random.uniform(-0.15, 0.15, size=len(vals))
 
             # Background (tutti i vincitori storici)
-            fig_strips.add_trace(go.Scatter(
-                x=vals, y=[y_val + j for j in jitter],
+            fig_metric.add_trace(go.Scatter(
+                x=vals, y=jitter,
                 mode='markers',
                 marker=dict(size=7, color='#c8bfad', opacity=0.4,
                             line=dict(width=0.5, color='#888')),
@@ -2297,62 +2294,87 @@ elif st.session_state.pagina_corrente == "corridori":
                 name=label,
             ))
 
-            # Mediana storica
-            median_val = vals.median()
-            fig_strips.add_shape(type='line',
+            # 🪄 FIX 1: Mediana storica bloccata stabilmente a x=median_val (sarà il centro dell'asse)
+            fig_metric.add_shape(type='line',
                 x0=median_val, x1=median_val,
-                y0=y_val - 0.25, y1=y_val + 0.25,
-                line=dict(color='#888', width=2, dash='dot'))
+                y0=-0.25, y1=0.25,
+                line=dict(color='#888', width=1.5, dash='dot'))
 
-            # Aggiungo i punti colorati per ciascun rider selezionato che ha vinto il Tour
+            # Punti colorati per ciascun rider selezionato
             for i, (rider_title, row_data) in enumerate(winners_found):
-                if pd.notna(row_data[col]):
-                    rider_val = row_data[col]
-                    
-                    # Usiamo la PALETTE globale per differenziare i ciclisti selezionati
+                if pd.notna(row_data[col_name]):
+                    rider_val = row_data[col_name]
                     rider_color = PALETTE[i % len(PALETTE)]
                     
-                    fig_strips.add_trace(go.Scatter(
-                        x=[rider_val], y=[y_val],
+                    fig_metric.add_trace(go.Scatter(
+                        x=[rider_val], y=[0],
                         mode='markers+text',
-                        marker=dict(size=14, color=rider_color,
+                        marker=dict(size=13, color=rider_color,
                                     line=dict(width=1.5, color='#1a1a1a'), symbol='diamond'),
                         text=[f'{rider_val:.1f}'], textposition='top center',
-                        textfont=dict(size=9, color='#1a1a1a', family='Arial'),
-                        showlegend=(idx == 0), # Mostra in legenda solo al primo ciclo per non duplicare
+                        textfont=dict(size=10, color='#1a1a1a', family='Arial', weight='bold'),
+                        # 🪄 FIX 2: Mostra la legenda con i diamanti dei corridori SOLO sotto l'ultimo grafico
+                        showlegend=(idx == 2), 
                         name=rider_title,
                         hovertemplate=f'<b>{rider_title}</b><br>{label}: {rider_val:.1f} {unit}<extra></extra>',
                     ))
 
-        fig_strips.update_layout(
-            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-            font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=320, margin=dict(l=120, r=20, t=20, b=20),
-            xaxis=dict(title='Value', showgrid=True, gridcolor='#e8e4da'),
-            yaxis=dict(
-                tickmode='array',
-                tickvals=y_positions,
-                ticktext=[v[0] for v in PHYSICAL_COLS.values()],
-                showgrid=False,
-            ),
-            legend=dict(orientation='h', y=-0.2, x=0.5, xanchor='center'),
-            showlegend=True if winners_found else False
-        )
+            # 🪄 FIX 1 (Continua): Calcolo dei limiti dell'asse X simmetrici rispetto alla mediana per centrarla perfettamente
+            max_delta = max(abs(vals.max() - median_val), abs(vals.min() - median_val))
+            padding = max_delta * 1.15 # 15% di margine laterale per non tagliare i punti estremi
+            x_range = [median_val - padding, median_val + padding]
 
-        st.plotly_chart(fig_strips, use_container_width=True)
+            # Configurazione del layout
+            fig_metric.update_layout(
+                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+                # Sull'ultimo grafico aumentiamo leggermente l'altezza per fare spazio alla legenda distanziata
+                height=140 if idx < 2 else 175, 
+                margin=dict(l=140, r=40, t=20, b=25 if idx < 2 else 60), # Margine inferiore maggiorato sull'ultimo grafico
+                xaxis=dict(
+                    showgrid=True, 
+                    gridcolor='#e8e4da', 
+                    tickfont=dict(size=10), 
+                    title=dict(text=unit, font=dict(size=10), standoff=8),
+                    range=x_range # Applica il range centrato sulla mediana
+                ),
+                yaxis=dict(
+                    tickmode='array',
+                    tickvals=[0],
+                    ticktext=[f"<b>{label}</b>"],
+                    tickfont=dict(size=12, family='Merriweather, serif'),
+                    showgrid=False, 
+                    zeroline=False,
+                    range=[-0.4, 0.4]
+                ),
+                # 🪄 FIX 2 (Continua): Configurazione della legenda spostata in basso e isolata sotto l'ultimo tracciato
+                legend=dict(
+                    orientation='h', 
+                    y=-0.75, # Spinta decisamente sotto l'asse X dell'ultimo grafico
+                    x=0.5, 
+                    xanchor='center', 
+                    yanchor='top',
+                    font=dict(size=10, family='Arial'),
+                    bgcolor='rgba(0,0,0,0)',
+                ),
+                showlegend=True if (idx == 2 and winners_found) else False
+            )
+
+            st.markdown('<div style="margin: 0 16px;">', unsafe_allow_html=True)
+            st.plotly_chart(fig_metric, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
         # Messaggio dinamico per chi non ha mai vinto il Tour
         if not_winners:
             riders_str = ", ".join([f"<strong>{r}</strong>" for r in not_winners])
             st.markdown(f"""
-                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:12px 16px; margin: 0 16px;
-                            border-radius:3px;font-family:'Merriweather',serif;color:#666;font-style:italic;font-size:12px;margin-bottom:15px;">
+                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:12px 16px; margin: 12px 16px 15px 16px;
+                            border-radius:3px;font-family:'Merriweather',serif;color:#666;font-style:italic;font-size:12px;">
                     Physical data available only for GC winners. {riders_str} did not win the Tour de France GC and cannot be highlighted.
                 </div>
             """, unsafe_allow_html=True)
 
         st.markdown(hr, unsafe_allow_html=True)
-
         # ── LONGEVITY vs PEAK ──
         st.markdown(hr, unsafe_allow_html=True)
         st.markdown("""
@@ -4851,12 +4873,6 @@ elif st.session_state.pagina_corrente == "teams":
 
         st.markdown(hr, unsafe_allow_html=True)        
         
-        # ──────────────────────────────────────────────────────
-        # SEZIONE C: HISTORICAL PERFORMANCE
-        # ──────────────────────────────────────────────────────
-        # ──────────────────────────────────────────────────────
-        # SEZIONE C: HISTORICAL PERFORMANCE
-        # ──────────────────────────────────────────────────────
         # ──────────────────────────────────────────────────────
         # SEZIONE C: HISTORICAL PERFORMANCE
         # ──────────────────────────────────────────────────────
