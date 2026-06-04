@@ -2375,8 +2375,8 @@ elif st.session_state.pagina_corrente == "corridori":
             """, unsafe_allow_html=True)
 
         st.markdown(hr, unsafe_allow_html=True)
-        # ── LONGEVITY vs PEAK ──
-        st.markdown(hr, unsafe_allow_html=True)
+
+        # ── LONGEVITY VS PEAK ──
         st.markdown("""
             <div style="padding: 0 16px;">
                 <span class="r-section-label">· Longevity vs Peak ·</span>
@@ -2407,61 +2407,117 @@ elif st.session_state.pagina_corrente == "corridori":
 
         fig_long = go.Figure()
 
+        # Definizione dei tagli netti a metà dei range
+        quad_x = 50
+        quad_y = 10
+        max_y_data = df_longevity_filtered['partecipazioni'].max()
+
         # Background dots
         df_bg = df_longevity_filtered[~df_longevity_filtered['is_selected']]
-        fig_long.add_trace(go.Scatter(
-            x=df_bg['best_rank'], y=df_bg['partecipazioni'],
-            mode='markers',
-            marker=dict(size=6, color='#c8bfad', opacity=0.5, line=dict(width=0.5, color='#888')),
-            showlegend=False,
-            hovertemplate='<b>%{customdata[0]}</b><br>Best: #%{x}<br>Tours: %{y}<extra></extra>',
-            customdata=df_bg[['Rider']].values,
-        ))
+        if not df_bg.empty:
+            jitter_y = np.random.uniform(-0.22, 0.22, size=len(df_bg))
+            fig_long.add_trace(go.Scatter(
+                x=df_bg['best_rank'], y=df_bg['partecipazioni'] + jitter_y,
+                mode='markers',
+                marker=dict(size=6, color='#c8bfad', opacity=0.4, line=dict(width=0.5, color='#888')),
+                showlegend=False,
+                hovertemplate='<b>%{customdata[0]}</b><br>Best Rank: #%{x}<br>Total Tours: %{y:.0f}<extra></extra>',
+                customdata=df_bg[['Rider']].values,
+            ))
 
-        # Selected riders (Evidenziati come stelle)
+        # Selected riders
         for i, rider in enumerate(riders_sel):
             df_sel = df_longevity_filtered[df_longevity_filtered['Rider'].str.lower().str.strip() == rider.lower().strip()]
             if df_sel.empty:
                 continue
             fig_long.add_trace(go.Scatter(
                 x=df_sel['best_rank'], y=df_sel['partecipazioni'],
-                mode='markers+text',
-                marker=dict(size=18, color=PALETTE[i % len(PALETTE)], line=dict(width=2, color='white'), symbol='star'),
-                text=[rider.title()],
-                textposition='top center',
-                textfont=dict(size=10, color=PALETTE[i % len(PALETTE)]),
+                mode='markers',
+                marker=dict(size=14, color=PALETTE[i % len(PALETTE)], 
+                            line=dict(width=1.5, color='#1a1a1a'), symbol='star'),
                 name=rider.title(),
                 hovertemplate=f'<b>{rider.title()}</b><br>Best GC: #%{{x}}<br>Tours ridden: %{{y}}<extra></extra>',
             ))
 
+        # Linee divisorie dei quadranti posizionate a x=50 e y=10
+        fig_long.add_shape(type="line", x0=quad_x, x1=quad_x, y0=2.5, y1=max_y_data + 1,
+                        line=dict(color="#c8bfad", width=1, dash="dash"))
+        fig_long.add_shape(type="line", x0=0, x1=100, y0=quad_y, y1=quad_y,
+                        line=dict(color="#c8bfad", width=1, dash="dash"))
+
         fig_long.update_layout(
             plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
             font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=380, margin=dict(l=40, r=20, t=20, b=20),
-            xaxis=dict(title='Best GC Rank (lower = better)', showgrid=True, gridcolor='#e8e4da'),
-            yaxis=dict(title='Total Tour participations', showgrid=True, gridcolor='#e8e4da'),
-            legend=dict(orientation='h', y=-0.15, x=0.5, xanchor='center'),
+            height=400, 
+            margin=dict(l=50, r=40, t=30, b=50),
+            xaxis=dict(title='Best Career GC Rank (lower = better)', showgrid=False, tickfont=dict(size=10), range=[0, 100]),
+            yaxis=dict(title='Total Tour Participations', showgrid=False, tickfont=dict(size=10), range=[2.5, max_y_data + 1]),
+            legend=dict(orientation='h', y=-0.18, x=0.5, xanchor='center', font=dict(size=10, family='Arial')),
             showlegend=True
         )
 
-        # Quadrant labels 
-        fig_long.add_annotation(x=2, y=14, text='🏆 Legends & Long Careers', showarrow=False,
-                                font=dict(size=10, color='#888', family='Arial', weight='bold'), opacity=0.8)
-        fig_long.add_annotation(x=50, y=14, text='🐢 Loyal Domestiques', showarrow=False,
-                                font=dict(size=10, color='#888', family='Arial'), opacity=0.7)
+        # Label posizionate nell'angolo ALTO A SINISTRA di ciascun rispettivo quadrante
+        # Quadrante 1: Alto-Sinistra (X < 50, Y > 10)
+        fig_long.add_annotation(x=2, y=max_y_data + 0.5, text='🏆 Legends / Leaders', showarrow=False,
+                                font=dict(size=10, color='#854F0B', family='Arial', weight='bold'), xanchor='left', yanchor='top')
+        # Quadrante 2: Alto-Destra (X > 50, Y > 10)
+        fig_long.add_annotation(x=quad_x + 2, y=max_y_data + 0.5, text='🛡️ Loyal Domestiques', showarrow=False,
+                                font=dict(size=10, color='#555', family='Arial', weight='bold'), xanchor='left', yanchor='top')
+        # Quadrante 3: Basso-Sinistra (X < 50, Y < 10)
+        fig_long.add_annotation(x=2, y=quad_y - 0.4, text='⚡ Short Peaks', showarrow=False,
+                                font=dict(size=10, color='#555', family='Arial', weight='bold'), xanchor='left', yanchor='top')
+        # Quadrante 4: Basso-Destra (X > 50, Y < 10)
+        fig_long.add_annotation(x=quad_x + 2, y=quad_y - 0.4, text='🐢 Pack Finishers', showarrow=False,
+                                font=dict(size=10, color='#888', family='Arial', weight='bold'), xanchor='left', yanchor='top')
 
+        st.markdown('<div style="margin: 0 16px;">', unsafe_allow_html=True)
         st.plotly_chart(fig_long, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        # Messaggio dinamico per chi ha meno di 3 partecipazioni nel secondo grafico
+        # ── GUIDA ALLA LETTURA DEI QUADRANTI SOTTO IL GRAFICO ──
+        st.markdown("""
+            <div style="margin: 4px 16px 16px 16px; padding: 14px 16px; background: #fdfdfb; border: 1px solid #e8e4da; border-radius: 6px; font-family: Arial, sans-serif;">
+                <h5 style="font-family:'Merriweather',serif; font-size:12px; font-weight:900; color:#1a1a1a; margin:0 0 10px 0; text-transform:uppercase; letter-spacing:0.5px;">
+                    💡 Come leggere i quattro quadranti della carriera
+                </h5>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 11px; line-height: 1.6; color: #444;">
+                    <div>
+                        <p style="margin: 0 0 10px 0;">
+                            <strong style="color: #854F0B; font-size: 12px;">🏆 Legends / Leaders</strong><br>
+                            <em>(Alta Longevità + Alta Performance)</em><br>
+                            I grandi campioni del Tour. Atleti che vantano una carriera lunghissima (più di 10 partecipazioni) e che sono stati in grado di artigliare la zona nobile della classifica generale (Rank ≤ 50) o la vittoria.
+                        </p>
+                        <p style="margin: 0;">
+                            <strong style="color: #555; font-size: 12px;">⚡ Short Peaks</strong><br>
+                            <em>(Bassa Longevità + Alta Performance)</em><br>
+                            Atleti con fiammate straordinarie ma un minor numero di presenze totali (meno di 10 edizioni), come astri nascenti della classifica generale, o capitani le cui carriere sono state abbreviate.
+                        </p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 10px 0;">
+                            <strong style="color: #555; font-size: 12px;">🛡️ Loyal Domestiques</strong><br>
+                            <em>(Alta Longevità + Piazzamenti di Gruppo)</em><br>
+                            Le colonne portanti del ciclismo. Atleti rimasti al Tour per oltre 10 edizioni svolgendo un lavoro di supporto totale. Non hanno mai curato la classifica personale, terminando sempre oltre la 50ª posizione.
+                        </p>
+                        <p style="margin: 0;">
+                            <strong style="color: #888; font-size: 12px;">🐢 Pack Finishers</strong><br>
+                            <em>(Bassa Longevità + Piazzamenti di Gruppo)</em><br>
+                            Corridori passati dal Tour de France per poche edizioni (meno di 10 presenze), i cui compiti o caratteristiche li hanno portati a concludere le corse stabilmente nella pancia del gruppo.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        # Messaggio dinamico per chi ha meno di 3 partecipazioni
         if low_participations:
             low_riders_str = ", ".join([f"<strong>{r}</strong>" for r in low_participations])
             st.markdown(f"""
-                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:12px 16px;margin: 0 16px;
+                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:12px 16px;margin: 4px 16px 15px 16px;
                             border-radius:3px;font-family:'Merriweather',serif;color:#666;font-style:italic;font-size:12px;">
                     Longevity criteria notice: {low_riders_str} has/have fewer than 3 total Tour de France participations and cannot be plotted.
                 </div>
             """, unsafe_allow_html=True)
-
 
     # ══════════════════════════════════════════════════════════
     # TAB 3 — HEAD-TO-HEAD
