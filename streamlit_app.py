@@ -2090,93 +2090,88 @@ elif st.session_state.pagina_corrente == "corridori":
 
         # ── RIDER TYPE EXPLAINER CARDS ──
             rider_cards_html = """
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:0 2rem 1.5rem;font-family:'Merriweather',Georgia,serif;">
-
-            <!-- CLIMBER -->
-            <div style="background:#fff8f8;border:1.5px solid #C62828;border-radius:10px;padding:14px 16px;cursor:pointer;"
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:0 2rem 1.5rem; font-family:'Merriweather',Georgia,serif; align-items: start;"> <div style="background:#fff8f8; border:1.5px solid #C62828; border-radius:10px; padding:14px 16px; cursor:pointer;"
                 onclick="toggleCard(this,'climber')">
-                <div style="display:flex;align-items:center;gap:10px;">
-                <div style="width:11px;height:11px;border-radius:50%;background:#C62828;flex-shrink:0"></div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:11px; height:11px; border-radius:50%; background:#C62828; flex-shrink:0"></div>
                 <div style="flex:1">
-                    <p style="margin:0;font-size:14px;font-weight:700;color:#C62828;">Climber</p>
-                    <p style="margin:2px 0 0;font-size:11px;color:#666;font-style:italic;line-height:1.4;">Light, powerful, relentless uphill</p>
+                    <p style="margin:0; font-size:14px; font-weight:700; color:#C62828;">Climber</p>
+                    <p style="margin:2px 0 0; font-size:11px; color:#666; font-style:italic; line-height:1.4;">Light, powerful, relentless uphill</p>
                 </div>
-                <span id="chev-climber" style="font-size:13px;color:#999;transition:transform 0.2s;display:inline-block;">▼</span>
+                <span id="chev-climber" style="font-size:13px; color:#999; transition:transform 0.2s; display:inline-block;">▼</span>
                 </div>
-                <div id="body-climber" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;">
-                <div style="border-top:1px solid #f5c6c6;margin-top:10px;padding-top:10px;">
-                    <p style="margin:0;font-size:12px;color:#444;line-height:1.7;">
+                <div id="body-climber" style="max-height:0; overflow:hidden; transition:max-height 0.3s ease;">
+                <div style="border-top:1px solid #f5c6c6; margin-top:10px; padding-top:10px;">
+                    <p style="margin:0; font-size:12px; color:#444; line-height:1.7;">
                     A climber excels due to an exceptional power-to-weight ratio — high watts per kilogram of body mass,
                     typically under 65 kg. They dominate Alpine and Pyrenean stages where gravity penalises every extra gram,
                     and are the primary GC contenders on summit finishes. Their relative weakness is flat terrain and time trials.
                     </p>
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
-                    <span style="background:#FFEBEE;color:#C62828;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">Low body weight</span>
-                    <span style="background:#FFEBEE;color:#C62828;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">High W/kg</span>
-                    <span style="background:#FFEBEE;color:#C62828;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">GC contender</span>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
+                    <span style="background:#FFEBEE; color:#C62828; font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;">Low body weight</span>
+                    <span style="background:#FFEBEE; color:#C62828; font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;">High W/kg</span>
+                    <span style="background:#FFEBEE; color:#C62828; font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;">GC contender</span>
                     </div>
-                    <p style="font-size:10px;color:#999;margin:10px 0 2px;text-transform:uppercase;letter-spacing:0.05em;">Iconic riders</p>
-                    <p style="font-size:12px;color:#1a1a1a;font-weight:600;margin:0;">Pantani · Gaul · Pogačar · Sastre</p>
+                    <p style="font-size:10px; color:#999; margin:10px 0 2px; text-transform:uppercase; letter-spacing:0.05em;">Iconic riders</p>
+                    <p style="font-size:12px; color:#1a1a1a; font-weight:600; margin:0;">Pantani · Gaul · Pogačar · Sastre</p>
                 </div>
                 </div>
             </div>
 
-            <!-- SPRINTER -->
-            <div style="background:#f6faf6;border:1.5px solid #2E7D32;border-radius:10px;padding:14px 16px;cursor:pointer;"
+            <div style="background:#f6faf6; border:1.5px solid #2E7D32; border-radius:10px; padding:14px 16px; cursor:pointer;"
                 onclick="toggleCard(this,'sprinter')">
-                <div style="display:flex;align-items:center;gap:10px;">
-                <div style="width:11px;height:11px;border-radius:50%;background:#2E7D32;flex-shrink:0"></div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:11px; height:11px; border-radius:50%; background:#2E7D32; flex-shrink:0"></div>
                 <div style="flex:1">
-                    <p style="margin:0;font-size:14px;font-weight:700;color:#2E7D32;">Sprinter</p>
-                    <p style="margin:2px 0 0;font-size:11px;color:#666;font-style:italic;line-height:1.4;">Explosive speed in the final 200 metres</p>
+                    <p style="margin:0; font-size:14px; font-weight:700; color:#2E7D32;">Sprinter</p>
+                    <p style="margin:2px 0 0; font-size:11px; color:#666; font-style:italic; line-height:1.4;">Explosive speed in the final 200 metres</p>
                 </div>
-                <span id="chev-sprinter" style="font-size:13px;color:#999;transition:transform 0.2s;display:inline-block;">▼</span>
+                <span id="chev-sprinter" style="font-size:13px; color:#999; transition:transform 0.2s; display:inline-block;">▼</span>
                 </div>
-                <div id="body-sprinter" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;">
-                <div style="border-top:1px solid #c8e6c9;margin-top:10px;padding-top:10px;">
-                    <p style="margin:0;font-size:12px;color:#444;line-height:1.7;">
+                <div id="body-sprinter" style="max-height:0; overflow:hidden; transition:max-height 0.3s ease;">
+                <div style="border-top:1px solid #c8e6c9; margin-top:10px; padding-top:10px;">
+                    <p style="margin:0; font-size:12px; color:#444; line-height:1.7;">
                     A sprinter produces a massive surge of power — often over 1,500 watts — for a short window at the end
                     of a flat stage. Heavier and more muscular than climbers, with fast-twitch fibres built for explosive output.
                     They survive mountain stages by staying sheltered in the peloton, then unleash their acceleration in the
                     chaotic final sprint for stage glory.
                     </p>
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
-                    <span style="background:#E8F5E9;color:#2E7D32;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">Explosive power</span>
-                    <span style="background:#E8F5E9;color:#2E7D32;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">Fast-twitch muscles</span>
-                    <span style="background:#E8F5E9;color:#2E7D32;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">Green jersey</span>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
+                    <span style="background:#E8F5E9; color:#2E7D32; font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;">Explosive power</span>
+                    <span style="background:#E8F5E9; color:#2E7D32; font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;">Fast-twitch muscles</span>
+                    <span style="background:#E8F5E9; color:#2E7D32; font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;">Green jersey</span>
                     </div>
-                    <p style="font-size:10px;color:#999;margin:10px 0 2px;text-transform:uppercase;letter-spacing:0.05em;">Iconic riders</p>
-                    <p style="font-size:12px;color:#1a1a1a;font-weight:600;margin:0;">Cavendish · Cipollini · Greipel · Kittel</p>
+                    <p style="font-size:10px; color:#999; margin:10px 0 2px; text-transform:uppercase; letter-spacing:0.05em;">Iconic riders</p>
+                    <p style="font-size:12px; color:#1a1a1a; font-weight:600; margin:0;">Cavendish · Cipollini · Greipel · Kittel</p>
                 </div>
                 </div>
             </div>
 
-            <!-- TIME TRIALIST -->
-            <div style="background:#f5f8ff;border:1.5px solid #1565C0;border-radius:10px;padding:14px 16px;cursor:pointer;"
+            <div style="background:#f5f8ff; border:1.5px solid #1565C0; border-radius:10px; padding:14px 16px; cursor:pointer;"
                 onclick="toggleCard(this,'tt')">
-                <div style="display:flex;align-items:center;gap:10px;">
-                <div style="width:11px;height:11px;border-radius:50%;background:#1565C0;flex-shrink:0"></div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:11px; height:11px; border-radius:50%; background:#1565C0; flex-shrink:0"></div>
                 <div style="flex:1">
-                    <p style="margin:0;font-size:14px;font-weight:700;color:#1565C0;">Time trialist</p>
-                    <p style="margin:2px 0 0;font-size:11px;color:#666;font-style:italic;line-height:1.4;">Alone against the clock</p>
+                    <p style="margin:0; font-size:14px; font-weight:700; color:#1565C0;">Time trialist</p>
+                    <p style="margin:2px 0 0; font-size:11px; color:#666; font-style:italic; line-height:1.4;">Alone against the clock</p>
                 </div>
-                <span id="chev-tt" style="font-size:13px;color:#999;transition:transform 0.2s;display:inline-block;">▼</span>
+                <span id="chev-tt" style="font-size:13px; color:#999; transition:transform 0.2s; display:inline-block;">▼</span>
                 </div>
-                <div id="body-tt" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;">
-                <div style="border-top:1px solid #bbdefb;margin-top:10px;padding-top:10px;">
-                    <p style="margin:0;font-size:12px;color:#444;line-height:1.7;">
+                <div id="body-tt" style="max-height:0; overflow:hidden; transition:max-height 0.3s ease;">
+                <div style="border-top:1px solid #bbdefb; margin-top:10px; padding-top:10px;">
+                    <p style="margin:0; font-size:12px; color:#444; line-height:1.7;">
                     A time trialist excels when each rider races alone against the clock — no drafting, no tactics, pure effort.
                     They have very high sustained power output (FTP) and an aerodynamic position on the bike. Larger and more
                     powerful than climbers, they can swing the GC by minutes on flat TT stages. The most complete GC champions
                     often combine this with climbing ability.
                     </p>
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
-                    <span style="background:#E3F2FD;color:#1565C0;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">High sustained power</span>
-                    <span style="background:#E3F2FD;color:#1565C0;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">Aerodynamic</span>
-                    <span style="background:#E3F2FD;color:#1565C0;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;">GC time gains</span>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
+                    <span style="background:#E3F2FD; color:#1565C0; font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;">High sustained power</span>
+                    <span style="background:#E3F2FD; color:#1565C0; font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;">Aerodynamic</span>
+                    <span style="background:#E3F2FD; color:#1565C0; font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;">GC time gains</span>
                     </div>
-                    <p style="font-size:10px;color:#999;margin:10px 0 2px;text-transform:uppercase;letter-spacing:0.05em;">Iconic riders</p>
-                    <p style="font-size:12px;color:#1a1a1a;font-weight:600;margin:0;">Induráin · Cancellara · Froome · Ullrich</p>
+                    <p style="font-size:10px; color:#999; margin:10px 0 2px; text-transform:uppercase; letter-spacing:0.05em;">Iconic riders</p>
+                    <p style="font-size:12px; color:#1a1a1a; font-weight:600; margin:0;">Induráin · Cancellara · Froome · Ullrich</p>
                 </div>
                 </div>
             </div>
@@ -2185,25 +2180,28 @@ elif st.session_state.pagina_corrente == "corridori":
 
             <script>
             function toggleCard(card, id) {
-            var body = document.getElementById('body-' + id);
-            var chev = document.getElementById('chev-' + id);
-            var isOpen = body.style.maxHeight && body.style.maxHeight !== '0px';
-            var allIds = ['climber','sprinter','tt'];
-            allIds.forEach(function(i) {
-                document.getElementById('body-' + i).style.maxHeight = '0px';
-                document.getElementById('chev-' + i).style.transform = 'rotate(0deg)';
-            });
-            if (!isOpen) {
-                body.style.maxHeight = '400px';
-                chev.style.transform = 'rotate(180deg)';
-            }
+                var body = document.getElementById('body-' + id);
+                var chev = document.getElementById('chev-' + id);
+                var isOpen = body.style.maxHeight && body.style.maxHeight !== '0px';
+                var allIds = ['climber','sprinter','tt'];
+                
+                allIds.forEach(function(i) {
+                    document.getElementById('body-' + i).style.maxHeight = '0px';
+                    document.getElementById('chev-' + i).style.transform = 'rotate(0deg)';
+                });
+                
+                if (!isOpen) {
+                    body.style.maxHeight = '400px';
+                    chev.style.transform = 'rotate(180deg)';
+                }
             }
             </script>
             """
 
-            st.components.v1.html(rider_cards_html, height=130, scrolling=False)
-
-        st.markdown(hr, unsafe_allow_html=True) 
+            # 🪄 FIX 2: Impostiamo l'altezza a 260 per contenere fluidamente l'espansione verticale asimmetrica
+# 🪄 FIX: Torniamo al componente HTML nativo che accetta la stringa di testo senza errori
+            st.components.v1.html(rider_cards_html, height=260, scrolling=False)
+            st.markdown(hr, unsafe_allow_html=True)
 
 
     # ══════════════════════════════════════════════════════════
@@ -2655,6 +2653,7 @@ elif st.session_state.pagina_corrente == "corridori":
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown(hr, unsafe_allow_html=True)
 
+       # ── CAREER ARC normalizzato H2H ──
         # ── CAREER ARC normalizzato H2H ──
         st.markdown("""
             <div style="padding: 0 16px;">
@@ -2700,24 +2699,24 @@ elif st.session_state.pagina_corrente == "corridori":
             plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
             font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
             height=400, 
-            # 🪄 FIX: Margini interni calibrati per far respirare i numeri dell'asse Y e allinearli
-            margin=dict(l=40, r=16, t=20, b=20), 
-            legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center', font=dict(size=11)),
+            # Aumentato il margine inferiore (b=60) per accogliere il distanziamento della legenda
+            margin=dict(l=40, r=16, t=20, b=60), 
+            # 🪄 FIX: Spostata la legenda più in basso (y=-0.22 invece di -0.12) per non toccare i testi dell'asse
+            legend=dict(orientation='h', y=-0.22, x=0.5, xanchor='center', font=dict(size=11), bgcolor='rgba(0,0,0,0)'),
             xaxis=dict(
-                title='Tour participation in career',
+                title=dict(text='Tour participation in career', font=dict(size=11), standoff=12), # 🪄 FIX: standoff distanzia il titolo dai tick
                 tickmode='linear', dtick=1,
                 tickvals=list(range(1, 17)),
                 ticktext=[f'Tour #{n}' for n in range(1, 17)],
-                showgrid=False, tickfont=dict(size=9),
+                showgrid=False, tickfont=dict(size=10),
             ),
             yaxis=dict(title='GC Final Rank', autorange='reversed',
-                       showgrid=True, gridcolor='#e8e4da'),
+                    showgrid=True, gridcolor='#e8e4da'),
         )
         fig_h2h_arc.add_hrect(y0=1, y1=3, fillcolor='rgba(255,204,0,0.08)',
-                              line_width=0, annotation_text='Podium zone',
-                              annotation_position='right', annotation_font=dict(size=9, color='#aaa'))
-        
-        # 🪄 FIX: Avvolgiamo il grafico nello stesso allineamento del titolo
+                            line_width=0, annotation_text='Podium zone',
+                            annotation_position='right', annotation_font=dict(size=9, color='#aaa'))
+
         st.markdown('<div style="margin: 0 16px;">', unsafe_allow_html=True)
         st.plotly_chart(fig_h2h_arc, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
@@ -2737,7 +2736,7 @@ elif st.session_state.pagina_corrente == "corridori":
             </div>
         """, unsafe_allow_html=True)
 
-       # ── WIN/LOSS DOTS per anni condivisi ──
+        # Calcolo degli anni condivisi
         years_r1 = set(df_r_norm[df_r_norm['Rider'] == h2h_r1]['Year'].values)
         years_r2 = set(df_r_norm[df_r_norm['Rider'] == h2h_r2]['Year'].values)
         shared_years = sorted(years_r1 & years_r2)
@@ -2797,18 +2796,20 @@ elif st.session_state.pagina_corrente == "corridori":
 
                 for _, row in df_duel.iterrows():
                     color_dot = PALETTE_H2H[0] if row['Winner'] == h2h_r1 else PALETTE_H2H[1]
-                    winner_name = h2h_r1.title() if row['Winner'] == h2h_r1 else h2h_r2.title()
+                    winner_full_name = h2h_r1.title() if row['Winner'] == h2h_r1 else h2h_r2.title()
+
                     fig_duel.add_trace(go.Scatter(
                         x=[row['Year']], y=[0],
                         mode='markers+text',
                         marker=dict(size=28, color=color_dot, line=dict(width=2, color='white')),
-                        text=[str(int(row['Year']))],
+                        # ── 🪄 FIX: Stampa Nome e Cognome completi ──
+                        text=[winner_full_name],
                         textposition='top center',
-                        textfont=dict(size=9, color='#1a1a1a', family='Arial'),
+                        textfont=dict(size=10, color='#1a1a1a', family='Arial', weight='bold'),
                         showlegend=False,
                         hovertemplate=(
                             f"<b>{int(row['Year'])}</b><br>"
-                            f"🥇 {winner_name}<br>"
+                            f"🥇 {winner_full_name}<br>"
                             f"{h2h_r1.title()}: #{int(row['Rank_R1'])}<br>"
                             f"{h2h_r2.title()}: #{int(row['Rank_R2'])}<br>"
                             f"Gap: {int(row['Gap'])} positions<extra></extra>"
@@ -2817,18 +2818,18 @@ elif st.session_state.pagina_corrente == "corridori":
 
                 fig_duel.update_layout(
                     plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                    height=130, margin=dict(l=40, r=40, t=10, b=20),
+                    height=160, # Aumentato a 160 per dare ampio spazio verticale a nome + cognome
+                    margin=dict(l=40, r=40, t=35, b=20), # Margine superiore aumentato (t=35)
                     xaxis=dict(
                         showgrid=False, 
                         zeroline=False, 
                         tickfont=dict(size=10, family='Arial'),
-                        # 🪄 FIX: Forza l'asse a non mostrare i decimali ed evita la virgola delle migliaia (es. 2,024 -> 2024)
                         tickmode='array',
                         tickvals=shared_years,
                         tickformat='d'
                     ),
                     yaxis=dict(visible=False, range=[-0.5, 0.6]),
-                    showlegend=False, # Disattiva la legenda nativa decentrata di Plotly
+                    showlegend=False,
                 )
 
                 st.markdown('<div style="margin: 0 16px;">', unsafe_allow_html=True)
