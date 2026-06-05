@@ -18,7 +18,7 @@ st.set_page_config(layout="wide", page_title="App Tour de France")
 # ==========================================
 # FUNZIONE PER CARICARE I DATI 
 # ==========================================
-@st.cache_data
+@st.cache_data(ttl=10)
 def load_all_datasets():
     # Link ai dataset esistenti
     url_storico = "https://docs.google.com/spreadsheets/d/1hI6y5tDpw176v0DhJN-P5hzsmXrtRSB0/export?format=xlsx"
@@ -3191,26 +3191,28 @@ elif st.session_state.pagina_corrente == "tappe":
     df_stage_h['Year'] = df_stage_h['Year'].fillna(0).astype(int)
     df_stage_h_filtered = df_stage_h[df_stage_h['Year'] >= 1903].copy()
 
-# df_coords = stages_TDF.xlsx
+# ==========================================================
+    # DATABASE_TOUR_COORDINATE_COMPLETO (4).xlsx STRUCTURE FIX
+    # ==========================================================
+    # df_coords = stages_TDF.xlsx (pesca da url_coords)
     df_coords_all = df_coords.copy()
     
-    # 1. Pulizia preventiva
+    # 1. Pulizia preventiva delle colonne
     df_coords_all.columns = df_coords_all.columns.str.strip()
 
     if 'Year' not in df_coords_all.columns:
         df_coords_all['Year'] = pd.to_datetime(df_coords_all['Date'], errors='coerce').dt.year
 
-    # 2. Allineamento nomi colonne per la mappa (Start/End -> Origin/Destination)
+    # 2. Allineamento nomi colonne per la mappa (Nel tuo file ci sono Start/End)
     if 'Start' in df_coords_all.columns and 'Origin' not in df_coords_all.columns:
         df_coords_all = df_coords_all.rename(columns={'Start': 'Origin'})
     if 'End' in df_coords_all.columns and 'Destination' not in df_coords_all.columns:
         df_coords_all = df_coords_all.rename(columns={'End': 'Destination'})
 
-    # 3. Gestione Tipo di Tappa a prova di crash
-    col_type = next((col for col in ['Type', 'Stage Type', 'Type of stage', 'Type of route', 'Stage_Type'] if col in df_coords_all.columns), None)
+    # 3. Intercettazione dinamica della colonna (Nel tuo file trova 'Stage Type')
+    col_type = next((col for col in ['Stage Type', 'Type', 'Stage_Type', 'Type of stage', 'Type of route'] if col in df_coords_all.columns), None)
 
     if col_type is None:
-        # Se nel file Excel non c'è il tipo, assegniamo 'Other' a tutte le tappe per non far bloccare l'app
         df_coords_all['Type_group'] = 'Other'
     else:
         TYPE_MAP = {
@@ -3225,8 +3227,16 @@ elif st.session_state.pagina_corrente == "tappe":
             'Half Stage': 'Other', 'Transition stage': 'Other',
             'Intermediate stage': 'Other',
         }
-        df_coords_all['Type_group'] = df_coords_all[col_type].astype(str).str.strip().map(TYPE_MAP).fillna('Other')
+        # 🪄 FIX DEFCON 1: Converte in testo, toglie gli spazi (strip) e rimuove i doppi spazi interni
+        df_coords_all['Type_group'] = (
+            df_coords_all[col_type]
+            .astype(str)
+            .str.strip()  # Toglie spazi all'inizio e alla fine (es. "Plain stage " -> "Plain stage")
+            .map(TYPE_MAP)
+            .fillna('Other')
+        )
     
+    # Generazione del decennio e dei colori
     df_coords_all['decade'] = (df_coords_all['Year'] // 10) * 10
 
     TYPE_COLORS = {
@@ -3234,6 +3244,8 @@ elif st.session_state.pagina_corrente == "tappe":
         'Hilly': '#FFCC00', 'Time Trial': '#A29BFE',
         'Team TT': '#FD79A8', 'Other': '#888',
     }
+
+    # ... [Qui in mezzo mantieni invariato il tuo dizionario CITY_COORDS e i primi 3 grafici] ...
 
     # Coordinate hardcoded per le città più frequenti del Tour
     CITY_COORDS = {
@@ -3687,30 +3699,43 @@ elif st.session_state.pagina_corrente == "tappe":
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown(hr, unsafe_allow_html=True)
-      # ── STACKED AREA: composizione tappe per decade ──
+
+# ── 3. STACKED AREA: COMPOSIZIONE TAPPE PER DECADE ──
+# ── 3. STACKED AREA: COMPOSIZIONE TAPPE PER DECADE ──
+# ── 3. STACKED AREA: COMPOSIZIONE TAPPE PER DECADE ──
         st.markdown("""
-            <span class="st-section-label-s">· Stage DNA ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
-                       color:#1a1a1a;font-size:18px;margin:2px 0 4px;">
-                The Changing DNA of the Tour — Stage Types Over Decades
-            </h4>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
-                      font-style:italic;margin-bottom:8px;">
-                Stacked area: how the mix of flat, mountain, time trial stages evolved. 
-                More mountains, fewer epic flat stages.
-            </p>
+            <div style="padding: 12px 2rem 16px;">
+                <span class="st-section-label-s">· Stage DNA ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                        color:#1a1a1a;font-size:18px;margin:2px 0 4px;">
+                    The Changing DNA of the Tour — Stage Types Over Decades
+                </h4>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                        font-style:italic;margin:0;">
+                    Stacked area: how the mix of flat, mountain, time trial stages evolved. 
+                    More mountains, fewer epic flat stages.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
-        df_type_dec = df_coords_filt.groupby(['decade', 'Type_group']).size().reset_index(name='count')
-        TYPE_ORDER = ['Flat', 'Mountain', 'Hilly', 'Time Trial', 'Team TT', 'Other']
+        # Filtriamo i dati per fermarci al 2017 (escludendo le decadi successive)
+        df_coords_dna = df_coords_filt[df_coords_filt['Year'] <= 2017].copy()
+
+        df_type_dec = df_coords_dna.groupby(['decade', 'Type_group']).size().reset_index(name='count')
+        
+        # Ordine richiesto: Team TT, Time Trial, Flat, Hilly, Mountain
+        TYPE_ORDER = ['Team TT', 'Time Trial', 'Flat', 'Hilly', 'Mountain']
         df_type_dec['Type_group'] = pd.Categorical(df_type_dec['Type_group'], categories=TYPE_ORDER, ordered=True)
         df_type_dec = df_type_dec.sort_values(['decade', 'Type_group'])
 
         fig_area = go.Figure()
+        
         for ttype in TYPE_ORDER:
             df_t = df_type_dec[df_type_dec['Type_group'] == ttype]
-            if df_t.empty:
+            
+            if df_t.empty or df_t['count'].sum() == 0:
                 continue
+                
             fig_area.add_trace(go.Scatter(
                 x=df_t['decade'], y=df_t['count'],
                 name=ttype,
@@ -3721,20 +3746,26 @@ elif st.session_state.pagina_corrente == "tappe":
                 opacity=0.85,
                 hovertemplate=f'<b>{ttype}</b><br>%{{x}}s: %{{y}} stages<extra></extra>',
             ))
+            
         fig_area.update_layout(
             plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
             font=dict(family='Merriweather, serif', color='#1a1a1a'),
-            height=380, margin=dict(l=0, r=0, t=10, b=0),
-            legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center', font=dict(size=10)),
-            xaxis=dict(title='Decade', showgrid=False,
-                       tickvals=list(range(1900,2030,10)),
-                       ticktext=[f"{d}s" for d in range(1900,2030,10)]),
+            height=390, 
+            margin=dict(l=45, r=15, t=10, b=40), 
+            legend=dict(orientation='h', y=-0.20, x=0.5, xanchor='center', font=dict(size=10)),
+            xaxis=dict(
+                title=dict(text='Decade', standoff=15), 
+                showgrid=False,
+                # 🪄 FIX VISUALIZZAZIONE: Range esteso fino a 2015 per dare spazio all'etichetta 2010s
+                range=[1910, 2015],
+                tickvals=list(range(1910, 2020, 10)),
+                ticktext=[f"{d}s" for d in range(1910, 2020, 10)]
+            ),
             yaxis=dict(title='Number of stages', showgrid=True, gridcolor='#e8e4da'),
         )
         st.plotly_chart(fig_area, use_container_width=True)
 
         st.markdown(hr, unsafe_allow_html=True)
-
 # ── SCATTER: ogni singola tappa come punto ──
         st.markdown("""
             <span class="st-section-label-s">· All Stages Ever ·</span>
