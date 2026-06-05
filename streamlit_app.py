@@ -3495,19 +3495,25 @@ elif st.session_state.pagina_corrente == "tappe":
     # ══════════════════════════════════════════════════════════
     if vista_corrente == "storico":
 
+# ── 1. UNICO TITOLO DI SEZIONE ──
         st.markdown("""
-            <span class="st-section-label-s">· Historical Overview ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
-                       color:#1a1a1a;margin:4px 0 4px;">
-                A Century of Racing — Distance, Intensity & Composition
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;
-                      font-style:italic;margin-bottom:16px;">
-                Drag the slider to filter the historical window. All charts update simultaneously.
-            </p>
+            <div style="padding: 0 2rem;">
+                <span class="r-section-label">· Historical Overview ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
+                        color:#1a1a1a;margin:4px 0 4px;">
+                    A Century of Racing — Distance, Intensity & Speed Evolution
+                </h3>
+                <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;
+                        font-style:italic;margin-bottom: 0;">
+                    Drag the slider to filter the historical window. All charts update simultaneously.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
-        # Slider
+        # Spazio di respiro esplicito per staccare la barra di selezione dal testo
+        st.markdown('<div style="margin-bottom: 24px;"></div>', unsafe_allow_html=True)
+
+        # Slider Unico
         anno_min_abs = int(df_stage_h_filtered['Year'].min())
         anno_max_abs = int(df_stage_h_filtered['Year'].max())
         anno_min, anno_max = st.slider(
@@ -3516,103 +3522,172 @@ elif st.session_state.pagina_corrente == "tappe":
         )
 
         df_filt = df_stage_h_filtered[(df_stage_h_filtered['Year'] >= anno_min) &
-                                       (df_stage_h_filtered['Year'] <= anno_max)]
+                                    (df_stage_h_filtered['Year'] <= anno_max)]
         df_coords_filt = df_coords_all[(df_coords_all['Year'] >= anno_min) &
                                         (df_coords_all['Year'] <= anno_max)]
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # ── ROW 1: Distance + Avg Stage Distance ──
-        col1, col2 = st.columns(2, gap="medium")
 
-        with col1:
-            st.markdown("""
-                <span class="st-section-label-s">· Total Race Distance ·</span>
-                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
-                           color:#1a1a1a;font-size:16px;margin:2px 0 8px;">
-                    Total km per Edition
-                </h4>
-            """, unsafe_allow_html=True)
+        # ── 2. ELABORAZIONE GRAFICO 1: DISTANCE ──
+        df_dist = df_filt.groupby('Year')['TotalTDFDistance'].max().reset_index()
+        
+        df_valid_dist = df_dist.dropna(subset=['TotalTDFDistance'])
+        if not df_valid_dist.empty:
+            max_row = df_valid_dist.loc[df_valid_dist['TotalTDFDistance'].idxmax()]
+            max_year = max_row['Year']
+            max_val = max_row['TotalTDFDistance']
+        else:
+            max_year, max_val = anno_min, 0
 
-            df_dist = df_filt.groupby('Year')['TotalTDFDistance'].max().reset_index()
-            df_dist = df_dist.set_index('Year').reindex(range(anno_min, anno_max+1)).reset_index()
-            df_dist.columns = ['Year', 'TotalTDFDistance']
-
-            fig_dist = go.Figure()
-            fig_dist.add_trace(go.Scatter(
-                x=df_dist['Year'], y=df_dist['TotalTDFDistance'],
-                mode='lines', fill='tozeroy',
-                line=dict(color='#FFCC00', width=2.5),
-                fillcolor='rgba(255,204,0,0.12)',
-                hovertemplate='<b>%{x}</b><br>%{y:,.0f} km<extra></extra>',
-                connectgaps=False,
-            ))
-            # Record annotation
-            max_row = df_dist.dropna().loc[df_dist['TotalTDFDistance'].idxmax()]
+        fig_dist = go.Figure()
+        fig_dist.add_trace(go.Scatter(
+            x=df_dist['Year'], y=df_dist['TotalTDFDistance'],
+            # ── 🪄 FIX MARKERS: Attivati i pallini coordinati con lo stile generale ──
+            mode='lines+markers', 
+            fill='tozeroy', fillcolor='rgba(255,204,0,0.12)',
+            line=dict(color='#FFCC00', width=2.5),
+            marker=dict(size=4, color='#FFCC00', line=dict(width=1, color='#1a1a1a')),
+            hovertemplate='<b>%{x}</b><br>%{y:,.0f} km<extra></extra>',
+            connectgaps=True,
+        ))
+        if max_val > 0:
             fig_dist.add_annotation(
-                x=max_row['Year'], y=max_row['TotalTDFDistance'],
-                text=f"Record<br>{int(max_row['TotalTDFDistance']):,} km",
+                x=max_year, y=max_val, text=f"Record<br>{int(max_val):,} km",
                 showarrow=True, arrowhead=2, arrowcolor='#888',
                 font=dict(size=9, color='#1a1a1a', family='Arial'),
                 bgcolor='rgba(255,204,0,0.8)', borderpad=4, ax=30, ay=-30,
             )
-            for x0, x1, lbl in [(1914,1918,'WWI'),(1939,1947,'WWII')]:
+
+
+        # ── 3. ELABORAZIONE GRAFICO 2: INTENSITY ──
+        df_avg = df_filt.groupby('Year').agg(
+            total=('TotalTDFDistance','max'), n=('Stages','count')
+        ).reset_index()
+        df_avg['avg_stage'] = df_avg['total'] / df_avg['n']
+
+        fig_avg = go.Figure()
+        fig_avg.add_trace(go.Scatter(
+            x=df_avg['Year'], y=df_avg['avg_stage'],
+            # ── 🪄 FIX MARKERS: Attivati i pallini coordinati con lo stile generale ──
+            mode='lines+markers', 
+            fill='tozeroy', fillcolor='rgba(255,107,107,0.10)',
+            line=dict(color='#FF6B6B', width=2.5),
+            marker=dict(size=4, color='#FF6B6B', line=dict(width=1, color='#1a1a1a')),
+            hovertemplate='<b>%{x}</b><br>%{y:.1f} km/stage<extra></extra>',
+            connectgaps=True,
+        ))
+
+
+        # ── 4. ELABORAZIONE GRAFICO 3: SPEED ──
+        df_winners_speed = df_storico.copy()
+        df_winners_speed['Rank_Num'] = pd.to_numeric(df_winners_speed['Rank'], errors='coerce')
+        df_winners_speed = df_winners_speed[
+            (df_winners_speed['Rank_Num'] == 1) &
+            df_winners_speed['TotalSeconds'].notna() &
+            (df_winners_speed['TotalSeconds'] > 0) &
+            (df_winners_speed['Year'] >= anno_min) &
+            (df_winners_speed['Year'] <= anno_max)
+        ].copy()
+        df_winners_speed['avg_speed'] = df_winners_speed['Distance (km)'] / (df_winners_speed['TotalSeconds'] / 3600)
+
+        df_clean = df_winners_speed[~df_winners_speed['Year'].isin(range(1999,2006))]
+        df_doping = df_winners_speed[df_winners_speed['Year'].isin(range(1999,2006))]
+
+        fig_speed = go.Figure()
+        fig_speed.add_trace(go.Scatter(
+            x=df_clean['Year'], y=df_clean['avg_speed'],
+            mode='lines+markers', line=dict(color='#1a1a1a', width=2.5),
+            marker=dict(size=5, color='#FFCC00', line=dict(width=1, color='#1a1a1a')),
+            hovertemplate='<b>%{x}</b><br>%{y:.2f} km/h<extra></extra>',
+            name='Official speed', showlegend=False,
+            connectgaps=True,
+        ))
+        if not df_doping.empty:
+            fig_speed.add_trace(go.Scatter(
+                x=df_doping['Year'], y=df_doping['avg_speed'],
+                mode='markers',
+                marker=dict(size=7, color='#FF6B6B', symbol='x', line=dict(width=2)),
+                hovertemplate='<b>%{x}</b> — Title subsequently revoked<br>%{y:.2f} km/h (unofficial)<extra></extra>',
+                name='Revoked title', showlegend=True,
+            ))
+
+
+        # ── 5. CONFIGURAZIONE ASSI E COMPATTAMENTO LAYOUT ──
+        BARRE_STORICHE = [(1914, 1918, 'WWI'), (1939, 1947, 'WWII'), (1999, 2005, 'Doping era')]
+        
+        for fig in [fig_dist, fig_avg, fig_speed]:
+            for x0, x1, lbl in BARRE_STORICHE:
                 if x0 >= anno_min and x1 <= anno_max:
-                    fig_dist.add_vrect(x0=x0, x1=x1, fillcolor='#888', opacity=0.15,
-                                       line_width=0, annotation_text=lbl,
-                                       annotation_font=dict(size=9, color='#888'))
-            fig_dist.update_layout(
+                    fig.add_vrect(x0=x0, x1=x1, fillcolor='#E5E1D8', opacity=1.0, line_width=0, layer="above",
+                                annotation_text=lbl, annotation_position='top',
+                                annotation_font=dict(size=8, color='#777', family='Arial', weight='bold'))
+            
+            fig.update_layout(
                 plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                font=dict(family='Merriweather, serif', color='#1a1a1a'),
-                height=300, margin=dict(l=0,r=0,t=10,b=0),
-                xaxis=dict(showgrid=False, range=[anno_min, anno_max]),
-                yaxis=dict(showgrid=True, gridcolor='#e8e4da', title='km'),
+                font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
+                height=280, margin=dict(l=45, r=15, t=10, b=30),
+                xaxis=dict(
+                    showgrid=False, 
+                    range=[anno_min, anno_max], 
+                    tickfont=dict(size=10),
+                    tickformat="4d"
+                ),
                 showlegend=False,
             )
-            st.plotly_chart(fig_dist, use_container_width=True)
 
-        with col2:
-            st.markdown("""
-                <span class="st-section-label-s">· Stage Intensity ·</span>
-                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
-                           color:#1a1a1a;font-size:16px;margin:2px 0 8px;">
+        # Assi Y specifici per ciascun grafico
+        fig_dist.update_layout(yaxis=dict(showgrid=True, gridcolor='#e8e4da', title='km', tickfont=dict(size=10)))
+        fig_avg.update_layout(yaxis=dict(showgrid=True, gridcolor='#e8e4da', title='km/stage', tickfont=dict(size=10)))
+        fig_speed.update_layout(
+            yaxis=dict(showgrid=True, gridcolor='#e8e4da', title='km/h', tickfont=dict(size=10)),
+            showlegend=True, legend=dict(orientation='h', y=-0.18, x=0.5, xanchor='center', bgcolor='rgba(0,0,0,0)')
+        )
+
+
+        # ── 6. RENDERING FINALE IN STREAMLIT ──
+        
+        # Grafico 1
+        st.markdown("""
+            <div style="padding: 0 2rem;">
+                <span class="r-section-label">· Total Race Distance ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;color:#1a1a1a;font-size:16px;margin:2px 0 8px;">
+                    Total km per Edition
+                </h4>
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown('<div style="padding: 0 2rem;">', unsafe_allow_html=True)
+        st.plotly_chart(fig_dist, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Grafico 2
+        st.markdown("""
+            <div style="padding: 0 2rem; margin-top: 16px;">
+                <span class="r-section-label">· Stage Intensity ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;color:#1a1a1a;font-size:16px;margin:2px 0 8px;">
                     Average km per Stage
                 </h4>
-            """, unsafe_allow_html=True)
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown('<div style="padding: 0 2rem;">', unsafe_allow_html=True)
+        st.plotly_chart(fig_avg, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-            df_avg = df_filt.groupby('Year').agg(
-                total=('TotalTDFDistance','max'), n=('Stages','count')
-            ).reset_index()
-            df_avg['avg_stage'] = df_avg['total'] / df_avg['n']
-            df_avg = df_avg.set_index('Year').reindex(range(anno_min, anno_max+1)).reset_index()
-
-            fig_avg = go.Figure()
-            fig_avg.add_trace(go.Scatter(
-                x=df_avg['Year'], y=df_avg['avg_stage'],
-                mode='lines', fill='tozeroy',
-                line=dict(color='#FF6B6B', width=2.5),
-                fillcolor='rgba(255,107,107,0.10)',
-                hovertemplate='<b>%{x}</b><br>%{y:.1f} km/stage<extra></extra>',
-                connectgaps=False,
-            ))
-            for x0, x1, lbl in [(1914,1918,'WWI'),(1939,1947,'WWII')]:
-                if x0 >= anno_min and x1 <= anno_max:
-                    fig_avg.add_vrect(x0=x0, x1=x1, fillcolor='#888', opacity=0.15,
-                                      line_width=0, annotation_text=lbl,
-                                      annotation_font=dict(size=9, color='#888'))
-            fig_avg.update_layout(
-                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                font=dict(family='Merriweather, serif', color='#1a1a1a'),
-                height=300, margin=dict(l=0,r=0,t=10,b=0),
-                xaxis=dict(showgrid=False, range=[anno_min, anno_max]),
-                yaxis=dict(showgrid=True, gridcolor='#e8e4da', title='km/stage'),
-                showlegend=False,
-            )
-            st.plotly_chart(fig_avg, use_container_width=True)
+        # Grafico 3
+        st.markdown("""
+            <div style="padding: 0 2rem; margin-top: 16px;">
+                <span class="r-section-label">· Speed of Champions ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;color:#1a1a1a;font-size:16px;margin:2px 0 8px;">
+                    Evolution of Average Winning Speed
+                </h4>
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown('<div style="padding: 0 2rem;">', unsafe_allow_html=True)
+        st.plotly_chart(fig_speed, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown(hr, unsafe_allow_html=True)
-
-        # ── STACKED AREA: composizione tappe per decade ──
+      # ── STACKED AREA: composizione tappe per decade ──
         st.markdown("""
             <span class="st-section-label-s">· Stage DNA ·</span>
             <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
@@ -3657,74 +3732,6 @@ elif st.session_state.pagina_corrente == "tappe":
             yaxis=dict(title='Number of stages', showgrid=True, gridcolor='#e8e4da'),
         )
         st.plotly_chart(fig_area, use_container_width=True)
-
-        st.markdown(hr, unsafe_allow_html=True)
-
-        # ── SPEED EVOLUTION ──
-        st.markdown("""
-            <span class="st-section-label-s">· Speed of Champions ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
-                       color:#1a1a1a;font-size:18px;margin:2px 0 4px;">
-                Evolution of Average Winning Speed
-            </h4>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
-                      font-style:italic;margin-bottom:8px;">
-                Dotted segment = doping era (1999–2005), titles revoked, no official winners.
-            </p>
-        """, unsafe_allow_html=True)
-
-        df_winners_speed = df_storico.copy()
-        df_winners_speed['Rank_Num'] = pd.to_numeric(df_winners_speed['Rank'], errors='coerce')
-        df_winners_speed = df_winners_speed[
-            (df_winners_speed['Rank_Num'] == 1) &
-            df_winners_speed['TotalSeconds'].notna() &
-            (df_winners_speed['TotalSeconds'] > 0) &
-            (df_winners_speed['Year'] >= anno_min) &
-            (df_winners_speed['Year'] <= anno_max)
-        ].copy()
-        df_winners_speed['avg_speed'] = df_winners_speed['Distance (km)'] / (df_winners_speed['TotalSeconds'] / 3600)
-
-        # Split: clean vs doping era
-        df_clean = df_winners_speed[~df_winners_speed['Year'].isin(range(1999,2006))]
-        df_doping = df_winners_speed[df_winners_speed['Year'].isin(range(1999,2006))]
-
-        fig_speed = go.Figure()
-        fig_speed.add_trace(go.Scatter(
-            x=df_clean['Year'], y=df_clean['avg_speed'],
-            mode='lines+markers',
-            line=dict(color='#1a1a1a', width=2.5),
-            marker=dict(size=5, color='#FFCC00', line=dict(width=1, color='#1a1a1a')),
-            hovertemplate='<b>%{x}</b><br>%{y:.2f} km/h<extra></extra>',
-            name='Official speed', showlegend=False,
-            connectgaps=False,
-        ))
-        if not df_doping.empty:
-            fig_speed.add_trace(go.Scatter(
-                x=df_doping['Year'], y=df_doping['avg_speed'],
-                mode='markers',
-                marker=dict(size=8, color='#FF6B6B', symbol='x', line=dict(width=2)),
-                hovertemplate='<b>%{x}</b> — Title subsequently revoked<br>%{y:.2f} km/h (unofficial)<extra></extra>',
-                name='Revoked title', showlegend=True,
-            ))
-            # Doping era vrect
-            if 1999 >= anno_min and 2005 <= anno_max:
-                fig_speed.add_vrect(x0=1998.5, x1=2005.5, fillcolor='#888', opacity=0.1,
-                                    line_width=0, annotation_text='Revoked era',
-                                    annotation_font=dict(size=9, color='#888'))
-        for x0, x1, lbl in [(1914,1918,'WWI'),(1939,1947,'WWII')]:
-            if x0 >= anno_min and x1 <= anno_max:
-                fig_speed.add_vrect(x0=x0, x1=x1, fillcolor='#888', opacity=0.15,
-                                    line_width=0, annotation_text=lbl,
-                                    annotation_font=dict(size=9, color='#888'))
-        fig_speed.update_layout(
-            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-            font=dict(family='Merriweather, serif', color='#1a1a1a'),
-            height=380, margin=dict(l=0, r=0, t=10, b=0),
-            xaxis=dict(showgrid=False, range=[anno_min, anno_max]),
-            yaxis=dict(title='Average speed (km/h)', showgrid=True, gridcolor='#e8e4da'),
-            legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center'),
-        )
-        st.plotly_chart(fig_speed, use_container_width=True)
 
         st.markdown(hr, unsafe_allow_html=True)
 
