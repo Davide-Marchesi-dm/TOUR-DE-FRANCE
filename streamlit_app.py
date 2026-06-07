@@ -3766,34 +3766,42 @@ elif st.session_state.pagina_corrente == "tappe":
         st.plotly_chart(fig_area, use_container_width=True)
 
         st.markdown(hr, unsafe_allow_html=True)
+        
 # ── SCATTER: ogni singola tappa come punto ──
         st.markdown("""
-            <span class="st-section-label-s">· All Stages Ever ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
-                       color:#1a1a1a;font-size:18px;margin:2px 0 4px;">
-                Every Stage in History — Distance by Type
-            </h4>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
-                      font-style:italic;margin-bottom:8px;">
-                Each dot = one stage. Color = type. The early Tour's epic 400+ km stages stand out dramatically.
-            </p>
+            <div style="padding: 12px 2rem 16px;">
+                <span class="st-section-label-s">· All Stages Ever ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                           color:#1a1a1a;font-size:18px;margin:2px 0 4px;">
+                    Every Stage in History — Distance by Type
+                </h4>
+                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                          font-style:italic;margin-bottom:8px;">
+                    Each dot = one stage. Color = type. The early Tour's epic 400+ km stages stand out dramatically.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         df_scatter_all = df_coords_filt.copy()
-        st.write("Colonne trovate nel dataset:", df_scatter_all.columns.tolist())        
-       
-        # 🪄 FIX: Trova automaticamente il nome corretto della colonna distanza
-        dist_col = next((col for col in ['Distance', 'Distance (km)', 'distance', 'Distance '] if col in df_scatter_all.columns), None)
+
+        # Rinomina la colonna mal nominata con le distanze per singola tappa
+        if 'Unnamed: 11' in df_scatter_all.columns:
+            df_scatter_all = df_scatter_all.rename(columns={'Unnamed: 11': 'StageDistance'})
         
-        if dist_col is None:
-            st.warning("⚠️ Impossibile trovare la colonna della distanza nel dataset. Verifica che si chiami 'Distance' o 'Distance (km)'.")
+        dist_col = 'StageDistance'
+        
+        if dist_col not in df_scatter_all.columns:
+            st.warning("⚠️ Impossibile trovare la colonna delle distanze per tappa nel dataset.")
         else:
-            # Assicuriamoci che sia numerica per evitare altri errori
             df_scatter_all[dist_col] = pd.to_numeric(df_scatter_all[dist_col], errors='coerce')
+            df_scatter_plot = df_scatter_all[df_scatter_all[dist_col] > 0].dropna(subset=[dist_col])
             
             fig_scatter = go.Figure()
-            for ttype in TYPE_ORDER:
-                df_t = df_scatter_all[df_scatter_all['Type_group'] == ttype]
+            
+            SCATTER_TYPES = ['Flat', 'Mountain', 'Hilly', 'Time Trial', 'Team TT', 'Other']
+            
+            for ttype in SCATTER_TYPES:
+                df_t = df_scatter_plot[df_scatter_plot['Type_group'] == ttype]
                 if df_t.empty:
                     continue
                 fig_scatter.add_trace(go.Scatter(
@@ -3810,16 +3818,19 @@ elif st.session_state.pagina_corrente == "tappe":
                     ),
                     customdata=df_t['Origin'].astype(str) + ' → ' + df_t['Destination'].astype(str),
                 ))
+                
             fig_scatter.update_layout(
                 plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
                 font=dict(family='Merriweather, serif', color='#1a1a1a'),
-                height=380, margin=dict(l=0, r=0, t=10, b=0),
-                legend=dict(orientation='h', y=-0.12, x=0.5, xanchor='center', font=dict(size=10)),
-                xaxis=dict(title='Year', showgrid=False, range=[anno_min, anno_max]),
+                height=380, 
+                margin=dict(l=45, r=15, t=10, b=40), 
+                legend=dict(orientation='h', y=-0.20, x=0.5, xanchor='center', font=dict(size=10)),
+                xaxis=dict(title=dict(text='Year', standoff=15), showgrid=False, range=[anno_min, anno_max]),
                 yaxis=dict(title='Stage distance (km)', showgrid=True, gridcolor='#e8e4da'),
             )
-            # Annotazione tappe epiche
-            epic = df_scatter_all[df_scatter_all[dist_col] > 450]
+            
+            # Annotazione tappe epiche (sopra i 450 km)
+            epic = df_scatter_plot[df_scatter_plot[dist_col] > 450]
             if not epic.empty:
                 top_epic = epic.nlargest(1, dist_col).iloc[0]
                 fig_scatter.add_annotation(
