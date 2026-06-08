@@ -3846,8 +3846,40 @@ elif st.session_state.pagina_corrente == "tappe":
     # ══════════════════════════════════════════════════════════
     elif vista_corrente == "dettaglio":
 
+        # ── INIEZIONE CSS PER FORZARE L'EXPANDER IN DARK MODE E SALVARE LE ICONE ──
         st.markdown("""
-            <span class="st-section-label-s">· Edition Details ·</span>
+            <style>
+            /* 1. SCUDO PER LE ICONE: Evita che "arrow_right" compaia come testo */
+            span[class*="material-symbols"], 
+            [data-testid="stIconMaterial"], 
+            .material-symbols-rounded {
+                font-family: "Material Symbols Rounded" !important;
+            }
+
+            /* 2. STILE EXPANDER: Sfondo scuro e testi chiari */
+            [data-testid="stExpander"] {
+                background-color: #0d0d0d !important;
+                border: 1px solid #333 !important;
+                border-radius: 6px;
+            }
+            [data-testid="stExpander"] summary {
+                color: #f0ece4 !important;
+            }
+            [data-testid="stExpander"] summary p {
+                color: #f0ece4 !important;
+                font-weight: 600 !important;
+            }
+            [data-testid="stExpander"] div[role="region"] p {
+                color: #cccccc !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+        # ── TITOLO PRINCIPALE: IN NERO ──
+        st.markdown("""
+            <span style="color:#1a1a1a;font-size:13px;font-weight:600;
+                         text-transform:uppercase;letter-spacing:1px;display:block;
+                         margin-bottom:4px;">· Edition Details ·</span>
             <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
                        color:#1a1a1a;margin:4px 0 4px;">
                 Route & Jerseys — Stage by Stage
@@ -3920,9 +3952,11 @@ elif st.session_state.pagina_corrente == "tappe":
             st.markdown(kpi_html, unsafe_allow_html=True)
             st.markdown(hr, unsafe_allow_html=True)
 
-            # ── JERSEY EVOLUTION (conservata e migliorata) ──
+            # ── TITOLO MAGLIE: IN NERO ──
             st.markdown("""
-                <span class="st-section-label-s">· Leadership Race ·</span>
+                <span style="color:#1a1a1a;font-size:13px;font-weight:600;
+                             text-transform:uppercase;letter-spacing:1px;display:block;
+                             margin-bottom:4px;">· Leadership Race ·</span>
                 <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
                            color:#1a1a1a;font-size:18px;margin:4px 0 4px;">
                     Jersey Evolution — Stage by Stage
@@ -3976,9 +4010,9 @@ elif st.session_state.pagina_corrente == "tappe":
 
             if anno_scelto < anno_intro:
                 st.markdown(f"""
-                    <div style="background:#f5f0e6;border-left:4px solid #FFCC00;
+                    <div style="background:#1a1a1a;border-left:4px solid #FFCC00;
                                 padding:14px 18px;border-radius:3px;
-                                font-family:'Merriweather',serif;color:#666;
+                                font-family:'Merriweather',serif;color:#cccccc;
                                 font-style:italic;font-size:12px;">
                         🕰️ In <strong>{anno_scelto}</strong> this jersey did not exist yet.
                         {cfg['storia']}
@@ -3995,20 +4029,15 @@ elif st.session_state.pagina_corrente == "tappe":
                     mode='lines+markers',
                     marker=dict(size=10, color=colore, line=dict(width=2, color='white')),
                 )
-
-                # Icona maglia su ogni cambio di leader
-                prev = None
                 
                # ── ICONE MAGLIA SU OGNI SINGOLO PALLINO ──
                 for _, row in df_leader.iterrows():
-                    # Rimosso il controllo del resto (%), ora inserisce l'immagine per ogni riga
                     fig_jersey.add_layout_image(dict(
                         source=img_maglia, xref="x", yref="y",
                         x=row['Stages'], y=row[col_sel],
                         sizex=1.4, sizey=0.85, 
                         xanchor="center", yanchor="middle", layer="above"
                     ))
-                prev = row[col_sel]
 
                 fig_jersey.update_layout(
                     plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d',
@@ -4030,14 +4059,16 @@ elif st.session_state.pagina_corrente == "tappe":
 
             st.markdown(hr, unsafe_allow_html=True)
 
-            # ── BOTTOM ROW: stage wins bar + team donut + route table ──
+            # ── BOTTOM ROW: GRAFICI IN DARK MODE CON TESTI BIANCHI ──
             col_b1, col_b2, col_b3 = st.columns([1.1, 1, 1.4], gap="medium")
 
             with col_b1:
                 st.markdown("""
-                    <span class="st-section-label-s">· Stage Winners ·</span>
+                    <span style="color:#f0ece4;font-size:12px;font-weight:600;
+                                 text-transform:uppercase;letter-spacing:1px;display:block;
+                                 margin-bottom:4px;">· Stage Winners ·</span>
                     <h5 style="font-family:'Merriweather',serif;font-weight:900;
-                               color:#1a1a1a;font-size:14px;margin:2px 0 6px;">
+                               color:#ffffff;font-size:14px;margin:2px 0 6px;">
                         Most Wins This Edition
                     </h5>
                 """, unsafe_allow_html=True)
@@ -4049,18 +4080,20 @@ elif st.session_state.pagina_corrente == "tappe":
                                   color_discrete_sequence=['#FFCC00'])
                 fig_wins.update_layout(
                     yaxis=dict(categoryorder='total ascending', title=''),
-                    xaxis=dict(title='Stage wins', showgrid=True, gridcolor='#e8e4da'),
-                    plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                    font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                    xaxis=dict(title='Stage wins', showgrid=True, gridcolor='#333333'),
+                    plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d', 
+                    font=dict(family='Merriweather, serif', color='#f0ece4'), 
                     height=280, margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
                 )
                 st.plotly_chart(fig_wins, use_container_width=True)
 
             with col_b2:
                 st.markdown("""
-                    <span class="st-section-label-s">· Team Dominance ·</span>
+                    <span style="color:#f0ece4;font-size:12px;font-weight:600;
+                                 text-transform:uppercase;letter-spacing:1px;display:block;
+                                 margin-bottom:4px;">· Team Dominance ·</span>
                     <h5 style="font-family:'Merriweather',serif;font-weight:900;
-                               color:#1a1a1a;font-size:14px;margin:2px 0 6px;">
+                               color:#ffffff;font-size:14px;margin:2px 0 6px;">
                         Wins by Team
                     </h5>
                 """, unsafe_allow_html=True)
@@ -4075,20 +4108,23 @@ elif st.session_state.pagina_corrente == "tappe":
                 fig_teams.update_traces(
                     textposition='inside', textinfo='label+value',
                     hovertemplate='<b>%{label}</b><br>%{value} stages<extra></extra>',
-                    marker=dict(line=dict(color='#F4F1EA', width=2)),
+                    marker=dict(line=dict(color='#0d0d0d', width=2)), 
                 )
                 fig_teams.update_layout(
-                    showlegend=False, plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                    font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                    showlegend=False, 
+                    plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d', 
+                    font=dict(family='Merriweather, serif', color='#f0ece4'), 
                     height=280, margin=dict(l=0, r=0, t=0, b=0),
                 )
                 st.plotly_chart(fig_teams, use_container_width=True)
 
             with col_b3:
                 st.markdown("""
-                    <span class="st-section-label-s">· Route ·</span>
+                    <span style="color:#f0ece4;font-size:12px;font-weight:600;
+                                 text-transform:uppercase;letter-spacing:1px;display:block;
+                                 margin-bottom:4px;">· Route ·</span>
                     <h5 style="font-family:'Merriweather',serif;font-weight:900;
-                               color:#1a1a1a;font-size:14px;margin:2px 0 6px;">
+                               color:#ffffff;font-size:14px;margin:2px 0 6px;">
                         Stage-by-Stage Itinerary
                     </h5>
                 """, unsafe_allow_html=True)
@@ -4096,9 +4132,8 @@ elif st.session_state.pagina_corrente == "tappe":
                 df_route.columns = ['#','Start','Finish','Stage Winner']
                 df_route['#'] = df_route['#'].apply(lambda x: int(x) if pd.notna(x) else '?')
                 st.dataframe(df_route, use_container_width=True, hide_index=True, height=280)
-
     # ══════════════════════════════════════════════════════════
-    # VISTA 3 — GEOGRAPHIC MAP (completamente rinnovata)
+    # VISTA 3 — GEOGRAPHIC MAP 
     # ══════════════════════════════════════════════════════════
     elif vista_corrente == "mappa":
 
