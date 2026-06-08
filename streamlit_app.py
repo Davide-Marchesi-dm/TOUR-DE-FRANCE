@@ -91,21 +91,17 @@ if "pagina_corrente" not in st.session_state:
 # ==========================================
 st.markdown("""
     <style>
-    /* ---> 1. IMPORTIAMO IL FONT GIORNALISTICO DA GOOGLE FONTS <--- */
     @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
 
-    /* ---> 2. APPLICHIAMO IL FONT A TUTTI I TESTI DELL'APP <--- */
     html, body, [class*="css"], [class*="st-"] {
         font-family: 'Merriweather', Georgia, 'Times New Roman', serif !important;
         color: #FFFFFF !important;
     }
 
-    /* ---> 3. SFONDO GIALLO GIORNALE <--- */
     .stApp {
-        background-color: #F4F1EA; /* Un giallo carta antico/giornale molto elegante */
+        background-color: #F4F1EA;
     }
 
-    /* Nasconde la barra spaziatrice superiore di default di Streamlit */
     [data-testid="stHeader"] { 
         display: none; 
     }
@@ -117,7 +113,6 @@ st.markdown("""
         max-width: 100% !important;
     }
     
-    /* Sfondo nero per l'intera riga della navigazione */
     [data-testid="stHorizontalBlock"] {
         background-color: #000000;
         align-items: center;
@@ -125,8 +120,8 @@ st.markdown("""
         margin-bottom: 20px;
     }
     
-    /* Stile base dei bottoni (i bottoni manterranno il font scelto sopra!) */
-    div.stButton > button {
+    /* NAVBAR: stile base bottoni — solo quelli nella barra nera */
+    [data-testid="stHorizontalBlock"] div.stButton > button {
         background-color: transparent !important;
         color: #FFFFFF !important;
         border: none !important;
@@ -140,21 +135,25 @@ st.markdown("""
         transition: border-color 0.2s ease-in-out;
     }
     
-    /* Effetto hover (quando passi il cursore) */
-    div.stButton > button:hover, 
-    div.stButton > button:focus, 
-    div.stButton > button:active {
+    /* NAVBAR: hover */
+    [data-testid="stHorizontalBlock"] div.stButton > button:hover, 
+    [data-testid="stHorizontalBlock"] div.stButton > button:focus, 
+    [data-testid="stHorizontalBlock"] div.stButton > button:active {
         color: #FFFFFF !important;
         border-bottom: 4px solid #FFCC00 !important;
         background-color: transparent !important;
+        box-shadow: none !important;
     }
-            /* ---> STATO ATTIVO REALE: Mantiene fissa la linea gialla per i tab selezionati <--- */
-    div.stButton > button[kind="primary"] {
+
+    /* NAVBAR: hover sul tab GIA' attivo — mantiene giallo */
+    [data-testid="stHorizontalBlock"] div.stButton > button[kind="primary"]:hover,
+    [data-testid="stHorizontalBlock"] div.stButton > button[kind="primary"]:focus,
+    [data-testid="stHorizontalBlock"] div.stButton > button[kind="primary"]:active {
         color: #FFCC00 !important;
         border-bottom: 4px solid #FFCC00 !important;
         background-color: transparent !important;
+        box-shadow: none !important;
     }
-    
     [data-testid="column"] {
         display: flex;
         justify-content: center;
@@ -165,13 +164,11 @@ st.markdown("""
         margin-bottom: 0 !important;
     }
     
-    /* Margini per il contenuto delle pagine sotto la barra */
-    /* Margini globali per il contenuto di tutte le pagine sotto la barra nera */
-.contenuto-pagina {
-    padding: 2rem 7% !important; /* Aumenta il rientro laterale al 7% della larghezza dello schermo */
-    max-width: 1400px;           /* Evita che il testo si allarghi troppo su schermi giganti */
-    margin: 0 auto;              /* Centra perfettamente tutto il blocco nella pagina */
-}
+    .contenuto-pagina {
+        padding: 2rem 7% !important;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -3700,8 +3697,7 @@ elif st.session_state.pagina_corrente == "tappe":
 
         st.markdown(hr, unsafe_allow_html=True)
 
-# ── 3. STACKED AREA: COMPOSIZIONE TAPPE PER DECADE ──
-# ── 3. STACKED AREA: COMPOSIZIONE TAPPE PER DECADE ──
+
 # ── 3. STACKED AREA: COMPOSIZIONE TAPPE PER DECADE ──
         st.markdown("""
             <div style="padding: 12px 2rem 16px;">
@@ -4379,1062 +4375,1101 @@ elif st.session_state.pagina_corrente == "tappe":
             )
         st.plotly_chart(fig_cities, use_container_width=True)
 # ==========================================
-# SEZIONE TEAMS — CODICE COMPLETO RIDISEGNATO
+# SEZIONE TEAMS 
 # ==========================================
-
 elif st.session_state.pagina_corrente == "teams":
 
-    import unicodedata, re
-
-    # ──────────────────────────────────────────────────────────
-    # 0. DIZIONARIO RAGGRUPPAMENTO SQUADRE
-    # ──────────────────────────────────────────────────────────
-    TEAM_GROUPS = {
-        # ── MODERN WORLDTOUR ──
-        "AG2R (2000–present)": ['AG2R PREVOYANCE','AG2R LA MONDIALE','AG2R-LA MONDIALE','AG2R CITROEN TEAM','DECATHLON AG2R LA MONDIALE TEAM'],
-        "Astana (2006–present)": ['ASTANA','PRO TEAM ASTANA','ASTANA PRO TEAM','ASTANA - PREMIER TECH','ASTANA - QAZAQSTAN TEAM','ASTANA QAZAQSTAN TEAM','XDS ASTANA TEAM'],
-        "Bahrain (2017–present)": ['BAHRAIN - MERIDA','BAHRAIN - MCLAREN','BAHRAIN VICTORIOUS'],
-        "Bora – Hansgrohe (2015–present)": ['BORA-ARGON 18','BORA - HANSGROHE','RED BULL - BORA - HANSGROHE'],
-        "Bouygues Telecom (2000–2010)": ['BOUYGUES TELECOM','BBOX BOUYGUES TELECOM'],
-        "Cofidis (1997–present)": ['COFIDIS','COFIDIS . CREDIT PAR TELEPHONE','COFIDIS . LE CREDIT PAR TELEPHONE','COFIDIS CREDIT PAR TELEPHONE','COFIDIS LE CREDIT EN LIGNE','COFIDIS, SOLUTIONS CREDITS','COFIDIS, SOLUTIONS CRÉDITS','COFIDIS.LE CREDIT PAR TELEPHONE'],
-        "DSM / Sunweb (2015–present)": ['TEAM SUNWEB','TEAM DSM','TEAM DSM - FIRMENICH','TEAM DSM-FIRMENICH POSTNL','TEAM PICNIC POSTNL'],
-        "EF Education (2012–present)": ['GARMIN CHIPOTLE','GARMIN - SLIPSTREAM','GARMIN - TRANSITIONS','GARMIN - SHARP','GARMIN-SHARP','TEAM GARMIN - CERVELO','CANNONDALE','CANNONDALE DRAPAC TEAM','CANNONDALE DRAPAC PROFESSIONAL CYCLING TEAM','TEAM CANNONDALE-GARMIN','EF PRO CYCLING','EF EDUCATION FIRST','EF EDUCATION - NIPPO','EF EDUCATION - EASYPOST','TEAM EF EDUCATION FIRST - DRAPAC P/B CANNONDALE'],
-        "Euskaltel-Euskadi (1994–2013)": ['EUSKALTEL - EUSKADI'],
-        "Groupama–FDJ (1997–present)": ['FRANCAISE DES JEUX','LA FRANCAISE DES JEUX','FDJ','FDJ.FR','FDJEUX.COM','FDJeux.com','FDJ-BIGMAT','GROUPAMA - FDJ','GROUPAMA-FDJ'],
-        "Ineos / Sky (2010–present)": ['SKY PRO CYCLING','SKY PROCYCLING','TEAM SKY','TEAM INEOS','INEOS GRENADIERS'],
-        "Intermarché–Wanty (2013–present)": ['WANTY - GROUPE GOBERT','WANTY - GOBERT CYCLING TEAM','INTERMARCHÉ - WANTY','INTERMARCHÉ - WANTY - GOBERT MATERIAUX','INTERMARCHÉ - CIRCUS - WANTY','INTERMARCHE - WANTY - GOBERT MATERIAUX'],
-        "Israel Premier Tech (2020–present)": ['ISRAEL START-UP NATION','ISRAEL - PREMIER TECH','ISRAEL-PREMIER TECH'],
-        "Jumbo-Visma / Visma (2016–present)": ['TEAM LOTTO NL - JUMBO','TEAM JUMBO - VISMA','JUMBO - VISMA','JUMBO-VISMA','TEAM VISMA | LEASE A BIKE'],
-        "Katusha (2009–2018)": ['KATUSHA TEAM','TEAM KATUSHA','TEAM KATUSHA ALPECIN'],
-        "Lidl-Trek (2012–present)": ['TREK FACTORY RACING','TREK - SEGAFREDO','LIDL - TREK','LIDL-TREK'],
-        "Lotto (1985–present)": ['LOTTO','LOTTO - ADECCO','LOTTO - DOMO','LOTTO - MOBISTAR','LOTTO-MOBISTAR-ISOGLASS','LOTTO-ISOGLASS','LOTTO-BELGACOM','LOTTO-BELISOL','LOTTO-BELISOL TEAM','LOTTO-SUPERCLUB','LOTTO-SUPERCLUB-MBK','LOTTO-EDDY MERCKX-CAMPAGNOLO','LOTTO-VETTA-CALÒ','DAVITAMON - LOTTO','PREDICTOR - LOTTO','SILENCE - LOTTO','OMEGA PHARMA - LOTTO','LOTTO SOUDAL','LOTTO-SOUDAL','LOTTO DSTNY'],
-        "Mitchelton-Scott / Jayco (2012–present)": ['ORICA GREENEDGE','ORICA - SCOTT','ORICA-BIKEEXCHANGE','MITCHELTON - SCOTT','TEAM BIKEEXCHANGE','TEAM BIKEEXCHANGE-JAYCO','TEAM JAYCO ALULA'],
-        "Movistar (1980–present)": ['REYNOLDS','REYNOLDS-BANESTO','REYNOLDS-PAPEL ALUMINIO','REYNOLDS-SEUR-SADA','REYNOLDS-TS BATTERIES','BANESTO','IBANESTO.COM','ILLES BALEARS-CAISSE D EPARGNE',"CAISSE D'EPARGNE-ILLES BALEARS","CAISSE D'EPARGNE","CAISSE Dâ€™EPARGNE",'ILLES BALEARS - B. SANTANDER','MOVISTAR TEAM'],
-        "NTT / Dimension Data (2015–2021)": ['TEAM DIMENSION DATA','MTN-QHUBEKA','TEAM QHUBEKA NEXTHASH','NTT PRO CYCLING TEAM'],
-        "ONCE (1989–2003)": ['ONCE','ONCE - EROSKI','O.N.C.E - DEUTSCHE BANK','O.N.C.E. - EROSKI'],
-        "Quick-Step (1999–present)": ['MAPEI - QUICK STEP','MAPEI-CLAS','MAPEI-GB','MAPEI - BRICOBI','QUICK STEP','QUICK STEP - DAVITAMON','QUICK STEP - INNERGETIC','QUICK STEP CYCLING TEAM','OMEGA PHARMA-QUICK STEP','ETIXX-QUICK STEP','DECEUNINCK - QUICK - STEP','QUICK - STEP FLOORS','QUICK-STEP ALPHA VINYL TEAM','SOUDAL QUICK-STEP'],
-        "Rabobank / Blanco (1996–2013)": ['RABOBANK','RABOBANK CYCLING TEAM','BELKIN PRO CYCLING'],
-        "T-Mobile / HTC (1999–2011)": ['TEAM DEUTSCHE TELEKOM','T-MOBILE TEAM','TEAM TELEKOM','TEAM COLUMBIA','TEAM COLUMBIA - HTC','TEAM HTC - COLUMBIA','HTC - HIGHROAD'],
-        "Tinkoff / Saxo (2008–2016)": ['TEAM SAXO BANK','TEAM CSC SAXO BANK','SAXO BANK SUNGARD','TEAM SAXO BANK-TINKOFF BANK','TEAM SAXO-TINKOFF','TINKOFF-SAXO','TINKOFF'],
-        "TotalEnergies (2004–present)": ['BONJOUR','BRIOCHES LA BOULANGERE','AGRITUBEL','BRETAGNE - SECHE ENVIRONNEMENT','SAUR-SOJASUN','SOJASUN','DIRECT ENERGIE','TOTAL DIRECT ENERGIE','TOTALENERGIES'],
-        "UAE Team Emirates (2017–present)": ['UAE TEAM EMIRATES','UAE TEAM EMIRATES XRG'],
-        "Uno-X (2021–present)": ['UNO-X PRO CYCLING TEAM','UNO-X MOBILITY'],
-        "US Postal / Discovery (1996–2007)": ['U.S POSTAL SERVICE','US POSTAL SERVICE','US POSTAL - BERRY FLOOR','DISCOVERY CHANNEL TEAM'],
-        # ── SQUADRE STORICHE ──
-        "Alcyon (1906–1931)": ['ALCYON','ALCYON-DUNLOP','ALCYON-SOLY'],
-        "Alpecin (2014–present)": ['TEAM GIANT-SHIMANO','TEAM GIANT-ALPECIN','TEAM ARGOS-SHIMANO','ALPECIN - FENIX','ALPECIN - DECEUNINCK','ALPECIN-DECEUNINCK'],
-        "Automoto (1920–1932)": ['AUTOMOTO','AUTOMOTO-CONTINENTAL','AUTOMOTO-HUTCHINSON'],
-        "B&B Hotels / Arkéa (2016–present)": ['FORTUNEO - VITAL CONCEPT','TEAM FORTUNEO - SAMSIC','TEAM FORTUNEO - OSCARO','B&B HOTELS - VITAL CONCEPT P / B KTM','B&B HOTELS - KTM','B&B HOTELS P/B KTM','ARKEA-B&B HOTELS','TEAM ARKEA - SAMSIC'],
-        "Bianchi (1949–2005)": ['BIANCHI','BIANCHI-CAMPAGNOLO','BIANCHI-FAEMA','TEAM BIANCHI'],
-        "BMC Racing (2007–2018)": ['BMC RACING TEAM'],
-        "Carrera (1984–1995)": ['CARRERA JEANS','CARRERA JEANS-INOXPRAN','CARRERA JEANS-TASSONI','CARRERA JEANS-VAGABOND','CARRERA-INOXPRAN','CARRERA-TASSONI','CARRERA BLUE JEANS-LONGONI'],
-        "Castorama (1990–1994)": ['CASTORAMA','CASTORAMA-RALEIGH'],
-        "CSC / Riis (2000–2007)": ['TEAM CSC','CSC - TISCALI','TEAM CSC TISCALI'],
-        "Faema (1956–1970)": ['FAEMA','FAEMA-FAEMINO','FAEMA-FLANDRIA','FAEMA-FLANDRIA-CLEMENT'],
-        "Fassa Bortolo (1997–2005)": ['FASSA BORTOLO'],
-        "Festina (1990–2001)": ['FESTINA','FESTINA WATCHES','FESTINA Watches','FESTINA-ANDORRA'],
-        "Flandria (1959–1979)": ['FLANDRIA-CA VA SEUL','FLANDRIA-CARPENTER-CONFORTLUXE','FLANDRIA-DE CLERCK-KRUGER','FLANDRIA-ROMEO','FLANDRIA-SHIMANO-MERLIN PLAGE','FLANDRIA-VELDA-VLEESBDRIJF','MARS-FLANDRIA','BEAULIEU-FLANDRIA'],
-        "Gan / Crédit Agricole (1989–2008)": ['GAN','GAN-MERCIER','GAN-MERCIER-HUTCHINSON','CREDIT AGRICOLE'],
-        "Gerolsteiner (2000–2008)": ['GEROLSTEINER'],
-        "Gitane / Renault (1955–1986)": ['GITANE','GITANE-CAMPAGNOLO','GITANE-FRIGECREME','FORD-FRANCE-GITANE-DUNLOP','RENAULT-GITANE','RENAULT-ELF-GITANE','RENAULT-ELF'],
-        "KAS (1960–1988)": ['KAS','KAS-CAMPAGNOLO','KAS-MAVIC','KAS-KASKOL','KAS-MIKO-MAVIC','KAS-CANAL 10-MAVIC'],
-        "Kelme (1984–2003)": ['KELME','KELME - COSTA BLANCA','KELME-ARTIACH-COSTA BLANCA','KELME-AVIANCA','KELME-COSTA BLANCA-EUROSPORT'],
-        "La Vie Claire (1984–1987)": ['LA VIE CLAIRE-TERRAILLON','LA VIE CLAIRE-WONDER-RADAR','TOSHIBA-LOOK-LA VIE CLAIRE','TOSHIBA'],
-        "La Redoute (1977–1988)": ['LA REDOUTE','LA REDOUTE-MOTOBECANE'],
-        "Lampre (1995–2016)": ['LAMPRE','LAMPRE - CAFFITA','LAMPRE - DAIKIN','LAMPRE - FARNESE','LAMPRE - ISD','LAMPRE - MERIDA','LAMPRE - N.G.C','LAMPRE-FONDITAL','LAMPRE-PANARIA','LAMPRE-POLTI'],
-        "Legnano (1908–1956)": ['LEGNANO','LEGNANO-PIRELLI'],
-        "Liberty Seguros / Würth (2003–2006)": ['LIBERTY SEGUROS','LIBERTY SEGUROS - WÜRTH TEAM'],
-        "Liquigas (2005–2012)": ['LIQUIGAS','LIQUIGAS - BIANCHI','LIQUIGAS-CANNONDALE','LIQUIGAS-DOIMO'],
-        "Mapei (1994–2002)": ['MAPEI-CLAS','MAPEI-GB','MAPEI - BRICOBI'],
-        "Mercatone Uno (1994–2002)": ['MERCATONE UNO-MEDEGHINI','MERCATONE UNO-SAECO','MERCATONE UNO - BIANCHI','MERCATONE UNO - ALBACOM','MERCATONE-UNO'],
-        "Mercier (1935–1984)": ['MERCIER-BP-HUTCHINSON','GAN-MERCIER','GAN-MERCIER-HUTCHINSON','FAGOR-MERCIER','FAGOR-MERCIER-HUTCHINSON','MIKO-MERCIER','MIKO-MERCIER-VIVAGEL'],
-        "Molteni (1958–1976)": ['MOLTENI','MOLTENI-IGNIS','I.B.A.C-MOLTENI'],
-        "Motorola / 7-Eleven (1985–1996)": ['MOTOROLA','SEVEN ELEVEN-AMERICAN AIRLINES','SEVEN ELEVEN-HOONVED'],
-        "Panasonic / PDM (1984–1992)": ['PANASONIC','PANASONIC-ISOSTAR','PANASONIC-RALEIGH','PANASONIC-SPORTLIFE','PDM','PDM-CONCORDE','P.D.M'],
-        "Pelforth / Sauvage (1960–1971)": ['PELFORTH-SAUVAGE-LEJEUNE','PELFORTH-SAUVAGE-LEJEUNE-WOLBER'],
-        "Peugeot (1954–1991)": ['PEUGEOT','PEUGEOT-BP','PEUGEOT-BP-DUNLOP','PEUGEOT-BP-ENGLEBERT','PEUGEOT-BP-MICHELIN','PEUGEOT-ESSO','PEUGEOT-ESSO-MICHELIN','PEUGEOT-SHELL','PEUGEOT-SHELL-MICHELIN','PEUGEOT-WOLBER','Z-PEUGEOT','Z'],
-        "Phonak (2002–2006)": ['PHONAK HEARING SYSTEMS'],
-        "RadioShack / Trek (2010–2015)": ['TEAM RADIOSHACK','RADIOSHACK-NISSAN','RADIOSHACK LEOPARD','TEAM LEOPARD-TREK'],
-        "RMO (1986–1993)": ['RMO- MAVIC-LIBERIA','RMO-LIBERIA-MAVIC','RMO-MAVIC','RMO-MERAL-MAVIC'],
-        "Saeco (1990–2003)": ['SAECO','SAECO - CANNONDALE','SAECO - MACCHINE PER CAFFE','SAECO MACCHINE DA CAFFE - CANNONDALE','SAECO - VALLI & VALLI','SAECO-ESTRO'],
-        "Salvarani (1961–1972)": ['SALVARANI'],
-        "Saunier Duval (2000–2008)": ['SAUNIER DUVAL - PRODIR'],
-        "Système U / Castorama (1986–1994)": ['SYSTEME U','SUPER U','CASTORAMA','CASTORAMA-RALEIGH'],
-        "Team Europcar (2011–2015)": ['TEAM EUROPCAR'],
-        "Team Milram (2006–2010)": ['TEAM MILRAM'],
-        "Team Polti (1993–1999)": ['TEAM POLTI','Team POLTI'],
-        "Teka (1977–1988)": ['TEKA'],
-        "TI-Raleigh (1973–1983)": ['TI-RALEIGH','TI-RALEIGH-CAMPAGNOLO','TI-RALEIGH-CREDA','TI-RALEIGH-McGREGOR'],
-        "TVM (1987–1999)": ['TVM','TVM-BISON','TVM-POLIS DIRECT'],
-        # ── NAZIONALI / REGIONALI ──
-        "France (national team)": ['FRANCE','FRANCE A','FRANCE B','FRANCE C','France'],
-        "Belgique (national team)": ['BELGIQUE','BELGIQUE A','BELGIQUE B','Belgique'],
-        "Italie (national team)": ['ITALIE','ITALIA','ITALIE B','Italie'],
-        "Espagne (national team)": ['ESPAGNE','ESPAGNE-LUXEMBOURG','ESPANA','Espagne'],
-        "Suisse (national team)": ['SUISSE','SUISSE-ALLEMAGNE','SUISSE-ESPAGNE','SUISSE-LUXEMBOURG','SUISSE/LUXEMBOURG','Suisse','HELVETIA','HELVETIA-COMMODORE','HELVETIA-LA SUISSE'],
-        "Pays-Bas (national team)": ['PAYS-BAS','PAYS BAS','PAYS BAS-LUXEMBOURG','NEDERLAND','PAYS-BAS/LUXEMBOURG','PAYS-BAS/ETRANGERS DE FRANCE','Hollande'],
-        "Allemagne (national team)": ['ALLEMAGNE','ALLEMAGNE-AUTRICHE','DEUTSCHLAND'],
-        "Touristes-Routiers (1924–1937)": ['TOURISTES ROUTIERS','TOURISTES-ROUTIERS'],
-        "Régions françaises": ['OUEST','OUEST-NORD','OUEST-SUD OUEST','Ouest','NORD','NORD EST-CENTRE','NORD-EST','SUD-EST','Sud-Est','SUD-OUEST','Sud-Ouest','ILE DE FRANCE','ILE DE FRANCE-NORD EST','Ile de France','CENTRE-MIDI','CENTRE-SUD OUEST','NORMANDIE','CHAMPAGNE','PARIS','PARIS-NORD','PARIS-NORD EST'],
-        "Isolés / Inconnus": ['ISOLES','INCONNU','INCOGNUE','INTERNATIONAUX','INTERNATIONONS'],
-    }
-
-    # Inverso: alias -> group name
-    ALIAS_TO_GROUP = {}
-    for gname, aliases in TEAM_GROUPS.items():
-        for alias in aliases:
-            ALIAS_TO_GROUP[alias] = gname
-
-    def get_group(team_name):
-        return ALIAS_TO_GROUP.get(str(team_name).strip(), str(team_name).strip())
-
-    # ──────────────────────────────────────────────────────────
-    # 1. PREPARAZIONE DATI
-    # ──────────────────────────────────────────────────────────
-    df_storico['Rank_Num'] = pd.to_numeric(df_storico['Rank'], errors='coerce')
-    df_storico['Team_Group'] = df_storico['Team'].apply(get_group)
-
-    anni_revocati = list(range(1999, 2006)) + [2006]
-
-    def pulisci_nome(nome):
-        if pd.isna(nome): return ""
-        s = re.sub(r'\(.*?\)', '', str(nome))
-        s = re.sub(r'[^a-zA-Z\s]', '', s).lower().strip()
-        s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
-        return " ".join(sorted(s.split()))
-
-    df_stage_h_c = df_stage_h.copy()
-    df_stage_h_c['Winner_Clean']  = df_stage_h_c['Winner of stage'].apply(pulisci_nome)
-    df_stage_h_c['Yellow_Clean']  = df_stage_h_c['Yellow Jersey'].apply(pulisci_nome)
-    df_stage_h_c['Green_Clean']   = df_stage_h_c['Green jersey'].apply(pulisci_nome)
-    df_stage_h_c['Pois_Clean']    = df_stage_h_c['Polka-dot jersey'].apply(pulisci_nome)
-
-    df_storico_clean = df_storico[['Year','Rider','Team','Team_Group']].drop_duplicates().copy()
-    df_storico_clean['Rider_Clean'] = df_storico_clean['Rider'].apply(pulisci_nome)
-
-    # ──────────────────────────────────────────────────────────
-    # 2. CSS
-    # ──────────────────────────────────────────────────────────
-    st.markdown("""
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
-
-        .teams-masthead {
-            border-top: 5px solid #1a1a1a; border-bottom: 2px solid #1a1a1a;
-            padding: 12px 0 8px; text-align: center; margin-bottom: 24px;
-        }
-        .t-rule { border: none; border-top: 1px solid #c8bfad; margin: 26px 0; }
-        .t-section-label {
-            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
-            color: #888; font-family: Arial, sans-serif; display: block; margin-bottom: 4px;
-        }
-        div[data-testid="stSelectbox"] {
-            background-color: transparent !important;
-        }
-        div[data-testid="stSelectbox"] label p {
-            color: #1a1a1a !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important;
-        }
-        div[data-baseweb="select"] > div {
-            background-color: #F4F1EA !important; color: #1a1a1a !important;
-            border: 1px solid #c8bfad !important; border-radius: 3px !important;
-        }
-        div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111 !important; }
-        div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li { color: #fff !important; background-color: #111 !important; }
-        div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover { background-color: #2a2a2a !important; }
-        ul[role="listbox"] li[aria-selected="true"] { color: #FFCC00 !important; }
-        div[data-testid="stPlotlyChart"] > div {
-            background-color: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-        }
-        div[data-testid="column"],
-        div[data-testid="stVerticalBlock"],
-        div[data-testid="stVerticalBlockBorderWrapper"] {
-            background-color: transparent !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    # ──────────────────────────────────────────────────────────
-    # 3. TESTATA
-    # ──────────────────────────────────────────────────────────
-    st.markdown("""
-        <div class="teams-masthead">
-            <span style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;font-family:Arial,sans-serif;">
-                Teams Archive · 1903 to Today · 100+ Franchises
-            </span>
-            <h1 style="font-family:'Merriweather',Georgia,serif;font-size:42px;font-weight:900;
-                       color:#1a1a1a;margin:4px 0 2px;letter-spacing:-1px;">
-                The Teams of Le Tour
-            </h1>
-            <div style="font-size:10px;letter-spacing:2px;color:#888;font-family:Arial,sans-serif;
-                        border-top:1px solid #c8bfad;padding-top:6px;margin-top:6px;">
-                Dynasties · Rosters · Palmarès · Stage Wins
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # ──────────────────────────────────────────────────────────
-    # 4. SELECTBOX GRUPPI
-    # ──────────────────────────────────────────────────────────
-    all_groups_in_data = sorted(df_storico['Team_Group'].dropna().unique())
-    # Aggiungi anche le famiglie del dizionario che hanno alias nel dataset
-    groups_with_data = [g for g in TEAM_GROUPS.keys()
-                        if df_storico['Team'].isin(TEAM_GROUPS[g]).any()]
-    # Unisci squadre singole (non mappate) che hanno dati
-    all_selectable = sorted(set(groups_with_data) | set(all_groups_in_data))
-
-    default_idx = all_selectable.index("Ineos / Sky (2010–present)") if "Ineos / Sky (2010–present)" in all_selectable else 0
-    team_scelto = st.selectbox("🚴 Select a team or franchise:", all_selectable, index=default_idx)
-
-    # Recupera alias per il gruppo selezionato
-    aliases_gruppo = TEAM_GROUPS.get(team_scelto, [team_scelto])
-    df_team = df_storico[df_storico['Team'].isin(aliases_gruppo)].copy()
-    df_team['Rank_Num'] = pd.to_numeric(df_team['Rank'], errors='coerce')
-
-    # Banner alias
-    if len(aliases_gruppo) > 1:
-        alias_list = " · ".join([f"<em>{a.title()}</em>" for a in aliases_gruppo if df_storico['Team'].eq(a).any()])
-        st.markdown(f"""
-            <div style="background:#111;border:1px solid #2a2a2a;border-left:4px solid #FFCC00;
-                        padding:10px 16px;border-radius:3px;margin-bottom:20px;
-                        font-family:'Merriweather',serif;font-size:11px;color:#888;">
-                <strong style="color:#FFCC00;">Franchise includes:</strong> {alias_list}
-            </div>
-        """, unsafe_allow_html=True)
-
-    if df_team.empty:
-        st.warning("No data available for this selection.")
-    else:
-        hr = "<hr class='t-rule'>"
-
-        # ── KPI ──
-        vittorie_gc = len(df_team[(df_team['Rank_Num'] == 1) & (~df_team['Year'].isin(anni_revocati))])
-        miglior_rank = int(df_team['Rank_Num'].min()) if not df_team['Rank_Num'].isna().all() else "N/A"
-        partecipazioni = df_team['Year'].nunique()
-        anno_debutto = int(df_team['Year'].min())
-        anno_ultimo  = int(df_team['Year'].max())
-        top10_count  = len(df_team[df_team['Rank_Num'] <= 10])
-
-        kpi_html = f"""
-        <div style="display:flex;gap:12px;margin:16px 0 24px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:110px;background:#0d0d0d;border:1px solid #222;
-                        border-top:3px solid #FFCC00;border-radius:4px;padding:14px 16px;
-                        font-family:'Merriweather',serif;">
-                <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#888;font-family:Arial;margin-bottom:6px;">GC Wins</div>
-                <div style="font-size:30px;font-weight:900;color:#FFCC00;">{vittorie_gc}</div>
-            </div>
-            <div style="flex:1;min-width:110px;background:#0d0d0d;border:1px solid #222;
-                        border-top:3px solid #f0ece4;border-radius:4px;padding:14px 16px;
-                        font-family:'Merriweather',serif;">
-                <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#888;font-family:Arial;margin-bottom:6px;">Best GC Result</div>
-                <div style="font-size:30px;font-weight:900;color:#f0ece4;">#{miglior_rank}</div>
-            </div>
-            <div style="flex:1;min-width:110px;background:#0d0d0d;border:1px solid #222;
-                        border-top:3px solid #4ECDC4;border-radius:4px;padding:14px 16px;
-                        font-family:'Merriweather',serif;">
-                <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#888;font-family:Arial;margin-bottom:6px;">Editions</div>
-                <div style="font-size:30px;font-weight:900;color:#4ECDC4;">{partecipazioni}</div>
-            </div>
-            <div style="flex:1;min-width:110px;background:#0d0d0d;border:1px solid #222;
-                        border-top:3px solid #FF6B6B;border-radius:4px;padding:14px 16px;
-                        font-family:'Merriweather',serif;">
-                <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#888;font-family:Arial;margin-bottom:6px;">Top-10 Finishes</div>
-                <div style="font-size:30px;font-weight:900;color:#FF6B6B;">{top10_count}</div>
-            </div>
-            <div style="flex:1;min-width:110px;background:#0d0d0d;border:1px solid #222;
-                        border-top:3px solid #888;border-radius:4px;padding:14px 16px;
-                        font-family:'Merriweather',serif;">
-                <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#888;font-family:Arial;margin-bottom:6px;">Active Period</div>
-                <div style="font-size:20px;font-weight:900;color:#f0ece4;">{anno_debutto}–{anno_ultimo}</div>
-            </div>
-        </div>
-        """
-        st.markdown(kpi_html, unsafe_allow_html=True)
-        st.markdown(hr, unsafe_allow_html=True)
-
-        # ──────────────────────────────────────────────────────
-        # SEZIONE A: DYNASTY TIMELINE
-        # ──────────────────────────────────────────────────────
+  # ──────────────────────────────────────────────────────────
+  #2. CSS OTTIMIZZATO (Fix menu nero + mantenimento stile bottoni)
+  #  ──────────────────────────────────────────────────────────
         st.markdown("""
-        <div style="padding: 0 16px;">
-            <span class="t-section-label">· Season by Season ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
-                    color:#1a1a1a;margin:4px 0 4px;">
-                Dynasty Timeline — Every Edition at a Glance
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
-                    font-style:italic;margin-bottom:8px;line-height:1.5;">
-                Each dot = one edition. Color = best GC result that year. Hover for details.
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
-
-        df_by_year = df_team.dropna(subset=['Rank_Num']).groupby('Year').agg(
-            best_rank=('Rank_Num','min'),
-            n_riders=('Rider','count'),
-            top_rider=('Rider', lambda x: x[df_team.loc[x.index,'Rank_Num'].idxmin()] if len(x)>0 else ''),
-        ).reset_index()
-
-        def rank_color(r):
-            if r == 1:   return '#FFD700'
-            if r <= 3:   return '#C0C0C0'
-            if r <= 10:  return '#CD7F32'
-            if r <= 20:  return '#4ECDC4'
-            return '#555'
-
-        def rank_label(r):
-            if r == 1:   return '🏆 GC Victory'
-            if r <= 3:   return '🥈 Podium'
-            if r <= 10:  return 'Top 10'
-            if r <= 20:  return 'Top 20'
-            return 'Participant'
-
-        df_by_year['color']      = df_by_year['best_rank'].apply(rank_color)
-        df_by_year['result_lbl'] = df_by_year['best_rank'].apply(rank_label)
-        df_by_year['size']       = df_by_year['best_rank'].apply(lambda r: 22 if r==1 else 16 if r<=3 else 13 if r<=10 else 10)
-
-        fig_timeline = go.Figure()
-
-        # Linea di sfondo
-        fig_timeline.add_trace(go.Scatter(
-            x=df_by_year['Year'], y=[0]*len(df_by_year),
-            mode='lines', line=dict(color='#c8bfad', width=1.5),
-            showlegend=False, hoverinfo='skip',
-        ))
-
-        # Dot per categoria
-        for lbl, color in [('🏆 GC Victory','#FFD700'),('🥈 Podium','#C0C0C0'),
-                            ('Top 10','#CD7F32'),('Top 20','#4ECDC4'),('Participant','#555')]:
-            df_cat = df_by_year[df_by_year['result_lbl'] == lbl]
-            if df_cat.empty: continue
-            fig_timeline.add_trace(go.Scatter(
-                x=df_cat['Year'], y=[0]*len(df_cat),
-                mode='markers',
-                marker=dict(
-                    size=df_cat['size'], color=color,
-                    line=dict(width=2, color='white'), symbol='circle',
-                ),
-                name=lbl,
-                hovertemplate=(
-                    '<b>%{customdata[0]}</b><br>'
-                    'Best GC: #%{customdata[1]}<br>'
-                    'Leader: %{customdata[2]}<br>'
-                    'Riders: %{customdata[3]}<extra></extra>'
-                ),
-                customdata=list(zip(
-                    df_cat['Year'].astype(int),
-                    df_cat['best_rank'].astype(int),
-                    df_cat['top_rider'].str.title(),
-                    df_cat['n_riders'].astype(int),
-                )),
-            ))
-
-        # Linee verticali per vittorie GC
-        for _, row in df_by_year[df_by_year['best_rank']==1].iterrows():
-            fig_timeline.add_annotation(
-                x=row['Year'], y=0,
-                text=f"🏆 {int(row['Year'])}",
-                showarrow=True, arrowhead=0, arrowcolor='#FFD700',
-                font=dict(size=9, color='#FFD700', family='Arial'),
-                ay=-36, ax=0, bgcolor='rgba(0,0,0,0.0)',
-            )
-
-        fig_timeline.update_layout(
-            plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-            font=dict(family='Merriweather, serif', color='#1a1a1a'),
-            height=200, margin=dict(l=0, r=0, t=30, b=10),
-            xaxis=dict(title='', showgrid=False, tickfont=dict(size=10)),
-            yaxis=dict(visible=False, range=[-0.5, 0.6]),
-            legend=dict(orientation='h', y=-0.3, x=0.5, xanchor='center', font=dict(size=10)),
-            showlegend=True,
-        )
-        st.plotly_chart(fig_timeline, use_container_width=True)
-        st.markdown(hr, unsafe_allow_html=True)
-
-   # ── TEAM ROLES EXPLAINER ──
-# ── TEAM ROLES EXPLAINER ──
-# ── TEAM ROLES EXPLAINER ──
-        if 'roles_open' not in st.session_state:
-            st.session_state.roles_open = False
-
-        arrow = "▲" if st.session_state.roles_open else "▼"
-
-        st.markdown(f"""
             <style>
-            div[data-testid="stButton"]:has(button[kind="secondary"]#roles_toggle_btn) button,
-            div[data-testid="stBaseButton-secondary"]:has(#roles_toggle_btn) {{
+            @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
+
+            /* --- FIX MENU NERO (Target: bottoni NON primari) --- */
+            div[data-testid="stButton"]:not(:has(button[kind="primary"])) button {
+                background-color: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            div[data-testid="stButton"]:not(:has(button[kind="primary"])) button:active,
+            div[data-testid="stButton"]:not(:has(button[kind="primary"])) button:focus {
+                background-color: transparent !important;
+                outline: none !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+
+            /* --- SCUDO PER LE ICONE --- */
+            span[class*="material-symbols"], [data-testid="stIconMaterial"], .material-symbols-rounded {
+                font-family: "Material Symbols Rounded" !important;
+            }
+
+            /* --- STILE EXPANDER IN DARK MODE --- */
+            [data-testid="stExpander"] {
+                background-color: #0d0d0d !important;
+                border: 1px solid #333 !important;
+                border-radius: 6px;
+            }
+            [data-testid="stExpander"] summary { color: #f0ece4 !important; }
+            [data-testid="stExpander"] summary p { color: #f0ece4 !important; font-weight: 600 !important; }
+            [data-testid="stExpander"] div[role="region"] p { color: #cccccc !important; }
+
+            /* --- STILE BOTTONE "TEAM ROLES" (Target: primario FUORI dalla navbar) --- */
+            :not([data-testid="stHorizontalBlock"]) > div[data-testid="stButton"] button[kind="primary"] {
                 background: #F4F1EA !important;
                 border-top: 2px solid #1a1a1a !important;
                 border-bottom: 1px solid #c8bfad !important;
-                border-left: none !important;
-                border-right: none !important;
                 border-radius: 0 !important;
                 padding: 9px 20px !important;
-                box-shadow: none !important;
                 width: 100% !important;
                 color: #1a1a1a !important;
                 font-family: 'Merriweather', Georgia, serif !important;
                 font-size: 12px !important;
                 font-weight: 700 !important;
-                letter-spacing: 0px !important;
-                text-transform: none !important;
-            }}
+            }
+            :not([data-testid="stHorizontalBlock"]) > div[data-testid="stButton"] button[kind="primary"] p { 
+                color: #1a1a1a !important; 
+            }
             
-            /* 🪄 FIX: Forza in nero qualsiasi testo interno (paragrafi/span) generato da Streamlit nel bottone */
-            div[data-testid="stButton"] button[kind="secondary"]#roles_toggle_btn p,
-            div[data-testid="stButton"] button[kind="secondary"]#roles_toggle_btn div,
-            div[data-testid="stButton"] button[kind="secondary"]#roles_toggle_btn span {{
-                color: #1a1a1a !important;
-            }}
-
-            /* Selettore più largo come fallback */
-            div[data-testid="stButton"] button[kind="secondary"] {{
-                background: #F4F1EA !important;
-                border-top: 2px solid #1a1a1a !important;
-                border-bottom: 1px solid #c8bfad !important;
-                border-left: none !important;
-                border-right: none !important;
-                border-radius: 0 !important;
-                padding: 9px 20px !important;
-                box-shadow: none !important;
-                color: #1a1a1a !important;
-                font-family: 'Merriweather', Georgia, serif !important;
-                font-size: 12px !important;
-                font-weight: 700 !important;
-            }}
-            
-            div[data-testid="stButton"] button[kind="secondary"] p {{
-                color: #1a1a1a !important;
-            }}
-
-            div[data-testid="stButton"] button[kind="secondary"]:hover {{
-                background: #ede9e0 !important;
-                border-top: 2px solid #1a1a1a !important;
-                border-bottom: 1px solid #c8bfad !important;
-                border-left: none !important;
-                border-right: none !important;
-            }}
+            /* --- STILI SELECTBOX --- */
+            div[data-testid="stSelectbox"] { background-color: transparent !important; }
+            div[data-baseweb="select"] > div {
+                background-color: #F4F1EA !important; color: #1a1a1a !important;
+                border: 1px solid #c8bfad !important;
+            }
+            div[data-baseweb="popover"] ul { background-color: #111 !important; }
+            div[data-baseweb="popover"] li { color: #fff !important; background-color: #111 !important; }
             </style>
         """, unsafe_allow_html=True)
 
-        # Testo pulito senza tag HTML che confondono Streamlit
-        if st.button(
-            f"· Team Roles ·   Who does what inside a Tour de France squad?   {arrow}",
-            key="roles_toggle_btn",
-            use_container_width=True
-        ):
-            st.session_state.roles_open = not st.session_state.roles_open
-            st.rerun()
+              
+        import unicodedata, re
 
-        if st.session_state.roles_open:
-            roles_content_html = """
-            <div style="background:#F4F1EA;border-bottom:1px solid #c8bfad;padding:16px 20px;
-                        font-family:'Merriweather',Georgia,serif;margin-top:-8px;">
-            <p style="font-size:12px;color:#555;line-height:1.7;margin:0 0 14px">
-                A professional cycling team is not a collection of solo athletes — it is a precisely structured unit
-                where every rider has a defined function. Understanding these roles transforms how you read the roster heatmap below.
-            </p>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+        # ──────────────────────────────────────────────────────────
+        # 0. DIZIONARIO RAGGRUPPAMENTO SQUADRE
+        # ──────────────────────────────────────────────────────────
+        TEAM_GROUPS = {
+            # ── MODERN WORLDTOUR ──
+            "AG2R (2000–present)": ['AG2R PREVOYANCE','AG2R LA MONDIALE','AG2R-LA MONDIALE','AG2R CITROEN TEAM','DECATHLON AG2R LA MONDIALE TEAM'],
+            "Astana (2006–present)": ['ASTANA','PRO TEAM ASTANA','ASTANA PRO TEAM','ASTANA - PREMIER TECH','ASTANA - QAZAQSTAN TEAM','ASTANA QAZAQSTAN TEAM','XDS ASTANA TEAM'],
+            "Bahrain (2017–present)": ['BAHRAIN - MERIDA','BAHRAIN - MCLAREN','BAHRAIN VICTORIOUS'],
+            "Bora – Hansgrohe (2015–present)": ['BORA-ARGON 18','BORA - HANSGROHE','RED BULL - BORA - HANSGROHE'],
+            "Bouygues Telecom (2000–2010)": ['BOUYGUES TELECOM','BBOX BOUYGUES TELECOM'],
+            "Cofidis (1997–present)": ['COFIDIS','COFIDIS . CREDIT PAR TELEPHONE','COFIDIS . LE CREDIT PAR TELEPHONE','COFIDIS CREDIT PAR TELEPHONE','COFIDIS LE CREDIT EN LIGNE','COFIDIS, SOLUTIONS CREDITS','COFIDIS, SOLUTIONS CRÉDITS','COFIDIS.LE CREDIT PAR TELEPHONE'],
+            "DSM / Sunweb (2015–present)": ['TEAM SUNWEB','TEAM DSM','TEAM DSM - FIRMENICH','TEAM DSM-FIRMENICH POSTNL','TEAM PICNIC POSTNL'],
+            "EF Education (2012–present)": ['GARMIN CHIPOTLE','GARMIN - SLIPSTREAM','GARMIN - TRANSITIONS','GARMIN - SHARP','GARMIN-SHARP','TEAM GARMIN - CERVELO','CANNONDALE','CANNONDALE DRAPAC TEAM','CANNONDALE DRAPAC PROFESSIONAL CYCLING TEAM','TEAM CANNONDALE-GARMIN','EF PRO CYCLING','EF EDUCATION FIRST','EF EDUCATION - NIPPO','EF EDUCATION - EASYPOST','TEAM EF EDUCATION FIRST - DRAPAC P/B CANNONDALE'],
+            "Euskaltel-Euskadi (1994–2013)": ['EUSKALTEL - EUSKADI'],
+            "Groupama–FDJ (1997–present)": ['FRANCAISE DES JEUX','LA FRANCAISE DES JEUX','FDJ','FDJ.FR','FDJEUX.COM','FDJeux.com','FDJ-BIGMAT','GROUPAMA - FDJ','GROUPAMA-FDJ'],
+            "Ineos / Sky (2010–present)": ['SKY PRO CYCLING','SKY PROCYCLING','TEAM SKY','TEAM INEOS','INEOS GRENADIERS'],
+            "Intermarché–Wanty (2013–present)": ['WANTY - GROUPE GOBERT','WANTY - GOBERT CYCLING TEAM','INTERMARCHÉ - WANTY','INTERMARCHÉ - WANTY - GOBERT MATERIAUX','INTERMARCHÉ - CIRCUS - WANTY','INTERMARCHE - WANTY - GOBERT MATERIAUX'],
+            "Israel Premier Tech (2020–present)": ['ISRAEL START-UP NATION','ISRAEL - PREMIER TECH','ISRAEL-PREMIER TECH'],
+            "Jumbo-Visma / Visma (2016–present)": ['TEAM LOTTO NL - JUMBO','TEAM JUMBO - VISMA','JUMBO - VISMA','JUMBO-VISMA','TEAM VISMA | LEASE A BIKE'],
+            "Katusha (2009–2018)": ['KATUSHA TEAM','TEAM KATUSHA','TEAM KATUSHA ALPECIN'],
+            "Lidl-Trek (2012–present)": ['TREK FACTORY RACING','TREK - SEGAFREDO','LIDL - TREK','LIDL-TREK'],
+            "Lotto (1985–present)": ['LOTTO','LOTTO - ADECCO','LOTTO - DOMO','LOTTO - MOBISTAR','LOTTO-MOBISTAR-ISOGLASS','LOTTO-ISOGLASS','LOTTO-BELGACOM','LOTTO-BELISOL','LOTTO-BELISOL TEAM','LOTTO-SUPERCLUB','LOTTO-SUPERCLUB-MBK','LOTTO-EDDY MERCKX-CAMPAGNOLO','LOTTO-VETTA-CALÒ','DAVITAMON - LOTTO','PREDICTOR - LOTTO','SILENCE - LOTTO','OMEGA PHARMA - LOTTO','LOTTO SOUDAL','LOTTO-SOUDAL','LOTTO DSTNY'],
+            "Mitchelton-Scott / Jayco (2012–present)": ['ORICA GREENEDGE','ORICA - SCOTT','ORICA-BIKEEXCHANGE','MITCHELTON - SCOTT','TEAM BIKEEXCHANGE','TEAM BIKEEXCHANGE-JAYCO','TEAM JAYCO ALULA'],
+            "Movistar (1980–present)": ['REYNOLDS','REYNOLDS-BANESTO','REYNOLDS-PAPEL ALUMINIO','REYNOLDS-SEUR-SADA','REYNOLDS-TS BATTERIES','BANESTO','IBANESTO.COM','ILLES BALEARS-CAISSE D EPARGNE',"CAISSE D'EPARGNE-ILLES BALEARS","CAISSE D'EPARGNE","CAISSE Dâ€™EPARGNE",'ILLES BALEARS - B. SANTANDER','MOVISTAR TEAM'],
+            "NTT / Dimension Data (2015–2021)": ['TEAM DIMENSION DATA','MTN-QHUBEKA','TEAM QHUBEKA NEXTHASH','NTT PRO CYCLING TEAM'],
+            "ONCE (1989–2003)": ['ONCE','ONCE - EROSKI','O.N.C.E - DEUTSCHE BANK','O.N.C.E. - EROSKI'],
+            "Quick-Step (1999–present)": ['MAPEI - QUICK STEP','MAPEI-CLAS','MAPEI-GB','MAPEI - BRICOBI','QUICK STEP','QUICK STEP - DAVITAMON','QUICK STEP - INNERGETIC','QUICK STEP CYCLING TEAM','OMEGA PHARMA-QUICK STEP','ETIXX-QUICK STEP','DECEUNINCK - QUICK - STEP','QUICK - STEP FLOORS','QUICK-STEP ALPHA VINYL TEAM','SOUDAL QUICK-STEP'],
+            "Rabobank / Blanco (1996–2013)": ['RABOBANK','RABOBANK CYCLING TEAM','BELKIN PRO CYCLING'],
+            "T-Mobile / HTC (1999–2011)": ['TEAM DEUTSCHE TELEKOM','T-MOBILE TEAM','TEAM TELEKOM','TEAM COLUMBIA','TEAM COLUMBIA - HTC','TEAM HTC - COLUMBIA','HTC - HIGHROAD'],
+            "Tinkoff / Saxo (2008–2016)": ['TEAM SAXO BANK','TEAM CSC SAXO BANK','SAXO BANK SUNGARD','TEAM SAXO BANK-TINKOFF BANK','TEAM SAXO-TINKOFF','TINKOFF-SAXO','TINKOFF'],
+            "TotalEnergies (2004–present)": ['BONJOUR','BRIOCHES LA BOULANGERE','AGRITUBEL','BRETAGNE - SECHE ENVIRONNEMENT','SAUR-SOJASUN','SOJASUN','DIRECT ENERGIE','TOTAL DIRECT ENERGIE','TOTALENERGIES'],
+            "UAE Team Emirates (2017–present)": ['UAE TEAM EMIRATES','UAE TEAM EMIRATES XRG'],
+            "Uno-X (2021–present)": ['UNO-X PRO CYCLING TEAM','UNO-X MOBILITY'],
+            "US Postal / Discovery (1996–2007)": ['U.S POSTAL SERVICE','US POSTAL SERVICE','US POSTAL - BERRY FLOOR','DISCOVERY CHANNEL TEAM'],
+            # ── SQUADRE STORICHE ──
+            "Alcyon (1906–1931)": ['ALCYON','ALCYON-DUNLOP','ALCYON-SOLY'],
+            "Alpecin (2014–present)": ['TEAM GIANT-SHIMANO','TEAM GIANT-ALPECIN','TEAM ARGOS-SHIMANO','ALPECIN - FENIX','ALPECIN - DECEUNINCK','ALPECIN-DECEUNINCK'],
+            "Automoto (1920–1932)": ['AUTOMOTO','AUTOMOTO-CONTINENTAL','AUTOMOTO-HUTCHINSON'],
+            "B&B Hotels / Arkéa (2016–present)": ['FORTUNEO - VITAL CONCEPT','TEAM FORTUNEO - SAMSIC','TEAM FORTUNEO - OSCARO','B&B HOTELS - VITAL CONCEPT P / B KTM','B&B HOTELS - KTM','B&B HOTELS P/B KTM','ARKEA-B&B HOTELS','TEAM ARKEA - SAMSIC'],
+            "Bianchi (1949–2005)": ['BIANCHI','BIANCHI-CAMPAGNOLO','BIANCHI-FAEMA','TEAM BIANCHI'],
+            "BMC Racing (2007–2018)": ['BMC RACING TEAM'],
+            "Carrera (1984–1995)": ['CARRERA JEANS','CARRERA JEANS-INOXPRAN','CARRERA JEANS-TASSONI','CARRERA JEANS-VAGABOND','CARRERA-INOXPRAN','CARRERA-TASSONI','CARRERA BLUE JEANS-LONGONI'],
+            "Castorama (1990–1994)": ['CASTORAMA','CASTORAMA-RALEIGH'],
+            "CSC / Riis (2000–2007)": ['TEAM CSC','CSC - TISCALI','TEAM CSC TISCALI'],
+            "Faema (1956–1970)": ['FAEMA','FAEMA-FAEMINO','FAEMA-FLANDRIA','FAEMA-FLANDRIA-CLEMENT'],
+            "Fassa Bortolo (1997–2005)": ['FASSA BORTOLO'],
+            "Festina (1990–2001)": ['FESTINA','FESTINA WATCHES','FESTINA Watches','FESTINA-ANDORRA'],
+            "Flandria (1959–1979)": ['FLANDRIA-CA VA SEUL','FLANDRIA-CARPENTER-CONFORTLUXE','FLANDRIA-DE CLERCK-KRUGER','FLANDRIA-ROMEO','FLANDRIA-SHIMANO-MERLIN PLAGE','FLANDRIA-VELDA-VLEESBDRIJF','MARS-FLANDRIA','BEAULIEU-FLANDRIA'],
+            "Gan / Crédit Agricole (1989–2008)": ['GAN','GAN-MERCIER','GAN-MERCIER-HUTCHINSON','CREDIT AGRICOLE'],
+            "Gerolsteiner (2000–2008)": ['GEROLSTEINER'],
+            "Gitane / Renault (1955–1986)": ['GITANE','GITANE-CAMPAGNOLO','GITANE-FRIGECREME','FORD-FRANCE-GITANE-DUNLOP','RENAULT-GITANE','RENAULT-ELF-GITANE','RENAULT-ELF'],
+            "KAS (1960–1988)": ['KAS','KAS-CAMPAGNOLO','KAS-MAVIC','KAS-KASKOL','KAS-MIKO-MAVIC','KAS-CANAL 10-MAVIC'],
+            "Kelme (1984–2003)": ['KELME','KELME - COSTA BLANCA','KELME-ARTIACH-COSTA BLANCA','KELME-AVIANCA','KELME-COSTA BLANCA-EUROSPORT'],
+            "La Vie Claire (1984–1987)": ['LA VIE CLAIRE-TERRAILLON','LA VIE CLAIRE-WONDER-RADAR','TOSHIBA-LOOK-LA VIE CLAIRE','TOSHIBA'],
+            "La Redoute (1977–1988)": ['LA REDOUTE','LA REDOUTE-MOTOBECANE'],
+            "Lampre (1995–2016)": ['LAMPRE','LAMPRE - CAFFITA','LAMPRE - DAIKIN','LAMPRE - FARNESE','LAMPRE - ISD','LAMPRE - MERIDA','LAMPRE - N.G.C','LAMPRE-FONDITAL','LAMPRE-PANARIA','LAMPRE-POLTI'],
+            "Legnano (1908–1956)": ['LEGNANO','LEGNANO-PIRELLI'],
+            "Liberty Seguros / Würth (2003–2006)": ['LIBERTY SEGUROS','LIBERTY SEGUROS - WÜRTH TEAM'],
+            "Liquigas (2005–2012)": ['LIQUIGAS','LIQUIGAS - BIANCHI','LIQUIGAS-CANNONDALE','LIQUIGAS-DOIMO'],
+            "Mapei (1994–2002)": ['MAPEI-CLAS','MAPEI-GB','MAPEI - BRICOBI'],
+            "Mercatone Uno (1994–2002)": ['MERCATONE UNO-MEDEGHINI','MERCATONE UNO-SAECO','MERCATONE UNO - BIANCHI','MERCATONE UNO - ALBACOM','MERCATONE-UNO'],
+            "Mercier (1935–1984)": ['MERCIER-BP-HUTCHINSON','GAN-MERCIER','GAN-MERCIER-HUTCHINSON','FAGOR-MERCIER','FAGOR-MERCIER-HUTCHINSON','MIKO-MERCIER','MIKO-MERCIER-VIVAGEL'],
+            "Molteni (1958–1976)": ['MOLTENI','MOLTENI-IGNIS','I.B.A.C-MOLTENI'],
+            "Motorola / 7-Eleven (1985–1996)": ['MOTOROLA','SEVEN ELEVEN-AMERICAN AIRLINES','SEVEN ELEVEN-HOONVED'],
+            "Panasonic / PDM (1984–1992)": ['PANASONIC','PANASONIC-ISOSTAR','PANASONIC-RALEIGH','PANASONIC-SPORTLIFE','PDM','PDM-CONCORDE','P.D.M'],
+            "Pelforth / Sauvage (1960–1971)": ['PELFORTH-SAUVAGE-LEJEUNE','PELFORTH-SAUVAGE-LEJEUNE-WOLBER'],
+            "Peugeot (1954–1991)": ['PEUGEOT','PEUGEOT-BP','PEUGEOT-BP-DUNLOP','PEUGEOT-BP-ENGLEBERT','PEUGEOT-BP-MICHELIN','PEUGEOT-ESSO','PEUGEOT-ESSO-MICHELIN','PEUGEOT-SHELL','PEUGEOT-SHELL-MICHELIN','PEUGEOT-WOLBER','Z-PEUGEOT','Z'],
+            "Phonak (2002–2006)": ['PHONAK HEARING SYSTEMS'],
+            "RadioShack / Trek (2010–2015)": ['TEAM RADIOSHACK','RADIOSHACK-NISSAN','RADIOSHACK LEOPARD','TEAM LEOPARD-TREK'],
+            "RMO (1986–1993)": ['RMO- MAVIC-LIBERIA','RMO-LIBERIA-MAVIC','RMO-MAVIC','RMO-MERAL-MAVIC'],
+            "Saeco (1990–2003)": ['SAECO','SAECO - CANNONDALE','SAECO - MACCHINE PER CAFFE','SAECO MACCHINE DA CAFFE - CANNONDALE','SAECO - VALLI & VALLI','SAECO-ESTRO'],
+            "Salvarani (1961–1972)": ['SALVARANI'],
+            "Saunier Duval (2000–2008)": ['SAUNIER DUVAL - PRODIR'],
+            "Système U / Castorama (1986–1994)": ['SYSTEME U','SUPER U','CASTORAMA','CASTORAMA-RALEIGH'],
+            "Team Europcar (2011–2015)": ['TEAM EUROPCAR'],
+            "Team Milram (2006–2010)": ['TEAM MILRAM'],
+            "Team Polti (1993–1999)": ['TEAM POLTI','Team POLTI'],
+            "Teka (1977–1988)": ['TEKA'],
+            "TI-Raleigh (1973–1983)": ['TI-RALEIGH','TI-RALEIGH-CAMPAGNOLO','TI-RALEIGH-CREDA','TI-RALEIGH-McGREGOR'],
+            "TVM (1987–1999)": ['TVM','TVM-BISON','TVM-POLIS DIRECT'],
+            # ── NAZIONALI / REGIONALI ──
+            "France (national team)": ['FRANCE','FRANCE A','FRANCE B','FRANCE C','France'],
+            "Belgique (national team)": ['BELGIQUE','BELGIQUE A','BELGIQUE B','Belgique'],
+            "Italie (national team)": ['ITALIE','ITALIA','ITALIE B','Italie'],
+            "Espagne (national team)": ['ESPAGNE','ESPAGNE-LUXEMBOURG','ESPANA','Espagne'],
+            "Suisse (national team)": ['SUISSE','SUISSE-ALLEMAGNE','SUISSE-ESPAGNE','SUISSE-LUXEMBOURG','SUISSE/LUXEMBOURG','Suisse','HELVETIA','HELVETIA-COMMODORE','HELVETIA-LA SUISSE'],
+            "Pays-Bas (national team)": ['PAYS-BAS','PAYS BAS','PAYS BAS-LUXEMBOURG','NEDERLAND','PAYS-BAS/LUXEMBOURG','PAYS-BAS/ETRANGERS DE FRANCE','Hollande'],
+            "Allemagne (national team)": ['ALLEMAGNE','ALLEMAGNE-AUTRICHE','DEUTSCHLAND'],
+            "Touristes-Routiers (1924–1937)": ['TOURISTES ROUTIERS','TOURISTES-ROUTIERS'],
+            "Régions françaises": ['OUEST','OUEST-NORD','OUEST-SUD OUEST','Ouest','NORD','NORD EST-CENTRE','NORD-EST','SUD-EST','Sud-Est','SUD-OUEST','Sud-Ouest','ILE DE FRANCE','ILE DE FRANCE-NORD EST','Ile de France','CENTRE-MIDI','CENTRE-SUD OUEST','NORMANDIE','CHAMPAGNE','PARIS','PARIS-NORD','PARIS-NORD EST'],
+            "Isolés / Inconnus": ['ISOLES','INCONNU','INCOGNUE','INTERNATIONAUX','INTERNATIONONS'],
+        }
 
-                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                    <div style="width:9px;height:9px;border-radius:50%;background:#FFCC00;flex-shrink:0"></div>
-                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Team captain</span>
-                </div>
-                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">The designated GC leader. The entire team rides in service of this rider on key mountain stages and time trials. All tactical decisions revolve around protecting and advancing the captain's result.</p>
-                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#FFF8DC;color:#854F0B;">GC leader</span>
-                </div>
+        # Inverso: alias -> group name
+        ALIAS_TO_GROUP = {}
+        for gname, aliases in TEAM_GROUPS.items():
+            for alias in aliases:
+                ALIAS_TO_GROUP[alias] = gname
 
-                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                    <div style="width:9px;height:9px;border-radius:50%;background:#4ECDC4;flex-shrink:0"></div>
-                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Domestique</span>
-                </div>
-                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">The backbone of any team. Domestiques sacrifice their own race to serve the captain — fetching water bottles, chasing attacks, setting tempo on climbs, and shielding the leader from wind. Rarely in results, but indispensable.</p>
-                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#e0f7f5;color:#0a6b65;">selfless worker</span>
-                </div>
+        def get_group(team_name):
+            return ALIAS_TO_GROUP.get(str(team_name).strip(), str(team_name).strip())
 
-                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                    <div style="width:9px;height:9px;border-radius:50%;background:#FF6B6B;flex-shrink:0"></div>
-                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Climbing domestique</span>
-                </div>
-                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">A specialist capable of maintaining pace on steep mountain passes. Sets a relentless rhythm that cracks rival teams, then peels off deep in the climb to let the captain race alone to the summit.</p>
-                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#FFEBEE;color:#A32D2D;">mountain worker</span>
-                </div>
+        # ──────────────────────────────────────────────────────────
+        # 1. PREPARAZIONE DATI
+        # ──────────────────────────────────────────────────────────
+        df_storico['Rank_Num'] = pd.to_numeric(df_storico['Rank'], errors='coerce')
+        df_storico['Team_Group'] = df_storico['Team'].apply(get_group)
 
-                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                    <div style="width:9px;height:9px;border-radius:50%;background:#aaa;flex-shrink:0"></div>
-                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Lead-out man</span>
-                </div>
-                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">Critical for sprinter teams. Drives at maximum speed in the final kilometres directly in front of the sprinter, clearing a path and delivering them to the perfect launch point. One of cycling's most technically demanding roles.</p>
-                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#f0ece4;color:#555;">sprint train</span>
-                </div>
+        anni_revocati = list(range(1999, 2006)) + [2006]
 
-                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                    <div style="width:9px;height:9px;border-radius:50%;background:#7F77DD;flex-shrink:0"></div>
-                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Super-domestique</span>
-                </div>
-                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">Talented enough to be a captain elsewhere, but supports a stronger teammate. Takes secondary leadership if the captain abandons, and can be unleashed on breakaways to secure bonus time or stage wins.</p>
-                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#EEEDFE;color:#3C3489;">versatile asset</span>
-                </div>
+        def pulisci_nome(nome):
+            if pd.isna(nome): return ""
+            s = re.sub(r'\(.*?\)', '', str(nome))
+            s = re.sub(r'[^a-zA-Z\s]', '', s).lower().strip()
+            s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+            return " ".join(sorted(s.split()))
 
-                <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                    <div style="width:9px;height:9px;border-radius:50%;background:#D85A30;flex-shrink:0"></div>
-                    <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Breakaway specialist</span>
-                </div>
-                <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">Given freedom to join early escapes. Since they don't threaten the GC, rivals let them go. This earns the team stage wins, polka-dot points, and crucial television exposure for sponsors throughout the race.</p>
-                <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#FAECE7;color:#712B13;">stage hunter</span>
-                </div>
+        df_stage_h_c = df_stage_h.copy()
+        df_stage_h_c['Winner_Clean']  = df_stage_h_c['Winner of stage'].apply(pulisci_nome)
+        df_stage_h_c['Yellow_Clean']  = df_stage_h_c['Yellow Jersey'].apply(pulisci_nome)
+        df_stage_h_c['Green_Clean']   = df_stage_h_c['Green jersey'].apply(pulisci_nome)
+        df_stage_h_c['Pois_Clean']    = df_stage_h_c['Polka-dot jersey'].apply(pulisci_nome)
 
-            </div>
-            <p style="font-size:11px;color:#888;margin:14px 0 0;line-height:1.6;font-style:italic;">
-                In the roster heatmap below, brighter cells often indicate captains or super-domestiques. Long streaks of dark cells are the hallmark of a loyal domestique who rode in the shadows of the team's success.
-            </p>
-            </div>
-            """
-            st.components.v1.html(roles_content_html, height=420, scrolling=False)
-        # ──────────────────────────────────────────────────────
-        # SEZIONE B: ROSTER HEATMAP "WHO RODE WHEN"
-        # ──────────────────────────────────────────────────────
+        df_storico_clean = df_storico[['Year','Rider','Team','Team_Group']].drop_duplicates().copy()
+        df_storico_clean['Rider_Clean'] = df_storico_clean['Rider'].apply(pulisci_nome)
 
-        st.markdown("""
-            <div style="padding: 0 16px;">
-                <span class="t-section-label">· Roster DNA ·</span>
-                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
-                        color:#1a1a1a;margin:4px 0 4px;">
-                    Who Rode When — The Full Team Roster
-                </h3>
-                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
-                        font-style:italic;margin-bottom:8px;line-height:1.5;">
-                    Each cell = one Tour. Color intensity = GC rank (brighter = better). 
-                    Reveals captains, loyal domestiques, and transitions.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-
-        df_heatmap = df_team.dropna(subset=['Rank_Num']).copy()
-        rider_years = df_heatmap.groupby('Rider')['Year'].count()
-        # Mostra solo corridori con 2+ presenze o rank ≤ 20
-        top_riders_hm = rider_years[rider_years >= 2].index.tolist()
-        elite_riders  = df_heatmap[df_heatmap['Rank_Num'] <= 20]['Rider'].unique().tolist()
-        riders_to_show = list(set(top_riders_hm) | set(elite_riders))
-        df_hm = df_heatmap[df_heatmap['Rider'].isin(riders_to_show)].copy()
-
-        if not df_hm.empty:
-            pivot = df_hm.pivot_table(index='Rider', columns='Year', values='Rank_Num', aggfunc='min')
-            
-            # Ordina al contrario (ascending=False) per contrastare l'inversione dell'asse Y di Plotly. 
-            pivot = pivot.loc[pivot.mean(axis=1).sort_values(ascending=False).index]
-            
-            # Limita a 30 corridori max
-            pivot = pivot.head(30)
-            
-            # Inverti scala: rank 1 = valore alto (appare luminoso)
-            pivot_inv = pivot.copy()
-            for col in pivot_inv.columns:
-                pivot_inv[col] = pivot_inv[col].apply(lambda x: max(0, 180-x) if pd.notna(x) else None)
-
-            # Creiamo una matrice di testi formattata a mano per eliminare la scritta 'NaN' dalle celle vuote
-            text_matrix = []
-            for rider_idx in pivot.index:
-                row_text = []
-                for year_col in pivot.columns:
-                    val = pivot.loc[rider_idx, year_col]
-                    if pd.isna(val):
-                        row_text.append("") 
-                    else:
-                        row_text.append(f"{int(val)}")
-                text_matrix.append(row_text)
-
-            fig_hm = go.Figure(data=go.Heatmap(
-                z=pivot_inv.values,
-                x=[int(c) for c in pivot_inv.columns],
-                y=[r.title() for r in pivot_inv.index],
-                # 🪄 FIX COLORS: Ricalibrata la distribuzione per isolare il picco di luce (1.0) solo per la vittoria
-                colorscale=[
-                    [0.0, '#F4F1EA'],    # Assente (colore sfondo app)
-                    [0.01, '#0d0d0d'],   # Fondo classifica (>100) -> Nero profondo
-                    [0.4, '#193326'],    # Gruppo (Rank 50-100) -> Verde scuro opaco
-                    [0.75, '#D4A373'],   # Top 20-30 -> Ocra / Bronzo spento
-                    [0.88, '#FF9F1C'],   # Top 10 (Rank 4-10) -> Arancione/Giallo caldo intenso
-                    [0.96, '#FFCC00'],   # Podio (Rank 2-3) -> Giallo iconico Tour
-                    [1.0, '#FFFFFF']     # Vittoria (#1 Win) -> Oro bianco / Luce purissima per staccare al massimo
-                ],
-                text=text_matrix, 
-                texttemplate='%{text}',
-                textfont=dict(size=9, family='Arial', weight='bold'), # Messo in bold per leggere meglio i numeri chiari
-                hovertemplate='<b>%{y}</b><br>%{x}<br>GC Rank: #%{text}<extra></extra>',
-                showscale=False,
-                zmin=0, 
-                zmax=180, 
-                xgap=2,
-                ygap=2,
-            ))
-            fig_hm.update_layout(
-                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                font=dict(family='Merriweather, serif', color='#1a1a1a'),
-                height=max(300, len(pivot)*22 + 60),
-                margin=dict(l=40, r=20, t=10, b=20), 
-                xaxis=dict(title='', tickmode='linear', dtick=max(1,len(pivot.columns)//15),
-                        tickfont=dict(size=9), side='bottom'),
-                yaxis=dict(title='', tickfont=dict(size=10)),
-            )
-            
-            st.markdown('<div style="margin: 0 16px;">', unsafe_allow_html=True)
-            st.plotly_chart(fig_hm, use_container_width=True)
-            
-            # ── LEGENDA AGGIORNATA CON I NUOVI LIVELLI ──
-            legend_hm_html = """
-            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
-                        margin-top: 8px; padding: 8px 12px; background: #F4F1EA; border: 1px solid #c8bfad; border-radius: 4px; font-family: Arial, sans-serif; font-size: 11px; color: #555;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <span style="display: flex; align-items: center; gap: 5px;">
-                        <span style="display: inline-block; width: 12px; height: 12px; background: #FFFFFF; border-radius: 2px; border: 1px solid #c8bfad;"></span>
-                        <strong>#1 Win</strong>
-                    </span>
-                    <span style="display: flex; align-items: center; gap: 5px;">
-                        <span style="display: inline-block; width: 12px; height: 12px; background: #FFCC00; border-radius: 2px; border: 1px solid #c8bfad;"></span>
-                        Podium (2-3)
-                    </span>
-                    <span style="display: flex; align-items: center; gap: 5px;">
-                        <span style="display: inline-block; width: 12px; height: 12px; background: #FF9F1C; border-radius: 2px;"></span>
-                        Top 10
-                    </span>
-                    <span style="display: flex; align-items: center; gap: 5px;">
-                        <span style="display: inline-block; width: 12px; height: 12px; background: #193326; border-radius: 2px;"></span>
-                        Mid Pack
-                    </span>
-                    <span style="display: flex; align-items: center; gap: 5px;">
-                        <span style="display: inline-block; width: 12px; height: 12px; background: #0d0d0d; border-radius: 2px;"></span>
-                        Back Pack / DNF
-                    </span>
-                </div>
-                <div style="color: #888; font-style: italic;">
-                    Numbers = GC rank · Brighter = better result · Only riders with 2+ appearances or top-20 finish shown
-                </div>
-            </div>
-            </div>
-            """
-            st.markdown(legend_hm_html, unsafe_allow_html=True)
-        else:
-            st.info("Not enough data to build the roster heatmap.")
-
-        st.markdown(hr, unsafe_allow_html=True)        
-        
-        # ──────────────────────────────────────────────────────
-        # SEZIONE C: HISTORICAL PERFORMANCE
-        # ──────────────────────────────────────────────────────
+        # ──────────────────────────────────────────────────────────
+        # 2. CSS PULITO (Senza background globali distruttivi!)
+        # ──────────────────────────────────────────────────────────
         st.markdown("""
             <style>
-            /* 1. Forza lo sfondo chiaro su TUTTO il blocco delle colonne di questa sezione */
-            div[data-testid="stHorizontalBlock"] {
-                background-color: #F4F1EA !important;
+            @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
+
+            .teams-masthead {
+                border-top: 5px solid #1a1a1a; border-bottom: 2px solid #1a1a1a;
+                padding: 12px 0 8px; text-align: center; margin-bottom: 24px;
             }
-            div[data-testid="column"] {
-                background-color: #F4F1EA !important;
+            .t-rule { border: none; border-top: 1px solid #c8bfad; margin: 26px 0; }
+            .t-section-label {
+                font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+                color: #888; font-family: Arial, sans-serif; display: block; margin-bottom: 4px;
             }
             
-            /* 2. Selectbox chiara */
-            div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-                background-color: #F4F1EA !important;
-                border: 1px solid #c8bfad !important;
-                color: #1a1a1a !important;
+            /* Stili per la Selectbox */
+            div[data-testid="stSelectbox"] {
+                background-color: transparent !important;
             }
             div[data-testid="stSelectbox"] label p {
-                color: #1a1a1a !important;
-                font-family: 'Merriweather', serif !important;
-                font-size: 12px !important;
-                font-weight: 700 !important;
+                color: #1a1a1a !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important;
+            }
+            div[data-baseweb="select"] > div {
+                background-color: #F4F1EA !important; color: #1a1a1a !important;
+                border: 1px solid #c8bfad !important; border-radius: 3px !important;
             }
             
-            /* 3. Dropdown menu chiaro e 🪄 FIX: Testo degli anni forzato in NERO */
-            div[data-baseweb="popover"] ul, ul[role="listbox"] {
-                background-color: #F4F1EA !important;
-            }
-            div[data-baseweb="popover"] li, ul[role="listbox"] li, div[role="option"] {
-                color: #1a1a1a !important;
-                background-color: #F4F1EA !important;
-            }
-            /* Colpisce i singoli span di testo annidati dentro la tendina per sovrascrivere il bianco */
-            div[data-baseweb="popover"] span, ul[role="listbox"] span, div[role="option"] span {
-                color: #1a1a1a !important;
-            }
-            div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover, div[role="option"]:hover {
-                background-color: #ede9e0 !important;
+            /* Stili per il menu a tendina della Selectbox */
+            div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111 !important; }
+            div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li { color: #fff !important; background-color: #111 !important; }
+            div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover { background-color: #2a2a2a !important; }
+            ul[role="listbox"] li[aria-selected="true"] { color: #FFCC00 !important; }
+            
+            /* Assicuriamoci che i grafici non abbiano sfondi bianchi indesiderati */
+            div[data-testid="stPlotlyChart"] > div {
+                background-color: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
             }
             </style>
         """, unsafe_allow_html=True)
 
+        # ──────────────────────────────────────────────────────────
+        # 3. TESTATA
+        # ──────────────────────────────────────────────────────────
         st.markdown("""
-            <div style="padding: 0 16px 8px;">
-                <span class="t-section-label">· Historical Performance ·</span>
+            <div class="teams-masthead">
+                <span style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;font-family:Arial,sans-serif;">
+                    Teams Archive · 1903 to Today · 100+ Franchises
+                </span>
+                <h1 style="font-family:'Merriweather',Georgia,serif;font-size:42px;font-weight:900;
+                           color:#1a1a1a;margin:4px 0 2px;letter-spacing:-1px;">
+                    The Teams of Le Tour
+                </h1>
+                <div style="font-size:10px;letter-spacing:2px;color:#888;font-family:Arial,sans-serif;
+                            border-top:1px solid #c8bfad;padding-top:6px;margin-top:6px;">
+                    Dynasties · Rosters · Palmarès · Stage Wins
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        # ──────────────────────────────────────────────────────────
+        # 4. SELECTBOX GRUPPI
+        # ──────────────────────────────────────────────────────────
+        all_groups_in_data = sorted(df_storico['Team_Group'].dropna().unique())
+        # Aggiungi anche le famiglie del dizionario che hanno alias nel dataset
+        groups_with_data = [g for g in TEAM_GROUPS.keys()
+                            if df_storico['Team'].isin(TEAM_GROUPS[g]).any()]
+        # Unisci squadre singole (non mappate) che hanno dati
+        all_selectable = sorted(set(groups_with_data) | set(all_groups_in_data))
+
+        default_idx = all_selectable.index("Ineos / Sky (2010–present)") if "Ineos / Sky (2010–present)" in all_selectable else 0
+        team_scelto = st.selectbox("🚴 Select a team or franchise:", all_selectable, index=default_idx)
+
+        # Recupera alias per il gruppo selezionato
+        aliases_gruppo = TEAM_GROUPS.get(team_scelto, [team_scelto])
+        df_team = df_storico[df_storico['Team'].isin(aliases_gruppo)].copy()
+        df_team['Rank_Num'] = pd.to_numeric(df_team['Rank'], errors='coerce')
+
+        # Banner alias
+        if len(aliases_gruppo) > 1:
+            alias_list = " · ".join([f"<em>{a.title()}</em>" for a in aliases_gruppo if df_storico['Team'].eq(a).any()])
+            st.markdown(f"""
+                <div style="background:#111;border:1px solid #2a2a2a;border-left:4px solid #FFCC00;
+                            padding:10px 16px;border-radius:3px;margin-bottom:20px;
+                            font-family:'Merriweather',serif;font-size:11px;color:#888;">
+                    <strong style="color:#FFCC00;">Franchise includes:</strong> {alias_list}
+                </div>
+            """, unsafe_allow_html=True)
+
+        if df_team.empty:
+            st.warning("No data available for this selection.")
+        else:
+            hr = "<hr class='t-rule'>"
+
+            # ── KPI ──
+            vittorie_gc = len(df_team[(df_team['Rank_Num'] == 1) & (~df_team['Year'].isin(anni_revocati))])
+            miglior_rank = int(df_team['Rank_Num'].min()) if not df_team['Rank_Num'].isna().all() else "N/A"
+            partecipazioni = df_team['Year'].nunique()
+            anno_debutto = int(df_team['Year'].min())
+            anno_ultimo  = int(df_team['Year'].max())
+            top10_count  = len(df_team[df_team['Rank_Num'] <= 10])
+
+            kpi_html = f"""
+            <div style="display:flex;gap:12px;margin:16px 0 24px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:110px;background:#0d0d0d;border:1px solid #222;
+                            border-top:3px solid #FFCC00;border-radius:4px;padding:14px 16px;
+                            font-family:'Merriweather',serif;">
+                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#888;font-family:Arial;margin-bottom:6px;">GC Wins</div>
+                    <div style="font-size:30px;font-weight:900;color:#FFCC00;">{vittorie_gc}</div>
+                </div>
+                <div style="flex:1;min-width:110px;background:#0d0d0d;border:1px solid #222;
+                            border-top:3px solid #f0ece4;border-radius:4px;padding:14px 16px;
+                            font-family:'Merriweather',serif;">
+                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#888;font-family:Arial;margin-bottom:6px;">Best GC Result</div>
+                    <div style="font-size:30px;font-weight:900;color:#f0ece4;">#{miglior_rank}</div>
+                </div>
+                <div style="flex:1;min-width:110px;background:#0d0d0d;border:1px solid #222;
+                            border-top:3px solid #4ECDC4;border-radius:4px;padding:14px 16px;
+                            font-family:'Merriweather',serif;">
+                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#888;font-family:Arial;margin-bottom:6px;">Editions</div>
+                    <div style="font-size:30px;font-weight:900;color:#4ECDC4;">{partecipazioni}</div>
+                </div>
+                <div style="flex:1;min-width:110px;background:#0d0d0d;border:1px solid #222;
+                            border-top:3px solid #FF6B6B;border-radius:4px;padding:14px 16px;
+                            font-family:'Merriweather',serif;">
+                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#888;font-family:Arial;margin-bottom:6px;">Top-10 Finishes</div>
+                    <div style="font-size:30px;font-weight:900;color:#FF6B6B;">{top10_count}</div>
+                </div>
+                <div style="flex:1;min-width:110px;background:#0d0d0d;border:1px solid #222;
+                            border-top:3px solid #888;border-radius:4px;padding:14px 16px;
+                            font-family:'Merriweather',serif;">
+                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#888;font-family:Arial;margin-bottom:6px;">Active Period</div>
+                    <div style="font-size:20px;font-weight:900;color:#f0ece4;">{anno_debutto}–{anno_ultimo}</div>
+                </div>
+            </div>
+            """
+            st.markdown(kpi_html, unsafe_allow_html=True)
+            st.markdown(hr, unsafe_allow_html=True)
+
+            # ──────────────────────────────────────────────────────
+            # SEZIONE A: DYNASTY TIMELINE
+            # ──────────────────────────────────────────────────────
+            st.markdown("""
+            <div style="padding: 0 16px;">
+                <span class="t-section-label">· Season by Season ·</span>
                 <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
-                            color:#1a1a1a;margin:4px 0 4px;">
-                    All-Time Placements & Edition Spotlight
+                        color:#1a1a1a;margin:4px 0 4px;">
+                    Dynasty Timeline — Every Edition at a Glance
                 </h3>
                 <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
                         font-style:italic;margin-bottom:8px;line-height:1.5;">
-                    Select an edition on the left to spotlight that year in the scatter plot.
-                    Each dot = one rider. Yellow = selected year. The red dotted line tracks the team's average GC rank over time.
+                    Each dot = one edition. Color = best GC result that year. Hover for details.
                 </p>
             </div>
         """, unsafe_allow_html=True)
 
-        col_p1, col_p2 = st.columns([1.2, 1], gap="medium")
+            df_by_year = df_team.dropna(subset=['Rank_Num']).groupby('Year').agg(
+                best_rank=('Rank_Num','min'),
+                n_riders=('Rider','count'),
+                top_rider=('Rider', lambda x: x[df_team.loc[x.index,'Rank_Num'].idxmin()] if len(x)>0 else ''),
+            ).reset_index()
 
-        with col_p1:
-            st.markdown('<div style="padding-left: 16px; background:#F4F1EA;">', unsafe_allow_html=True)
-            anni_team = sorted(df_team['Year'].dropna().unique(), reverse=True)
-            anno_sel = st.selectbox("📅 Focus on edition:", [int(a) for a in anni_team], key="team_anno")
+            def rank_color(r):
+                if r == 1:   return '#FFD700'
+                if r <= 3:   return '#C0C0C0'
+                if r <= 10:  return '#CD7F32'
+                if r <= 20:  return '#4ECDC4'
+                return '#555'
 
-            df_anno_team = df_team[df_team['Year'] == anno_sel][['Rider', 'Rank_Num']].sort_values('Rank_Num').copy()
-            df_anno_team['Rank_Num'] = df_anno_team['Rank_Num'].apply(
-                lambda x: int(x) if pd.notna(x) else "DNF"
-            )
-            df_anno_team.columns = ['Rider', 'Final GC']
-            df_anno_team['Rider'] = df_anno_team['Rider'].str.title()
+            def rank_label(r):
+                if r == 1:   return '🏆 GC Victory'
+                if r <= 3:   return '🥈 Podium'
+                if r <= 10:  return 'Top 10'
+                if r <= 20:  return 'Top 20'
+                return 'Participant'
 
-            best_yr_row = df_by_year.loc[df_by_year['best_rank'].idxmin()] if not df_by_year.empty else None
-            if best_yr_row is not None and int(best_yr_row['Year']) == anno_sel:
-                st.markdown(
-                    '<div style="background:rgba(255,215,0,0.08);border:1px solid #FFD700;'
-                    'border-radius:4px;padding:8px 12px;margin-bottom:8px;'
-                    'font-family:Merriweather,serif;font-size:11px;color:#1a1a1a;">'
-                    '⭐ <strong>Best edition in franchise history</strong></div>',
-                    unsafe_allow_html=True
-                )
+            df_by_year['color']      = df_by_year['best_rank'].apply(rank_color)
+            df_by_year['result_lbl'] = df_by_year['best_rank'].apply(rank_label)
+            df_by_year['size']       = df_by_year['best_rank'].apply(lambda r: 22 if r==1 else 16 if r<=3 else 13 if r<=10 else 10)
 
-            rows_html = ""
-            for _, row in df_anno_team.iterrows():
-                gc = row['Final GC']
-                if gc == "DNF":
-                    bg, col, pre = "#FFEBEE", "#A32D2D", ""
-                else:
-                    n = int(gc)
-                    if n == 1:
-                        bg, col, pre = "#FFF8DC", "#854F0B", "🏆 "
-                    elif n <= 3:
-                        bg, col, pre = "#f0ece4", "#444444", ""
-                    elif n <= 10:
-                        bg, col, pre = "#e0f7f5", "#0a6b65", ""
-                    else:
-                        bg, col, pre = "#F4F1EA", "#888888", ""
+            fig_timeline = go.Figure()
 
-                rows_html += (
-                    '<tr style="border-bottom:1px solid #c8bfad;">'
-                    '<td style="padding:8px 12px;font-family:Merriweather,serif;'
-                    'font-size:12px;color:#1a1a1a;">' + str(row['Rider']) + '</td>'
-                    '<td style="padding:8px 12px;text-align:center;">'
-                    '<span style="background:' + bg + ';color:' + col + ';font-size:11px;'
-                    'font-weight:700;padding:2px 10px;border-radius:20px;'
-                    'font-family:Arial,sans-serif;">' + pre + str(gc) + '</span>'
-                    '</td></tr>'
-                )
-
-            table_html = (
-                '<div style="background:#F4F1EA;border:1px solid #c8bfad;border-radius:4px;'
-                'overflow:hidden;margin-top:4px;max-height:320px;overflow-y:auto;">'
-                '<table style="width:100%;border-collapse:collapse;background:#F4F1EA;">'
-                '<thead>'
-                '<tr style="background:#F4F1EA;border-bottom:2px solid #1a1a1a;">'
-                '<th style="padding:10px 12px;text-align:left;font-family:Arial,sans-serif;'
-                'font-size:10px;letter-spacing:2px;text-transform:uppercase;'
-                'color:#1a1a1a;font-weight:700;">Rider</th>'
-                '<th style="padding:10px 12px;text-align:center;font-family:Arial,sans-serif;'
-                'font-size:10px;letter-spacing:2px;text-transform:uppercase;'
-                'color:#1a1a1a;font-weight:700;">Final GC</th>'
-                '</tr>'
-                '</thead>'
-                '<tbody>' + rows_html + '</tbody>'
-                '</table>'
-                '</div>'
-            )
-
-            st.markdown(table_html, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        with col_p2:
-            st.markdown('<div style="padding-right: 16px; background:#F4F1EA;">', unsafe_allow_html=True)
-            df_strip = df_team.dropna(subset=['Rank_Num']).copy()
-            df_strip['Selected'] = df_strip['Year'] == anno_sel
-
-            fig_strip = go.Figure()
-
-            # Tutti gli altri anni — grigio
-            df_other = df_strip[~df_strip['Selected']]
-            if not df_other.empty:
-                jitter = np.random.uniform(-0.18, 0.18, size=len(df_other))
-                fig_strip.add_trace(go.Scatter(
-                    x=df_other['Year'] + jitter,
-                    y=df_other['Rank_Num'],
-                    mode='markers',
-                    name='Other editions',
-                    marker=dict(size=6, color='#c8bfad', opacity=0.5,
-                                line=dict(width=0)),
-                    hovertemplate='<b>%{customdata[0]}</b><br>%{customdata[1]}<br>GC rank: #%{y:.0f}<extra></extra>',
-                    customdata=list(zip(
-                        df_other['Rider'].str.title(),
-                        df_other['Year'].astype(int),
-                    )),
-                ))
-
-            # Anno selezionato — giallo evidenziato
-            df_sel = df_strip[df_strip['Selected']]
-            if not df_sel.empty:
-                jitter_sel = np.random.uniform(-0.18, 0.18, size=len(df_sel))
-                fig_strip.add_trace(go.Scatter(
-                    x=df_sel['Year'] + jitter_sel,
-                    y=df_sel['Rank_Num'],
-                    mode='markers',
-                    name=f'{anno_sel} edition',
-                    marker=dict(size=11, color='#FFCC00', opacity=1.0,
-                                line=dict(width=1.5, color='#1a1a1a')),
-                    hovertemplate='<b>%{customdata[0]}</b><br>%{customdata[1]}<br>GC rank: #%{y:.0f}<extra></extra>',
-                    customdata=list(zip(
-                        df_sel['Rider'].str.title(),
-                        df_sel['Year'].astype(int),
-                    )),
-                ))
-
-            # Linea media per anno
-            avg_by_year = df_strip.groupby('Year')['Rank_Num'].mean().reset_index()
-            fig_strip.add_trace(go.Scatter(
-                x=avg_by_year['Year'],
-                y=avg_by_year['Rank_Num'],
-                mode='lines',
-                name='Team avg rank',
-                line=dict(color='#FF6B6B', width=1.5, dash='dot'),
-                hovertemplate='<b>%{x}</b><br>Avg GC rank: #%{y:.1f}<extra></extra>',
+            # Linea di sfondo
+            fig_timeline.add_trace(go.Scatter(
+                x=df_by_year['Year'], y=[0]*len(df_by_year),
+                mode='lines', line=dict(color='#c8bfad', width=1.5),
+                showlegend=False, hoverinfo='skip',
             ))
 
-            fig_strip.update_layout(
-                plot_bgcolor='#F4F1EA',
-                paper_bgcolor='#F4F1EA',
-                font=dict(family='Merriweather, serif', color='#1a1a1a'),
-                height=360,
-                margin=dict(l=50, r=20, t=10, b=50),
-                xaxis=dict(
-                    title='Year',
-                    showgrid=False,
-                    tickmode='linear',
-                    dtick=max(1, (df_strip['Year'].max() - df_strip['Year'].min()) // 8),
-                    tickfont=dict(size=10),
-                    title_font=dict(size=11),
-                ),
-                yaxis=dict(
-                    title='GC rank (lower = better)',
-                    autorange='reversed',
-                    showgrid=True,
-                    gridcolor='#e8e4da',
-                    tickfont=dict(size=10),
-                    title_font=dict(size=11),
-                ),
-                legend=dict(
-                    orientation='h',
-                    y=-0.22, x=0.5, xanchor='center',
-                    font=dict(size=10, family='Arial'),
-                    bgcolor='rgba(0,0,0,0)',
-                ),
-                showlegend=True,
-            )
-
-            # Fascia top 10 ricalibrata
-            fig_strip.add_hrect(
-                y0=0.5, y1=10.5,
-                fillcolor='rgba(255,204,0,0.06)',
-                line_width=0,
-                annotation_text='Top 10 zone',
-                annotation_font=dict(size=9, color='#854F0B', family='Arial', weight='bold'),
-                annotation_position='top right',
-            )
-
-            st.plotly_chart(fig_strip, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        st.markdown(hr, unsafe_allow_html=True)
-        # ──────────────────────────────────────────────────────
-        # SEZIONE D: PALMARÈS
-        # ──────────────────────────────────────────────────────
-        st.markdown("""
-            <span class="t-section-label">· Palmarès ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
-                       color:#1a1a1a;margin:4px 0 4px;">
-                Stage Wins & Jersey Days
-            </h3>
-        """, unsafe_allow_html=True)
-
-        # Calcola tappe vinte
-        df_team_riders = df_storico_clean[df_storico_clean['Team'].isin(aliases_gruppo)]
-        df_merge_stages = pd.merge(
-            df_stage_h_c, df_team_riders,
-            left_on=['Year','Winner_Clean'], right_on=['Year','Rider_Clean'], how='inner'
-        )
-        df_tappe_ttt = df_stage_h_c[
-            df_stage_h_c['Winner of stage'].apply(
-                lambda x: any(a.lower() in str(x).lower() for a in aliases_gruppo)
-            )
-        ].copy()
-        df_tappe = pd.concat([df_merge_stages, df_tappe_ttt], ignore_index=True).drop_duplicates(
-            subset=['Year','Stages']
-        )
-
-        # Maglie
-        corridori_set = df_team_riders[['Year','Rider_Clean']].drop_duplicates()
-        maglia_gialla = pd.merge(df_stage_h_c, corridori_set, left_on=['Year','Yellow_Clean'], right_on=['Year','Rider_Clean'], how='inner')
-        maglia_verde  = pd.merge(df_stage_h_c, corridori_set, left_on=['Year','Green_Clean'],  right_on=['Year','Rider_Clean'], how='inner')
-        maglia_pois   = pd.merge(df_stage_h_c, corridori_set, left_on=['Year','Pois_Clean'],   right_on=['Year','Rider_Clean'], how='inner')
-
-        n_yellow = len(maglia_gialla)
-        n_green  = len(maglia_verde)
-        n_pois   = len(maglia_pois)
-        n_stages_won = len(df_tappe)
-
-        # ── JERSEY RADIAL GAUGE ──
-        col_gauge, col_stagewin = st.columns([1, 1.6], gap="medium")
-
-        with col_gauge:
-            st.markdown("""
-                <span class="t-section-label">· Jersey Days ·</span>
-                <h5 style="font-family:'Merriweather',serif;font-weight:900;color:#1a1a1a;
-                           font-size:14px;margin:2px 0 8px;">
-                    Days Wearing Each Jersey
-                </h5>
-            """, unsafe_allow_html=True)
-
-            max_days = max(n_yellow, n_green, n_pois, 1)
-            gauge_items = [
-                ('Yellow', n_yellow, '#FFD700', 'GC Leader'),
-                ('Green',  n_green,  '#22c55e', 'Points Leader'),
-                ('Polka-dot', n_pois, '#ef4444', 'KOM Leader'),
-            ]
-            fig_gauge = go.Figure()
-            for i, (name, val, color, label) in enumerate(gauge_items):
-                pct = val / max_days
-                # Arco pieno (sfondo)
-                fig_gauge.add_trace(go.Barpolar(
-                    r=[1], theta=[i*120 + 60], width=[80],
-                    marker_color='#e8e4da', opacity=0.4,
-                    showlegend=False, hoverinfo='skip',
-                ))
-                # Arco valore
-                if val > 0:
-                    fig_gauge.add_trace(go.Barpolar(
-                        r=[pct], theta=[i*120 + 60], width=[80],
-                        marker_color=color, opacity=0.9,
-                        name=f'{name}: {val} days',
-                        hovertemplate=f'<b>{label}</b><br>{val} days<extra></extra>',
-                    ))
-            fig_gauge.update_layout(
-                polar=dict(
-                    radialaxis=dict(visible=False, range=[0,1.1]),
-                    angularaxis=dict(visible=False),
-                    bgcolor='#F4F1EA',
-                ),
-                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                height=280, margin=dict(l=20,r=20,t=20,b=20),
-                legend=dict(orientation='h', y=-0.08, x=0.5, xanchor='center', font=dict(size=10)),
-                showlegend=True,
-            )
-            # Numero al centro come annotation
-            fig_gauge.add_annotation(
-                x=0.5, y=0.5, xref='paper', yref='paper',
-                text=f'<b>{n_yellow+n_green+n_pois}</b><br><span style="font-size:10px">total jersey<br>days</span>',
-                showarrow=False, font=dict(size=14, color='#1a1a1a', family='Merriweather, serif'),
-                align='center',
-            )
-            st.plotly_chart(fig_gauge, use_container_width=True)
-
-        with col_stagewin:
-            st.markdown("""
-                <span class="t-section-label">· Stage Wins per Edition ·</span>
-                <h5 style="font-family:'Merriweather',serif;font-weight:900;color:#1a1a1a;
-                           font-size:14px;margin:2px 0 8px;">
-                    Stage Wins Timeline
-                </h5>
-            """, unsafe_allow_html=True)
-
-            if not df_tappe.empty and 'Year' in df_tappe.columns:
-                vittorie_anno = df_tappe.groupby('Year').size().reset_index(name='wins')
-
-                fig_bar = go.Figure()
-                fig_bar.add_trace(go.Bar(
-                    x=vittorie_anno['Year'], y=vittorie_anno['wins'],
+            # Dot per categoria
+            for lbl, color in [('🏆 GC Victory','#FFD700'),('🥈 Podium','#C0C0C0'),
+                                ('Top 10','#CD7F32'),('Top 20','#4ECDC4'),('Participant','#555')]:
+                df_cat = df_by_year[df_by_year['result_lbl'] == lbl]
+                if df_cat.empty: continue
+                fig_timeline.add_trace(go.Scatter(
+                    x=df_cat['Year'], y=[0]*len(df_cat),
+                    mode='markers',
                     marker=dict(
-                        color=vittorie_anno['wins'],
-                        colorscale=[[0,'#FFF3CD'],[0.4,'#FFCC00'],[1,'#1a1a1a']],
-                        line=dict(width=0),
+                        size=df_cat['size'], color=color,
+                        line=dict(width=2, color='white'), symbol='circle',
                     ),
-                    hovertemplate='<b>%{x}</b><br>Stage wins: %{y}<extra></extra>',
+                    name=lbl,
+                    hovertemplate=(
+                        '<b>%{customdata[0]}</b><br>'
+                        'Best GC: #%{customdata[1]}<br>'
+                        'Leader: %{customdata[2]}<br>'
+                        'Riders: %{customdata[3]}<extra></extra>'
+                    ),
+                    customdata=list(zip(
+                        df_cat['Year'].astype(int),
+                        df_cat['best_rank'].astype(int),
+                        df_cat['top_rider'].str.title(),
+                        df_cat['n_riders'].astype(int),
+                    )),
                 ))
-                fig_bar.update_layout(
+
+            # Linee verticali per vittorie GC
+            for _, row in df_by_year[df_by_year['best_rank']==1].iterrows():
+                fig_timeline.add_annotation(
+                    x=row['Year'], y=0,
+                    text=f"🏆 {int(row['Year'])}",
+                    showarrow=True, arrowhead=0, arrowcolor='#FFD700',
+                    font=dict(size=9, color='#FFD700', family='Arial'),
+                    ay=-36, ax=0, bgcolor='rgba(0,0,0,0.0)',
+                )
+
+            fig_timeline.update_layout(
+                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                height=200, margin=dict(l=0, r=0, t=30, b=10),
+                xaxis=dict(title='', showgrid=False, tickfont=dict(size=10)),
+                yaxis=dict(visible=False, range=[-0.5, 0.6]),
+                legend=dict(orientation='h', y=-0.3, x=0.5, xanchor='center', font=dict(size=10)),
+                showlegend=True,
+            )
+            st.plotly_chart(fig_timeline, use_container_width=True)
+            st.markdown(hr, unsafe_allow_html=True)
+
+            # ── TEAM ROLES EXPLAINER ──
+
+            if 'roles_open' not in st.session_state:
+                st.session_state.roles_open = False
+
+            arrow = "▲" if st.session_state.roles_open else "▼"
+
+            st.markdown(f"""
+                <style>
+                /* 🪄 ISOLAMENTO PERFETTO: Colpiamo SOLO i bottoni "primary" per non rovinare il menu in alto! */
+                div[data-testid="stButton"] button[kind="primary"] p,
+                div[data-testid="stButton"] button[kind="primary"] div,
+                div[data-testid="stButton"] button[kind="primary"] span {{
+                    color: #1a1a1a !important;
+                }}
+
+                div[data-testid="stButton"] button[kind="primary"] {{
+                    background: #F4F1EA !important;
+                    border-top: 2px solid #1a1a1a !important;
+                    border-bottom: 1px solid #c8bfad !important;
+                    border-left: none !important;
+                    border-right: none !important;
+                    border-radius: 0 !important;
+                    padding: 9px 20px !important;
+                    box-shadow: none !important;
+                    width: 100% !important;
+                    color: #1a1a1a !important;
+                    font-family: 'Merriweather', Georgia, serif !important;
+                    font-size: 12px !important;
+                    font-weight: 700 !important;
+                    letter-spacing: 0px !important;
+                    text-transform: none !important;
+                }}
+                
+                div[data-testid="stButton"] button[kind="primary"]:hover {{
+                    background: #ede9e0 !important;
+                    border-top: 2px solid #1a1a1a !important;
+                    border-bottom: 1px solid #c8bfad !important;
+                    border-left: none !important;
+                    border-right: none !important;
+                }}
+                </style>
+            """, unsafe_allow_html=True)
+
+            # Testo pulito senza tag HTML che confondono Streamlit
+            if st.button(
+                f"· Team Roles ·   Who does what inside a Tour de France squad?   {arrow}",
+                key="roles_toggle_btn",
+                type="primary", # <- FIX che protegge i bottoni del menu globale
+                use_container_width=True
+            ):
+                st.session_state.roles_open = not st.session_state.roles_open
+                st.rerun()
+
+            if st.session_state.roles_open:
+                roles_content_html = """
+                <div style="background:#F4F1EA;border-bottom:1px solid #c8bfad;padding:16px 20px;
+                            font-family:'Merriweather',Georgia,serif;margin-top:-8px;">
+                <p style="font-size:12px;color:#555;line-height:1.7;margin:0 0 14px">
+                    A professional cycling team is not a collection of solo athletes — it is a precisely structured unit
+                    where every rider has a defined function. Understanding these roles transforms how you read the roster heatmap below.
+                </p>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+
+                    <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                        <div style="width:9px;height:9px;border-radius:50%;background:#FFCC00;flex-shrink:0"></div>
+                        <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Team captain</span>
+                    </div>
+                    <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">The designated GC leader. The entire team rides in service of this rider on key mountain stages and time trials. All tactical decisions revolve around protecting and advancing the captain's result.</p>
+                    <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#FFF8DC;color:#854F0B;">GC leader</span>
+                    </div>
+
+                    <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                        <div style="width:9px;height:9px;border-radius:50%;background:#4ECDC4;flex-shrink:0"></div>
+                        <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Domestique</span>
+                    </div>
+                    <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">The backbone of any team. Domestiques sacrifice their own race to serve the captain — fetching water bottles, chasing attacks, setting tempo on climbs, and shielding the leader from wind. Rarely in results, but indispensable.</p>
+                    <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#e0f7f5;color:#0a6b65;">selfless worker</span>
+                    </div>
+
+                    <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                        <div style="width:9px;height:9px;border-radius:50%;background:#FF6B6B;flex-shrink:0"></div>
+                        <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Climbing domestique</span>
+                    </div>
+                    <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">A specialist capable of maintaining pace on steep mountain passes. Sets a relentless rhythm that cracks rival teams, then peels off deep in the climb to let the captain race alone to the summit.</p>
+                    <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#FFEBEE;color:#A32D2D;">mountain worker</span>
+                    </div>
+
+                    <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                        <div style="width:9px;height:9px;border-radius:50%;background:#aaa;flex-shrink:0"></div>
+                        <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Lead-out man</span>
+                    </div>
+                    <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">Critical for sprinter teams. Drives at maximum speed in the final kilometres directly in front of the sprinter, clearing a path and delivering them to the perfect launch point. One of cycling's most technically demanding roles.</p>
+                    <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#f0ece4;color:#555;">sprint train</span>
+                    </div>
+
+                    <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                        <div style="width:9px;height:9px;border-radius:50%;background:#7F77DD;flex-shrink:0"></div>
+                        <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Super-domestique</span>
+                    </div>
+                    <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">Talented enough to be a captain elsewhere, but supports a stronger teammate. Takes secondary leadership if the captain abandons, and can be unleashed on breakaways to secure bonus time or stage wins.</p>
+                    <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#EEEDFE;color:#3C3489;">versatile asset</span>
+                    </div>
+
+                    <div style="border-radius:6px;padding:12px 14px;border:0.5px solid #c8bfad;background:#fff;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                        <div style="width:9px;height:9px;border-radius:50%;background:#D85A30;flex-shrink:0"></div>
+                        <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Breakaway specialist</span>
+                    </div>
+                    <p style="font-size:11px;color:#444;line-height:1.65;margin:0;">Given freedom to join early escapes. Since they don't threaten the GC, rivals let them go. This earns the team stage wins, polka-dot points, and crucial television exposure for sponsors throughout the race.</p>
+                    <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#FAECE7;color:#712B13;">stage hunter</span>
+                    </div>
+
+                </div>
+                <p style="font-size:11px;color:#888;margin:14px 0 0;line-height:1.6;font-style:italic;">
+                    In the roster heatmap below, brighter cells often indicate captains or super-domestiques. Long streaks of dark cells are the hallmark of a loyal domestique who rode in the shadows of the team's success.
+                </p>
+                </div>
+                """
+                st.components.v1.html(roles_content_html, height=420, scrolling=False)
+            
+            # ──────────────────────────────────────────────────────
+            # SEZIONE B: ROSTER HEATMAP "WHO RODE WHEN"
+            # ──────────────────────────────────────────────────────
+
+            st.markdown("""
+                <div style="padding: 0 16px;">
+                    <span class="t-section-label">· Roster DNA ·</span>
+                    <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
+                            color:#1a1a1a;margin:4px 0 4px;">
+                        Who Rode When — The Full Team Roster
+                    </h3>
+                    <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                            font-style:italic;margin-bottom:8px;line-height:1.5;">
+                        Each cell = one Tour. Color intensity = GC rank (brighter = better). 
+                        Reveals captains, loyal domestiques, and transitions.
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+
+            df_heatmap = df_team.dropna(subset=['Rank_Num']).copy()
+            rider_years = df_heatmap.groupby('Rider')['Year'].count()
+            # Mostra solo corridori con 2+ presenze o rank ≤ 20
+            top_riders_hm = rider_years[rider_years >= 2].index.tolist()
+            elite_riders  = df_heatmap[df_heatmap['Rank_Num'] <= 20]['Rider'].unique().tolist()
+            riders_to_show = list(set(top_riders_hm) | set(elite_riders))
+            df_hm = df_heatmap[df_heatmap['Rider'].isin(riders_to_show)].copy()
+
+            if not df_hm.empty:
+                pivot = df_hm.pivot_table(index='Rider', columns='Year', values='Rank_Num', aggfunc='min')
+                
+                # Ordina al contrario (ascending=False) per contrastare l'inversione dell'asse Y di Plotly. 
+                pivot = pivot.loc[pivot.mean(axis=1).sort_values(ascending=False).index]
+                
+                # Limita a 30 corridori max
+                pivot = pivot.head(30)
+                
+                # Inverti scala: rank 1 = valore alto (appare luminoso)
+                pivot_inv = pivot.copy()
+                for col in pivot_inv.columns:
+                    pivot_inv[col] = pivot_inv[col].apply(lambda x: max(0, 180-x) if pd.notna(x) else None)
+
+                # Creiamo una matrice di testi formattata a mano per eliminare la scritta 'NaN' dalle celle vuote
+                text_matrix = []
+                for rider_idx in pivot.index:
+                    row_text = []
+                    for year_col in pivot.columns:
+                        val = pivot.loc[rider_idx, year_col]
+                        if pd.isna(val):
+                            row_text.append("") 
+                        else:
+                            row_text.append(f"{int(val)}")
+                    text_matrix.append(row_text)
+
+                fig_hm = go.Figure(data=go.Heatmap(
+                    z=pivot_inv.values,
+                    x=[int(c) for c in pivot_inv.columns],
+                    y=[r.title() for r in pivot_inv.index],
+                    # 🪄 FIX COLORS: Ricalibrata la distribuzione per isolare il picco di luce (1.0) solo per la vittoria
+                    colorscale=[
+                        [0.0, '#F4F1EA'],    # Assente (colore sfondo app)
+                        [0.01, '#0d0d0d'],   # Fondo classifica (>100) -> Nero profondo
+                        [0.4, '#193326'],    # Gruppo (Rank 50-100) -> Verde scuro opaco
+                        [0.75, '#D4A373'],   # Top 20-30 -> Ocra / Bronzo spento
+                        [0.88, '#FF9F1C'],   # Top 10 (Rank 4-10) -> Arancione/Giallo caldo intenso
+                        [0.96, '#FFCC00'],   # Podio (Rank 2-3) -> Giallo iconico Tour
+                        [1.0, '#FFFFFF']     # Vittoria (#1 Win) -> Oro bianco / Luce purissima per staccare al massimo
+                    ],
+                    text=text_matrix, 
+                    texttemplate='%{text}',
+                    textfont=dict(size=9, family='Arial', weight='bold'), # Messo in bold per leggere meglio i numeri chiari
+                    hovertemplate='<b>%{y}</b><br>%{x}<br>GC Rank: #%{text}<extra></extra>',
+                    showscale=False,
+                    zmin=0, 
+                    zmax=180, 
+                    xgap=2,
+                    ygap=2,
+                ))
+                fig_hm.update_layout(
                     plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
                     font=dict(family='Merriweather, serif', color='#1a1a1a'),
-                    height=280, margin=dict(l=0,r=0,t=10,b=0),
-                    xaxis=dict(title='', showgrid=False, tickfont=dict(size=9)),
-                    yaxis=dict(title='Stage Wins', showgrid=True, gridcolor='#e8e4da'),
-                    showlegend=False,
-                    title=dict(text=f'Total stage wins: <b>{n_stages_won}</b>',
-                               font=dict(size=12, color='#1a1a1a')),
+                    height=max(300, len(pivot)*22 + 60),
+                    margin=dict(l=40, r=20, t=10, b=20), 
+                    xaxis=dict(title='', tickmode='linear', dtick=max(1,len(pivot.columns)//15),
+                            tickfont=dict(size=9), side='bottom'),
+                    yaxis=dict(title='', tickfont=dict(size=10)),
                 )
-                st.plotly_chart(fig_bar, use_container_width=True)
+                
+                st.markdown('<div style="margin: 0 16px;">', unsafe_allow_html=True)
+                st.plotly_chart(fig_hm, use_container_width=True)
+                
+                # ── LEGENDA AGGIORNATA CON I NUOVI LIVELLI ──
+                legend_hm_html = """
+                <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+                            margin-top: 8px; padding: 8px 12px; background: #F4F1EA; border: 1px solid #c8bfad; border-radius: 4px; font-family: Arial, sans-serif; font-size: 11px; color: #555;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span style="display: flex; align-items: center; gap: 5px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; background: #FFFFFF; border-radius: 2px; border: 1px solid #c8bfad;"></span>
+                            <strong>#1 Win</strong>
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 5px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; background: #FFCC00; border-radius: 2px; border: 1px solid #c8bfad;"></span>
+                            Podium (2-3)
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 5px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; background: #FF9F1C; border-radius: 2px;"></span>
+                            Top 10
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 5px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; background: #193326; border-radius: 2px;"></span>
+                            Mid Pack
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 5px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; background: #0d0d0d; border-radius: 2px;"></span>
+                            Back Pack / DNF
+                        </span>
+                    </div>
+                    <div style="color: #888; font-style: italic;">
+                        Numbers = GC rank · Brighter = better result · Only riders with 2+ appearances or top-20 finish shown
+                    </div>
+                </div>
+                </div>
+                """
+                st.markdown(legend_hm_html, unsafe_allow_html=True)
             else:
-                st.info("No stage win data found for this team.")
+                st.info("Not enough data to build the roster heatmap.")
 
-        st.markdown(hr, unsafe_allow_html=True)
+            st.markdown(hr, unsafe_allow_html=True)        
+            
+            # ──────────────────────────────────────────────────────
+            # SEZIONE C: HISTORICAL PERFORMANCE
+            # ──────────────────────────────────────────────────────
+            st.markdown("""
+                <style>
+                /* 2. Selectbox chiara */
+                div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+                    background-color: #F4F1EA !important;
+                    border: 1px solid #c8bfad !important;
+                    color: #1a1a1a !important;
+                }
+                div[data-testid="stSelectbox"] label p {
+                    color: #1a1a1a !important;
+                    font-family: 'Merriweather', serif !important;
+                    font-size: 12px !important;
+                    font-weight: 700 !important;
+                }
+                
+                /* 3. Dropdown menu chiaro e 🪄 FIX: Testo degli anni forzato in NERO */
+                div[data-baseweb="popover"] ul, ul[role="listbox"] {
+                    background-color: #F4F1EA !important;
+                }
+                div[data-baseweb="popover"] li, ul[role="listbox"] li, div[role="option"] {
+                    color: #1a1a1a !important;
+                    background-color: #F4F1EA !important;
+                }
+                /* Colpisce i singoli span di testo annidati dentro la tendina per sovrascrivere il bianco */
+                div[data-baseweb="popover"] span, ul[role="listbox"] span, div[role="option"] span {
+                    color: #1a1a1a !important;
+                }
+                div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover, div[role="option"]:hover {
+                    background-color: #ede9e0 !important;
+                }
+                </style>
+            """, unsafe_allow_html=True)
 
-        # ── TOP STAGE WINNERS del team ──
-        st.markdown("""
-            <span class="t-section-label">· Franchise Heroes ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;
-                       color:#1a1a1a;margin:4px 0 4px;">
-                The Franchise's Greatest Stage Winners
-            </h4>
-        """, unsafe_allow_html=True)
+            st.markdown("""
+                <div style="padding: 0 16px 8px;">
+                    <span class="t-section-label">· Historical Performance ·</span>
+                    <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
+                                color:#1a1a1a;margin:4px 0 4px;">
+                        All-Time Placements & Edition Spotlight
+                    </h3>
+                    <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                            font-style:italic;margin-bottom:8px;line-height:1.5;">
+                        Select an edition on the left to spotlight that year in the scatter plot.
+                        Each dot = one rider. Yellow = selected year. The red dotted line tracks the team's average GC rank over time.
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
 
-        col_sw1, col_sw2 = st.columns(2, gap="medium")
+            col_p1, col_p2 = st.columns([1.2, 1], gap="medium")
 
-        with col_sw1:
-            if not df_tappe.empty and 'Winner of stage' in df_tappe.columns:
-                top_sw = df_tappe.groupby('Winner of stage').size().reset_index(name='Wins')
-                top_sw = top_sw.sort_values('Wins', ascending=False).head(10)
-                top_sw['Winner of stage'] = top_sw['Winner of stage'].str.title()
+            with col_p1:
+                st.markdown('<div style="padding-left: 16px; background:#F4F1EA;">', unsafe_allow_html=True)
+                anni_team = sorted(df_team['Year'].dropna().unique(), reverse=True)
+                anno_sel = st.selectbox("📅 Focus on edition:", [int(a) for a in anni_team], key="team_anno")
 
-                fig_sw = px.bar(top_sw, y='Winner of stage', x='Wins', orientation='h',
-                                color='Wins',
-                                color_continuous_scale=[[0,'#FFF3CD'],[0.5,'#FFCC00'],[1,'#FF6B6B']],
-                                labels={'Winner of stage':'', 'Wins':'Stage Wins'})
-                fig_sw.update_layout(
+                df_anno_team = df_team[df_team['Year'] == anno_sel][['Rider', 'Rank_Num']].sort_values('Rank_Num').copy()
+                df_anno_team['Rank_Num'] = df_anno_team['Rank_Num'].apply(
+                    lambda x: int(x) if pd.notna(x) else "DNF"
+                )
+                df_anno_team.columns = ['Rider', 'Final GC']
+                df_anno_team['Rider'] = df_anno_team['Rider'].str.title()
+
+                best_yr_row = df_by_year.loc[df_by_year['best_rank'].idxmin()] if not df_by_year.empty else None
+                if best_yr_row is not None and int(best_yr_row['Year']) == anno_sel:
+                    st.markdown(
+                        '<div style="background:rgba(255,215,0,0.08);border:1px solid #FFD700;'
+                        'border-radius:4px;padding:8px 12px;margin-bottom:8px;'
+                        'font-family:Merriweather,serif;font-size:11px;color:#1a1a1a;">'
+                        '⭐ <strong>Best edition in franchise history</strong></div>',
+                        unsafe_allow_html=True
+                    )
+
+                rows_html = ""
+                for _, row in df_anno_team.iterrows():
+                    gc = row['Final GC']
+                    if gc == "DNF":
+                        bg, col, pre = "#FFEBEE", "#A32D2D", ""
+                    else:
+                        n = int(gc)
+                        if n == 1:
+                            bg, col, pre = "#FFF8DC", "#854F0B", "🏆 "
+                        elif n <= 3:
+                            bg, col, pre = "#f0ece4", "#444444", ""
+                        elif n <= 10:
+                            bg, col, pre = "#e0f7f5", "#0a6b65", ""
+                        else:
+                            bg, col, pre = "#F4F1EA", "#888888", ""
+
+                    rows_html += (
+                        '<tr style="border-bottom:1px solid #c8bfad;">'
+                        '<td style="padding:8px 12px;font-family:Merriweather,serif;'
+                        'font-size:12px;color:#1a1a1a;">' + str(row['Rider']) + '</td>'
+                        '<td style="padding:8px 12px;text-align:center;">'
+                        '<span style="background:' + bg + ';color:' + col + ';font-size:11px;'
+                        'font-weight:700;padding:2px 10px;border-radius:20px;'
+                        'font-family:Arial,sans-serif;">' + pre + str(gc) + '</span>'
+                        '</td></tr>'
+                    )
+
+                table_html = (
+                    '<div style="background:#F4F1EA;border:1px solid #c8bfad;border-radius:4px;'
+                    'overflow:hidden;margin-top:4px;max-height:320px;overflow-y:auto;">'
+                    '<table style="width:100%;border-collapse:collapse;background:#F4F1EA;">'
+                    '<thead>'
+                    '<tr style="background:#F4F1EA;border-bottom:2px solid #1a1a1a;">'
+                    '<th style="padding:10px 12px;text-align:left;font-family:Arial,sans-serif;'
+                    'font-size:10px;letter-spacing:2px;text-transform:uppercase;'
+                    'color:#1a1a1a;font-weight:700;">Rider</th>'
+                    '<th style="padding:10px 12px;text-align:center;font-family:Arial,sans-serif;'
+                    'font-size:10px;letter-spacing:2px;text-transform:uppercase;'
+                    'color:#1a1a1a;font-weight:700;">Final GC</th>'
+                    '</tr>'
+                    '</thead>'
+                    '<tbody>' + rows_html + '</tbody>'
+                    '</table>'
+                    '</div>'
+                )
+
+                st.markdown(table_html, unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            with col_p2:
+                st.markdown('<div style="padding-right: 16px; background:#F4F1EA;">', unsafe_allow_html=True)
+                df_strip = df_team.dropna(subset=['Rank_Num']).copy()
+                df_strip['Selected'] = df_strip['Year'] == anno_sel
+
+                fig_strip = go.Figure()
+
+                # Tutti gli altri anni — grigio
+                df_other = df_strip[~df_strip['Selected']]
+                if not df_other.empty:
+                    jitter = np.random.uniform(-0.18, 0.18, size=len(df_other))
+                    fig_strip.add_trace(go.Scatter(
+                        x=df_other['Year'] + jitter,
+                        y=df_other['Rank_Num'],
+                        mode='markers',
+                        name='Other editions',
+                        marker=dict(size=6, color='#c8bfad', opacity=0.5,
+                                    line=dict(width=0)),
+                        hovertemplate='<b>%{customdata[0]}</b><br>%{customdata[1]}<br>GC rank: #%{y:.0f}<extra></extra>',
+                        customdata=list(zip(
+                            df_other['Rider'].str.title(),
+                            df_other['Year'].astype(int),
+                        )),
+                    ))
+
+                # Anno selezionato — giallo evidenziato
+                df_sel = df_strip[df_strip['Selected']]
+                if not df_sel.empty:
+                    jitter_sel = np.random.uniform(-0.18, 0.18, size=len(df_sel))
+                    fig_strip.add_trace(go.Scatter(
+                        x=df_sel['Year'] + jitter_sel,
+                        y=df_sel['Rank_Num'],
+                        mode='markers',
+                        name=f'{anno_sel} edition',
+                        marker=dict(size=11, color='#FFCC00', opacity=1.0,
+                                    line=dict(width=1.5, color='#1a1a1a')),
+                        hovertemplate='<b>%{customdata[0]}</b><br>%{customdata[1]}<br>GC rank: #%{y:.0f}<extra></extra>',
+                        customdata=list(zip(
+                            df_sel['Rider'].str.title(),
+                            df_sel['Year'].astype(int),
+                        )),
+                    ))
+
+                # Linea media per anno
+                avg_by_year = df_strip.groupby('Year')['Rank_Num'].mean().reset_index()
+                fig_strip.add_trace(go.Scatter(
+                    x=avg_by_year['Year'],
+                    y=avg_by_year['Rank_Num'],
+                    mode='lines',
+                    name='Team avg rank',
+                    line=dict(color='#FF6B6B', width=1.5, dash='dot'),
+                    hovertemplate='<b>%{x}</b><br>Avg GC rank: #%{y:.1f}<extra></extra>',
+                ))
+
+                fig_strip.update_layout(
+                    plot_bgcolor='#F4F1EA',
+                    paper_bgcolor='#F4F1EA',
+                    font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                    height=360,
+                    margin=dict(l=50, r=20, t=10, b=50),
+                    xaxis=dict(
+                        title='Year',
+                        showgrid=False,
+                        tickmode='linear',
+                        dtick=max(1, (df_strip['Year'].max() - df_strip['Year'].min()) // 8),
+                        tickfont=dict(size=10),
+                        title_font=dict(size=11),
+                    ),
+                    yaxis=dict(
+                        title='GC rank (lower = better)',
+                        autorange='reversed',
+                        showgrid=True,
+                        gridcolor='#e8e4da',
+                        tickfont=dict(size=10),
+                        title_font=dict(size=11),
+                    ),
+                    legend=dict(
+                        orientation='h',
+                        y=-0.22, x=0.5, xanchor='center',
+                        font=dict(size=10, family='Arial'),
+                        bgcolor='rgba(0,0,0,0)',
+                    ),
+                    showlegend=True,
+                )
+
+                # Fascia top 10 ricalibrata
+                fig_strip.add_hrect(
+                    y0=0.5, y1=10.5,
+                    fillcolor='rgba(255,204,0,0.06)',
+                    line_width=0,
+                    annotation_text='Top 10 zone',
+                    annotation_font=dict(size=9, color='#854F0B', family='Arial', weight='bold'),
+                    annotation_position='top right',
+                )
+
+                st.plotly_chart(fig_strip, use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            st.markdown(hr, unsafe_allow_html=True)
+            
+            # ──────────────────────────────────────────────────────
+            # SEZIONE D: PALMARÈS
+            # ──────────────────────────────────────────────────────
+            st.markdown("""
+                <span class="t-section-label">· Palmarès ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
+                           color:#1a1a1a;margin:4px 0 4px;">
+                    Stage Wins & Jersey Days
+                </h3>
+            """, unsafe_allow_html=True)
+
+            # Calcola tappe vinte
+            df_team_riders = df_storico_clean[df_storico_clean['Team'].isin(aliases_gruppo)]
+            df_merge_stages = pd.merge(
+                df_stage_h_c, df_team_riders,
+                left_on=['Year','Winner_Clean'], right_on=['Year','Rider_Clean'], how='inner'
+            )
+            df_tappe_ttt = df_stage_h_c[
+                df_stage_h_c['Winner of stage'].apply(
+                    lambda x: any(a.lower() in str(x).lower() for a in aliases_gruppo)
+                )
+            ].copy()
+            df_tappe = pd.concat([df_merge_stages, df_tappe_ttt], ignore_index=True).drop_duplicates(
+                subset=['Year','Stages']
+            )
+
+            # Maglie
+            corridori_set = df_team_riders[['Year','Rider_Clean']].drop_duplicates()
+            maglia_gialla = pd.merge(df_stage_h_c, corridori_set, left_on=['Year','Yellow_Clean'], right_on=['Year','Rider_Clean'], how='inner')
+            maglia_verde  = pd.merge(df_stage_h_c, corridori_set, left_on=['Year','Green_Clean'],  right_on=['Year','Rider_Clean'], how='inner')
+            maglia_pois   = pd.merge(df_stage_h_c, corridori_set, left_on=['Year','Pois_Clean'],   right_on=['Year','Rider_Clean'], how='inner')
+
+            n_yellow = len(maglia_gialla)
+            n_green  = len(maglia_verde)
+            n_pois   = len(maglia_pois)
+            n_stages_won = len(df_tappe)
+
+            # ── JERSEY RADIAL GAUGE ──
+            col_gauge, col_stagewin = st.columns([1, 1.6], gap="medium")
+
+            with col_gauge:
+                st.markdown("""
+                    <span class="t-section-label">· Jersey Days ·</span>
+                    <h5 style="font-family:'Merriweather',serif;font-weight:900;color:#1a1a1a;
+                               font-size:14px;margin:2px 0 8px;">
+                        Days Wearing Each Jersey
+                    </h5>
+                """, unsafe_allow_html=True)
+
+                max_days = max(n_yellow, n_green, n_pois, 1)
+                gauge_items = [
+                    ('Yellow', n_yellow, '#FFD700', 'GC Leader'),
+                    ('Green',  n_green,  '#22c55e', 'Points Leader'),
+                    ('Polka-dot', n_pois, '#ef4444', 'KOM Leader'),
+                ]
+                fig_gauge = go.Figure()
+                for i, (name, val, color, label) in enumerate(gauge_items):
+                    pct = val / max_days
+                    # Arco pieno (sfondo)
+                    fig_gauge.add_trace(go.Barpolar(
+                        r=[1], theta=[i*120 + 60], width=[80],
+                        marker_color='#e8e4da', opacity=0.4,
+                        showlegend=False, hoverinfo='skip',
+                    ))
+                    # Arco valore
+                    if val > 0:
+                        fig_gauge.add_trace(go.Barpolar(
+                            r=[pct], theta=[i*120 + 60], width=[80],
+                            marker_color=color, opacity=0.9,
+                            name=f'{name}: {val} days',
+                            hovertemplate=f'<b>{label}</b><br>{val} days<extra></extra>',
+                        ))
+                fig_gauge.update_layout(
+                    polar=dict(
+                        radialaxis=dict(visible=False, range=[0,1.1]),
+                        angularaxis=dict(visible=False),
+                        bgcolor='#F4F1EA',
+                    ),
+                    plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                    height=280, margin=dict(l=20,r=20,t=20,b=20),
+                    legend=dict(orientation='h', y=-0.08, x=0.5, xanchor='center', font=dict(size=10)),
+                    showlegend=True,
+                )
+                # Numero al centro come annotation
+                fig_gauge.add_annotation(
+                    x=0.5, y=0.5, xref='paper', yref='paper',
+                    text=f'<b>{n_yellow+n_green+n_pois}</b><br><span style="font-size:10px">total jersey<br>days</span>',
+                    showarrow=False, font=dict(size=14, color='#1a1a1a', family='Merriweather, serif'),
+                    align='center',
+                )
+                st.plotly_chart(fig_gauge, use_container_width=True)
+
+            with col_stagewin:
+                st.markdown("""
+                    <span class="t-section-label">· Stage Wins per Edition ·</span>
+                    <h5 style="font-family:'Merriweather',serif;font-weight:900;color:#1a1a1a;
+                               font-size:14px;margin:2px 0 8px;">
+                        Stage Wins Timeline
+                    </h5>
+                """, unsafe_allow_html=True)
+
+                if not df_tappe.empty and 'Year' in df_tappe.columns:
+                    vittorie_anno = df_tappe.groupby('Year').size().reset_index(name='wins')
+
+                    fig_bar = go.Figure()
+                    fig_bar.add_trace(go.Bar(
+                        x=vittorie_anno['Year'], y=vittorie_anno['wins'],
+                        marker=dict(
+                            color=vittorie_anno['wins'],
+                            colorscale=[[0,'#FFF3CD'],[0.4,'#FFCC00'],[1,'#1a1a1a']],
+                            line=dict(width=0),
+                        ),
+                        hovertemplate='<b>%{x}</b><br>Stage wins: %{y}<extra></extra>',
+                    ))
+                    fig_bar.update_layout(
+                        plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                        font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                        height=280, margin=dict(l=0,r=0,t=10,b=0),
+                        xaxis=dict(title='', showgrid=False, tickfont=dict(size=9)),
+                        yaxis=dict(title='Stage Wins', showgrid=True, gridcolor='#e8e4da'),
+                        showlegend=False,
+                        title=dict(text=f'Total stage wins: <b>{n_stages_won}</b>',
+                                   font=dict(size=12, color='#1a1a1a')),
+                    )
+                    st.plotly_chart(fig_bar, use_container_width=True)
+                else:
+                    st.info("No stage win data found for this team.")
+
+            st.markdown(hr, unsafe_allow_html=True)
+
+            # ── TOP STAGE WINNERS del team ──
+            st.markdown("""
+                <span class="t-section-label">· Franchise Heroes ·</span>
+                <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;
+                           color:#1a1a1a;margin:4px 0 4px;">
+                    The Franchise's Greatest Stage Winners
+                </h4>
+            """, unsafe_allow_html=True)
+
+            col_sw1, col_sw2 = st.columns(2, gap="medium")
+
+            with col_sw1:
+                if not df_tappe.empty and 'Winner of stage' in df_tappe.columns:
+                    top_sw = df_tappe.groupby('Winner of stage').size().reset_index(name='Wins')
+                    top_sw = top_sw.sort_values('Wins', ascending=False).head(10)
+                    top_sw['Winner of stage'] = top_sw['Winner of stage'].str.title()
+
+                    fig_sw = px.bar(top_sw, y='Winner of stage', x='Wins', orientation='h',
+                                    color='Wins',
+                                    color_continuous_scale=[[0,'#FFF3CD'],[0.5,'#FFCC00'],[1,'#FF6B6B']],
+                                    labels={'Winner of stage':'', 'Wins':'Stage Wins'})
+                    fig_sw.update_layout(
+                        plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                        font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                        height=320, margin=dict(l=0,r=0,t=10,b=0),
+                        yaxis=dict(categoryorder='total ascending', title=''),
+                        xaxis=dict(showgrid=True, gridcolor='#e8e4da'),
+                        coloraxis_showscale=False,
+                    )
+                    st.plotly_chart(fig_sw, use_container_width=True)
+
+            with col_sw2:
+                # "Loyals": corridori con più presenze
+                loyals = df_team['Rider'].value_counts().reset_index()
+                loyals.columns = ['Rider','Tours']
+                loyals['Rider'] = loyals['Rider'].str.title()
+                loyals = loyals.head(10)
+
+                fig_loyals = px.bar(loyals, y='Rider', x='Tours', orientation='h',
+                                    color='Tours',
+                                    color_continuous_scale=[[0,'#e8e4da'],[0.5,'#4ECDC4'],[1,'#1a1a1a']],
+                                    labels={'Rider':'', 'Tours':'Tour Appearances with Franchise'})
+                fig_loyals.update_layout(
                     plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
                     font=dict(family='Merriweather, serif', color='#1a1a1a'),
                     height=320, margin=dict(l=0,r=0,t=10,b=0),
                     yaxis=dict(categoryorder='total ascending', title=''),
                     xaxis=dict(showgrid=True, gridcolor='#e8e4da'),
                     coloraxis_showscale=False,
+                    title=dict(text='The Franchise Loyals', font=dict(size=13, color='#1a1a1a')),
                 )
-                st.plotly_chart(fig_sw, use_container_width=True)
-
-        with col_sw2:
-            # "Loyals": corridori con più presenze
-            loyals = df_team['Rider'].value_counts().reset_index()
-            loyals.columns = ['Rider','Tours']
-            loyals['Rider'] = loyals['Rider'].str.title()
-            loyals = loyals.head(10)
-
-            fig_loyals = px.bar(loyals, y='Rider', x='Tours', orientation='h',
-                                color='Tours',
-                                color_continuous_scale=[[0,'#e8e4da'],[0.5,'#4ECDC4'],[1,'#1a1a1a']],
-                                labels={'Rider':'', 'Tours':'Tour Appearances with Franchise'})
-            fig_loyals.update_layout(
-                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                font=dict(family='Merriweather, serif', color='#1a1a1a'),
-                height=320, margin=dict(l=0,r=0,t=10,b=0),
-                yaxis=dict(categoryorder='total ascending', title=''),
-                xaxis=dict(showgrid=True, gridcolor='#e8e4da'),
-                coloraxis_showscale=False,
-                title=dict(text='The Franchise Loyals', font=dict(size=13, color='#1a1a1a')),
-            )
-            st.plotly_chart(fig_loyals, use_container_width=True)
+                st.plotly_chart(fig_loyals, use_container_width=True)
