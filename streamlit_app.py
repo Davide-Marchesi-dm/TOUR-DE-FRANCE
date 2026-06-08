@@ -5312,7 +5312,7 @@ elif st.session_state.pagina_corrente == "teams":
 
             st.markdown(hr, unsafe_allow_html=True)
 
-            # ──────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────
             # SEZIONE D: PALMARÈS
             # ──────────────────────────────────────────────────────
             st.markdown("""
@@ -5347,92 +5347,73 @@ elif st.session_state.pagina_corrente == "teams":
             n_pois   = len(maglia_pois)
             n_stages_won = len(df_tappe)
 
-            col_gauge, col_stagewin = st.columns([1, 1.6], gap="medium")
-
-            with col_gauge:
-                st.markdown("""
+            # ── 1. JERSEY DAYS (Visualizzazione in linea verticale, sopra il grafico) ──
+            st.markdown("""
+                <div style="padding: 4px 0 4px;">
                     <span class="t-section-label">· Jersey Days ·</span>
                     <h5 style="font-family:'Merriweather',serif;font-weight:900;color:#1a1a1a;
-                               font-size:14px;margin:2px 0 8px;">
+                               font-size:14px;margin:2px 0 12px;">
                         Days Wearing Each Jersey
                     </h5>
-                """, unsafe_allow_html=True)
+                </div>
+            """, unsafe_allow_html=True)
 
-                max_days = max(n_yellow, n_green, n_pois, 1)
-                gauge_items = [
-                    ('Yellow', n_yellow, '#FFD700', 'GC Leader'),
-                    ('Green',  n_green,  '#22c55e', 'Points Leader'),
-                    ('Polka-dot', n_pois, '#ef4444', 'KOM Leader'),
-                ]
-                fig_gauge = go.Figure()
-                for i, (name, val, color, label) in enumerate(gauge_items):
-                    pct = val / max_days
-                    fig_gauge.add_trace(go.Barpolar(
-                        r=[1], theta=[i*120 + 60], width=[80],
-                        marker_color='#e8e4da', opacity=0.4,
-                        showlegend=False, hoverinfo='skip',
-                    ))
-                    if val > 0:
-                        fig_gauge.add_trace(go.Barpolar(
-                            r=[pct], theta=[i*120 + 60], width=[80],
-                            marker_color=color, opacity=0.9,
-                            name=f'{name}: {val} days',
-                            hovertemplate=f'<b>{label}</b><br>{val} days<extra></extra>',
-                        ))
-                fig_gauge.update_layout(
-                    polar=dict(
-                        radialaxis=dict(visible=False, range=[0,1.1]),
-                        angularaxis=dict(visible=False),
-                        bgcolor='#F4F1EA',
-                    ),
-                    plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                    height=280, margin=dict(l=20,r=20,t=20,b=20),
-                    legend=dict(orientation='h', y=-0.08, x=0.5, xanchor='center', font=dict(size=10)),
-                    showlegend=True,
-                )
-                fig_gauge.add_annotation(
-                    x=0.5, y=0.5, xref='paper', yref='paper',
-                    text=f'<b>{n_yellow+n_green+n_pois}</b><br><span style="font-size:10px">total jersey<br>days</span>',
-                    showarrow=False, font=dict(size=14, color='#1a1a1a', family='Merriweather, serif'),
-                    align='center',
-                )
-                st.plotly_chart(fig_gauge, use_container_width=True)
+            # HTML & CSS dei tre Box in stile Vintage adattati alle variabili locali
+            html_maglie = f"""
+            <div class="vintage-card-container" style="display: flex; gap: 20px; justify-content: center; margin-bottom: 30px;">
+                <div class="vintage-card" style="flex: 1; padding: 15px; text-align: center; border: 2px solid #FFD700; background-color: #fffacd; border-radius: 4px;">
+                    <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Days in Yellow</h4>
+                    <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 24px; font-weight: bold;">{n_yellow}</h2>
+                </div>
+                <div class="vintage-card" style="flex: 1; padding: 15px; text-align: center; border: 2px solid #228B22; background-color: #f0fff0; border-radius: 4px;">
+                    <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; font-size: 14px;">Days in Green</h4>
+                    <h2 style="margin: 10px 0 0 0; color: #000000; font-size: 24px; font-weight: bold;">{n_green}</h2>
+                </div>
+                <div class="vintage-card" style="flex: 1; padding: 15px; text-align: center; border: 2px solid #ff0000; background-image: radial-gradient(#ff0000 15%, transparent 16%), radial-gradient(#ff0000 15%, transparent 16%); background-size: 20px 20px; background-position: 0 0, 10px 10px; background-color: white; border-radius: 4px;">
+                    <h4 style="margin: 0; color: #000000; font-family: Georgia, serif; background-color: rgba(255,255,255,0.85); padding: 5px; font-size: 14px;">Days in Polka dot</h4>
+                    <h2 style="margin: 10px 0 0 0; color: #000000; background-color: rgba(255,255,255,0.85); padding: 5px; display: inline-block; font-size: 24px; font-weight: bold;">{n_pois}</h2>
+                </div>
+            </div>
+            """
+            st.markdown(html_maglie, unsafe_allow_html=True)
 
-            with col_stagewin:
-                st.markdown("""
+            # ── 2. STAGE WINS PER EDITION (Incollandolo sotto, senza colonne) ──
+            st.markdown("""
+                <div style="padding: 4px 0 4px;">
                     <span class="t-section-label">· Stage Wins per Edition ·</span>
                     <h5 style="font-family:'Merriweather',serif;font-weight:900;color:#1a1a1a;
                                font-size:14px;margin:2px 0 8px;">
                         Stage Wins Timeline
                     </h5>
-                """, unsafe_allow_html=True)
+                </div>
+            """, unsafe_allow_html=True)
 
-                if not df_tappe.empty and 'Year' in df_tappe.columns:
-                    vittorie_anno = df_tappe.groupby('Year').size().reset_index(name='wins')
+            if not df_tappe.empty and 'Year' in df_tappe.columns:
+                vittorie_anno = df_tappe.groupby('Year').size().reset_index(name='wins')
 
-                    fig_bar = go.Figure()
-                    fig_bar.add_trace(go.Bar(
-                        x=vittorie_anno['Year'], y=vittorie_anno['wins'],
-                        marker=dict(
-                            color=vittorie_anno['wins'],
-                            colorscale=[[0,'#FFF3CD'],[0.4,'#FFCC00'],[1,'#1a1a1a']],
-                            line=dict(width=0),
-                        ),
-                        hovertemplate='<b>%{x}</b><br>Stage wins: %{y}<extra></extra>',
-                    ))
-                    fig_bar.update_layout(
-                        plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                        font=dict(family='Merriweather, serif', color='#1a1a1a'),
-                        height=280, margin=dict(l=0,r=0,t=10,b=0),
-                        xaxis=dict(title='', showgrid=False, tickfont=dict(size=9)),
-                        yaxis=dict(title='Stage Wins', showgrid=True, gridcolor='#e8e4da'),
-                        showlegend=False,
-                        title=dict(text=f'Total stage wins: <b>{n_stages_won}</b>',
-                                   font=dict(size=12, color='#1a1a1a')),
-                    )
-                    st.plotly_chart(fig_bar, use_container_width=True)
-                else:
-                    st.info("No stage win data found for this team.")
+                fig_bar = go.Figure()
+                fig_bar.add_trace(go.Bar(
+                    x=vittorie_anno['Year'], y=vittorie_anno['wins'],
+                    marker=dict(
+                        color=vittorie_anno['wins'],
+                        colorscale=[[0,'#FFF3CD'],[0.4,'#FFCC00'],[1,'#1a1a1a']],
+                        line=dict(width=0),
+                    ),
+                    hovertemplate='<b>%{x}</b><br>Stage wins: %{y}<extra></extra>',
+                ))
+                fig_bar.update_layout(
+                    plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
+                    font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                    height=280, margin=dict(l=0,r=0,t=10,b=0),
+                    xaxis=dict(title='', showgrid=False, tickfont=dict(size=9)),
+                    yaxis=dict(title='Stage Wins', showgrid=True, gridcolor='#e8e4da'),
+                    showlegend=False,
+                    title=dict(text=f'Total stage wins: <b>{n_stages_won}</b>',
+                               font=dict(size=12, color='#1a1a1a')),
+                )
+                st.plotly_chart(fig_bar, use_container_width=True)
+            else:
+                st.info("No stage win data found for this team.")
 
             st.markdown(hr, unsafe_allow_html=True)
 
