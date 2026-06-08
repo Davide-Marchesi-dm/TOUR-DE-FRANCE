@@ -89,6 +89,9 @@ if "pagina_corrente" not in st.session_state:
 # ==========================================
 # 3. CSS E STILE DELLA BARRA NERA E SFONDO
 # ==========================================
+# ==========================================
+# 3. CSS E STILE DELLA BARRA NERA E SFONDO
+# ==========================================
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
@@ -113,47 +116,79 @@ st.markdown("""
         max-width: 100% !important;
     }
     
-    [data-testid="stHorizontalBlock"] {
-        background-color: #000000;
+    /* ---------------------------------------------------
+       SCUDO NAVBAR: Targetizza SOLO la prima riga in alto
+       --------------------------------------------------- */
+    [data-testid="stHorizontalBlock"]:first-of-type {
+        background-color: #000000 !important;
         align-items: center;
         padding: 10px 20px;
         margin-bottom: 20px;
     }
     
-    /* NAVBAR: stile base bottoni — solo quelli nella barra nera */
-    [data-testid="stHorizontalBlock"] div.stButton > button {
+    /* Resetta TUTTI i bottoni nella navbar */
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button {
         background-color: transparent !important;
-        color: #FFFFFF !important;
         border: none !important;
-        border-bottom: 4px solid transparent !important; 
         border-radius: 0px !important;
         box-shadow: none !important;
-        font-weight: bold;
-        font-size: 16px;
-        letter-spacing: 1px;
-        padding-bottom: 8px;
-        transition: border-color 0.2s ease-in-out;
-    }
-    
-    /* NAVBAR: hover */
-    [data-testid="stHorizontalBlock"] div.stButton > button:hover, 
-    [data-testid="stHorizontalBlock"] div.stButton > button:focus, 
-    [data-testid="stHorizontalBlock"] div.stButton > button:active {
-        color: #FFFFFF !important;
-        border-bottom: 4px solid #FFCC00 !important;
-        background-color: transparent !important;
-        box-shadow: none !important;
+        outline: none !important;
+        font-weight: bold !important;
+        font-size: 16px !important;
+        letter-spacing: 1px !important;
+        padding-bottom: 8px !important;
+        transition: color 0.2s ease-in-out, border-color 0.2s ease-in-out !important;
     }
 
-    /* NAVBAR: hover sul tab GIA' attivo — mantiene giallo */
-    [data-testid="stHorizontalBlock"] div.stButton > button[kind="primary"]:hover,
-    [data-testid="stHorizontalBlock"] div.stButton > button[kind="primary"]:focus,
-    [data-testid="stHorizontalBlock"] div.stButton > button[kind="primary"]:active {
-        color: #FFCC00 !important;
+    /* Rimuovi bordi dal testo interno per evitare la "doppia linea" */
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button p {
+        border: none !important;
+        text-decoration: none !important;
+        margin: 0 !important;
+    }
+
+    /* --- STATO INATTIVO (Pagine non selezionate -> Secondary) --- */
+    /* 1. Colore Testo */
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="secondary"],
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="secondary"] p {
+        color: #FFFFFF !important;
+        text-shadow: none !important;
+    }
+    /* 2. Bordo Trasparente (solo sul bottone) */
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="secondary"] {
+        border-bottom: 4px solid transparent !important; 
+    }
+    
+    /* Hover/Focus INATTIVO */
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="secondary"]:hover, 
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="secondary"]:focus, 
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="secondary"]:active {
+        background-color: transparent !important;
+        border-bottom: 4px solid #FFCC00 !important;
+    }
+
+    /* --- STATO ATTIVO (Pagina selezionata -> Primary) --- */
+    /* 1. Colore Testo (Bianco) */
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="primary"],
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="primary"] p {
+        color: #FFFFFF !important;
+        text-shadow: none !important;
+    }
+    /* 2. Bordo Giallo (solo sul bottone, niente doppie linee!) */
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="primary"] {
         border-bottom: 4px solid #FFCC00 !important;
         background-color: transparent !important;
-        box-shadow: none !important;
     }
+    
+    /* Hover/Focus ATTIVO */
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="primary"]:hover,
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="primary"]:focus,
+    [data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] > button[kind="primary"]:active {
+        background-color: transparent !important;
+        border-bottom: 4px solid #FFCC00 !important;
+    }
+
+    /* Centratura colonne */
     [data-testid="column"] {
         display: flex;
         justify-content: center;
@@ -211,7 +246,6 @@ with col5:
     if st.button("TEAMS", use_container_width=True, type="primary" if st.session_state.pagina_corrente == "teams" else "secondary"):
         st.session_state.pagina_corrente = "teams"
         st.rerun()
-
 # ==========================================
 # 5. CONTENUTO DELLE PAGINE
 # ==========================================
@@ -4380,70 +4414,53 @@ elif st.session_state.pagina_corrente == "tappe":
 elif st.session_state.pagina_corrente == "teams":
 
   # ──────────────────────────────────────────────────────────
-  #2. CSS OTTIMIZZATO (Fix menu nero + mantenimento stile bottoni)
-  #  ──────────────────────────────────────────────────────────
-        st.markdown("""
-            <style>
-            @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
-
-            /* --- FIX MENU NERO (Target: bottoni NON primari) --- */
-            div[data-testid="stButton"]:not(:has(button[kind="primary"])) button {
-                background-color: transparent !important;
-                border: none !important;
-                box-shadow: none !important;
+  # 1. CSS OTTIMIZZATO (Fix menu nero + mantenimento stile bottoni)
+  # ──────────────────────────────────────────────────────────
+           # --- 1. INIEZIONE CSS PER SELECTBOX SCURI E LABEL NERA ---
+        css_selectbox_scuro = """
+        <style>
+            div[data-testid="stSelectbox"] label p {
+                color: #000000 !important;
+                font-family: 'Georgia', serif !important;
             }
-            div[data-testid="stButton"]:not(:has(button[kind="primary"])) button:active,
-            div[data-testid="stButton"]:not(:has(button[kind="primary"])) button:focus {
-                background-color: transparent !important;
-                outline: none !important;
-                border: none !important;
-                box-shadow: none !important;
-            }
-
-            /* --- SCUDO PER LE ICONE --- */
-            span[class*="material-symbols"], [data-testid="stIconMaterial"], .material-symbols-rounded {
-                font-family: "Material Symbols Rounded" !important;
-            }
-
-            /* --- STILE EXPANDER IN DARK MODE --- */
-            [data-testid="stExpander"] {
-                background-color: #0d0d0d !important;
-                border: 1px solid #333 !important;
-                border-radius: 6px;
-            }
-            [data-testid="stExpander"] summary { color: #f0ece4 !important; }
-            [data-testid="stExpander"] summary p { color: #f0ece4 !important; font-weight: 600 !important; }
-            [data-testid="stExpander"] div[role="region"] p { color: #cccccc !important; }
-
-            /* --- STILE BOTTONE "TEAM ROLES" (Target: primario FUORI dalla navbar) --- */
-            :not([data-testid="stHorizontalBlock"]) > div[data-testid="stButton"] button[kind="primary"] {
-                background: #F4F1EA !important;
-                border-top: 2px solid #1a1a1a !important;
-                border-bottom: 1px solid #c8bfad !important;
-                border-radius: 0 !important;
-                padding: 9px 20px !important;
-                width: 100% !important;
-                color: #1a1a1a !important;
-                font-family: 'Merriweather', Georgia, serif !important;
-                font-size: 12px !important;
-                font-weight: 700 !important;
-            }
-            :not([data-testid="stHorizontalBlock"]) > div[data-testid="stButton"] button[kind="primary"] p { 
-                color: #1a1a1a !important; 
-            }
-            
-            /* --- STILI SELECTBOX --- */
-            div[data-testid="stSelectbox"] { background-color: transparent !important; }
             div[data-baseweb="select"] > div {
-                background-color: #F4F1EA !important; color: #1a1a1a !important;
-                border: 1px solid #c8bfad !important;
+                background-color: #111111 !important;
+                border: 1px solid #ff0000 !important;
+                border-radius: 4px !important;
             }
-            div[data-baseweb="popover"] ul { background-color: #111 !important; }
-            div[data-baseweb="popover"] li { color: #fff !important; background-color: #111 !important; }
-            </style>
-        """, unsafe_allow_html=True)
+            div[data-baseweb="select"] span {
+                color: #ffffff !important;
+                font-family: 'Georgia', serif !important;
+                font-size: 16px !important;
+            }
+            div[data-baseweb="select"] div[data-testid="stSelectbox"] svg,
+            div[data-baseweb="select"] svg {
+                color: #ffffff !important;
+            }
+            div[data-baseweb="popover"] div[role="listbox"],
+            div[data-baseweb="popover"] ul {
+                background-color: #111111 !important;
+                border: 1px solid #333333 !important;
+            }
+            div[data-baseweb="popover"] ul li {
+                color: #ffffff !important;
+                font-family: 'Georgia', serif !important;
+                background-color: #111111 !important;
+                padding-top: 10px !important;
+                padding-bottom: 10px !important;
+            }
+            div[data-baseweb="popover"] ul li:hover, 
+            div[data-baseweb="popover"] ul li[aria-selected="true"],
+            div[data-baseweb="popover"] ul li[aria-selected="true"]:hover {
+                background-color: #2b2d30 !important;
+                color: #ffffff !important;
+            }
+        </style>
+        """
+        st.markdown(css_selectbox_scuro, unsafe_allow_html=True)
 
-              
+
+
         import unicodedata, re
 
         # ──────────────────────────────────────────────────────────
@@ -4573,7 +4590,7 @@ elif st.session_state.pagina_corrente == "teams":
         df_storico_clean['Rider_Clean'] = df_storico_clean['Rider'].apply(pulisci_nome)
 
         # ──────────────────────────────────────────────────────────
-        # 2. CSS PULITO (Senza background globali distruttivi!)
+        # 2. CSS PULITO
         # ──────────────────────────────────────────────────────────
         st.markdown("""
             <style>
@@ -4588,32 +4605,52 @@ elif st.session_state.pagina_corrente == "teams":
                 font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
                 color: #888; font-family: Arial, sans-serif; display: block; margin-bottom: 4px;
             }
+
+            /* --- STILI SELECTBOX (Nero profondo) --- */
+            div[data-testid="stSelectbox"] { 
+                background-color: transparent !important; 
+            }
             
-            /* Stili per la Selectbox */
-            div[data-testid="stSelectbox"] {
-                background-color: transparent !important;
-            }
-            div[data-testid="stSelectbox"] label p {
-                color: #1a1a1a !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important;
-            }
+            /* La scatola chiusa della selectbox */
             div[data-baseweb="select"] > div {
-                background-color: #F4F1EA !important; color: #1a1a1a !important;
-                border: 1px solid #c8bfad !important; border-radius: 3px !important;
+                background-color: #000000 !important; /* Sfondo Nero */
+                border: 1px solid #333333 !important; /* Bordo scuro */
+                border-radius: 4px !important;
             }
             
-            /* Stili per il menu a tendina della Selectbox */
-            div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111 !important; }
-            div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li { color: #fff !important; background-color: #111 !important; }
-            div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover { background-color: #2a2a2a !important; }
-            ul[role="listbox"] li[aria-selected="true"] { color: #FFCC00 !important; }
-            
-            /* Assicuriamoci che i grafici non abbiano sfondi bianchi indesiderati */
-            div[data-testid="stPlotlyChart"] > div {
-                background-color: transparent !important;
-                border: none !important;
-                box-shadow: none !important;
+            /* Il testo all'interno della selectbox */
+            div[data-baseweb="select"] span {
+                color: #ffffff !important;
+                font-family: 'Georgia', serif !important;
+                font-size: 16px !important;
             }
-            </style>
+            
+            /* L'icona della freccina */
+            div[data-baseweb="select"] svg {
+                color: #ffffff !important;
+            }
+            
+            /* La tendina quando si apre */
+            div[data-baseweb="popover"] div[role="listbox"],
+            div[data-baseweb="popover"] ul {
+                background-color: #000000 !important;
+                border: 1px solid #333333 !important;
+            }
+            
+            /* Le singole opzioni nella lista */
+            div[data-baseweb="popover"] ul li {
+                color: #ffffff !important;
+                font-family: 'Georgia', serif !important;
+                background-color: #000000 !important;
+            }
+            
+            /* Effetto hover/selezione */
+            div[data-baseweb="popover"] ul li:hover, 
+            div[data-baseweb="popover"] ul li[aria-selected="true"],
+            div[data-baseweb="popover"] ul li[aria-selected="true"]:hover {
+                background-color: #2b2d30 !important;
+                color: #ffffff !important;
+            }
         """, unsafe_allow_html=True)
 
         # ──────────────────────────────────────────────────────────
@@ -4639,21 +4676,17 @@ elif st.session_state.pagina_corrente == "teams":
         # 4. SELECTBOX GRUPPI
         # ──────────────────────────────────────────────────────────
         all_groups_in_data = sorted(df_storico['Team_Group'].dropna().unique())
-        # Aggiungi anche le famiglie del dizionario che hanno alias nel dataset
         groups_with_data = [g for g in TEAM_GROUPS.keys()
                             if df_storico['Team'].isin(TEAM_GROUPS[g]).any()]
-        # Unisci squadre singole (non mappate) che hanno dati
         all_selectable = sorted(set(groups_with_data) | set(all_groups_in_data))
 
         default_idx = all_selectable.index("Ineos / Sky (2010–present)") if "Ineos / Sky (2010–present)" in all_selectable else 0
         team_scelto = st.selectbox("🚴 Select a team or franchise:", all_selectable, index=default_idx)
 
-        # Recupera alias per il gruppo selezionato
         aliases_gruppo = TEAM_GROUPS.get(team_scelto, [team_scelto])
         df_team = df_storico[df_storico['Team'].isin(aliases_gruppo)].copy()
         df_team['Rank_Num'] = pd.to_numeric(df_team['Rank'], errors='coerce')
 
-        # Banner alias
         if len(aliases_gruppo) > 1:
             alias_list = " · ".join([f"<em>{a.title()}</em>" for a in aliases_gruppo if df_storico['Team'].eq(a).any()])
             st.markdown(f"""
@@ -4757,14 +4790,12 @@ elif st.session_state.pagina_corrente == "teams":
 
             fig_timeline = go.Figure()
 
-            # Linea di sfondo
             fig_timeline.add_trace(go.Scatter(
                 x=df_by_year['Year'], y=[0]*len(df_by_year),
                 mode='lines', line=dict(color='#c8bfad', width=1.5),
                 showlegend=False, hoverinfo='skip',
             ))
 
-            # Dot per categoria
             for lbl, color in [('🏆 GC Victory','#FFD700'),('🥈 Podium','#C0C0C0'),
                                 ('Top 10','#CD7F32'),('Top 20','#4ECDC4'),('Participant','#555')]:
                 df_cat = df_by_year[df_by_year['result_lbl'] == lbl]
@@ -4791,7 +4822,6 @@ elif st.session_state.pagina_corrente == "teams":
                     )),
                 ))
 
-            # Linee verticali per vittorie GC
             for _, row in df_by_year[df_by_year['best_rank']==1].iterrows():
                 fig_timeline.add_annotation(
                     x=row['Year'], y=0,
@@ -4814,7 +4844,6 @@ elif st.session_state.pagina_corrente == "teams":
             st.markdown(hr, unsafe_allow_html=True)
 
             # ── TEAM ROLES EXPLAINER ──
-
             if 'roles_open' not in st.session_state:
                 st.session_state.roles_open = False
 
@@ -4822,13 +4851,12 @@ elif st.session_state.pagina_corrente == "teams":
 
             st.markdown(f"""
                 <style>
-                /* 🪄 ISOLAMENTO PERFETTO: Colpiamo SOLO i bottoni "primary" per non rovinare il menu in alto! */
+                /* ISOLAMENTO: Colpiamo SOLO i bottoni "primary" per non rovinare il menu in alto */
                 div[data-testid="stButton"] button[kind="primary"] p,
                 div[data-testid="stButton"] button[kind="primary"] div,
                 div[data-testid="stButton"] button[kind="primary"] span {{
                     color: #1a1a1a !important;
                 }}
-
                 div[data-testid="stButton"] button[kind="primary"] {{
                     background: #F4F1EA !important;
                     border-top: 2px solid #1a1a1a !important;
@@ -4846,22 +4874,33 @@ elif st.session_state.pagina_corrente == "teams":
                     letter-spacing: 0px !important;
                     text-transform: none !important;
                 }}
-                
                 div[data-testid="stButton"] button[kind="primary"]:hover {{
                     background: #ede9e0 !important;
                     border-top: 2px solid #1a1a1a !important;
                     border-bottom: 1px solid #c8bfad !important;
                     border-left: none !important;
                     border-right: none !important;
+                    box-shadow: none !important;
+                }}
+                div[data-testid="stButton"] button[kind="primary"]:active,
+                div[data-testid="stButton"] button[kind="primary"]:focus,
+                div[data-testid="stButton"] button[kind="primary"]:focus-visible {{
+                    background: #F4F1EA !important;
+                    border-top: 2px solid #1a1a1a !important;
+                    border-bottom: 1px solid #c8bfad !important;
+                    border-left: none !important;
+                    border-right: none !important;
+                    box-shadow: none !important;
+                    outline: none !important;
+                    color: #1a1a1a !important;
                 }}
                 </style>
             """, unsafe_allow_html=True)
 
-            # Testo pulito senza tag HTML che confondono Streamlit
             if st.button(
                 f"· Team Roles ·   Who does what inside a Tour de France squad?   {arrow}",
                 key="roles_toggle_btn",
-                type="primary", # <- FIX che protegge i bottoni del menu globale
+                type="primary",
                 use_container_width=True
             ):
                 st.session_state.roles_open = not st.session_state.roles_open
@@ -4938,11 +4977,10 @@ elif st.session_state.pagina_corrente == "teams":
                 </div>
                 """
                 st.components.v1.html(roles_content_html, height=420, scrolling=False)
-            
+
             # ──────────────────────────────────────────────────────
             # SEZIONE B: ROSTER HEATMAP "WHO RODE WHEN"
             # ──────────────────────────────────────────────────────
-
             st.markdown("""
                 <div style="padding: 0 16px;">
                     <span class="t-section-label">· Roster DNA ·</span>
@@ -4952,7 +4990,7 @@ elif st.session_state.pagina_corrente == "teams":
                     </h3>
                     <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
                             font-style:italic;margin-bottom:8px;line-height:1.5;">
-                        Each cell = one Tour. Color intensity = GC rank (brighter = better). 
+                        Each cell = one Tour. Color intensity = GC rank (brighter = better).
                         Reveals captains, loyal domestiques, and transitions.
                     </p>
                 </div>
@@ -4960,7 +4998,6 @@ elif st.session_state.pagina_corrente == "teams":
 
             df_heatmap = df_team.dropna(subset=['Rank_Num']).copy()
             rider_years = df_heatmap.groupby('Rider')['Year'].count()
-            # Mostra solo corridori con 2+ presenze o rank ≤ 20
             top_riders_hm = rider_years[rider_years >= 2].index.tolist()
             elite_riders  = df_heatmap[df_heatmap['Rank_Num'] <= 20]['Rider'].unique().tolist()
             riders_to_show = list(set(top_riders_hm) | set(elite_riders))
@@ -4968,26 +5005,20 @@ elif st.session_state.pagina_corrente == "teams":
 
             if not df_hm.empty:
                 pivot = df_hm.pivot_table(index='Rider', columns='Year', values='Rank_Num', aggfunc='min')
-                
-                # Ordina al contrario (ascending=False) per contrastare l'inversione dell'asse Y di Plotly. 
                 pivot = pivot.loc[pivot.mean(axis=1).sort_values(ascending=False).index]
-                
-                # Limita a 30 corridori max
                 pivot = pivot.head(30)
-                
-                # Inverti scala: rank 1 = valore alto (appare luminoso)
+
                 pivot_inv = pivot.copy()
                 for col in pivot_inv.columns:
                     pivot_inv[col] = pivot_inv[col].apply(lambda x: max(0, 180-x) if pd.notna(x) else None)
 
-                # Creiamo una matrice di testi formattata a mano per eliminare la scritta 'NaN' dalle celle vuote
                 text_matrix = []
                 for rider_idx in pivot.index:
                     row_text = []
                     for year_col in pivot.columns:
                         val = pivot.loc[rider_idx, year_col]
                         if pd.isna(val):
-                            row_text.append("") 
+                            row_text.append("")
                         else:
                             row_text.append(f"{int(val)}")
                     text_matrix.append(row_text)
@@ -4996,23 +5027,22 @@ elif st.session_state.pagina_corrente == "teams":
                     z=pivot_inv.values,
                     x=[int(c) for c in pivot_inv.columns],
                     y=[r.title() for r in pivot_inv.index],
-                    # 🪄 FIX COLORS: Ricalibrata la distribuzione per isolare il picco di luce (1.0) solo per la vittoria
                     colorscale=[
-                        [0.0, '#F4F1EA'],    # Assente (colore sfondo app)
-                        [0.01, '#0d0d0d'],   # Fondo classifica (>100) -> Nero profondo
-                        [0.4, '#193326'],    # Gruppo (Rank 50-100) -> Verde scuro opaco
-                        [0.75, '#D4A373'],   # Top 20-30 -> Ocra / Bronzo spento
-                        [0.88, '#FF9F1C'],   # Top 10 (Rank 4-10) -> Arancione/Giallo caldo intenso
-                        [0.96, '#FFCC00'],   # Podio (Rank 2-3) -> Giallo iconico Tour
-                        [1.0, '#FFFFFF']     # Vittoria (#1 Win) -> Oro bianco / Luce purissima per staccare al massimo
+                        [0.0, '#F4F1EA'],
+                        [0.01, '#0d0d0d'],
+                        [0.4, '#193326'],
+                        [0.75, '#D4A373'],
+                        [0.88, '#FF9F1C'],
+                        [0.96, '#FFCC00'],
+                        [1.0, '#FFFFFF']
                     ],
-                    text=text_matrix, 
+                    text=text_matrix,
                     texttemplate='%{text}',
-                    textfont=dict(size=9, family='Arial', weight='bold'), # Messo in bold per leggere meglio i numeri chiari
+                    textfont=dict(size=9, family='Arial', weight='bold'),
                     hovertemplate='<b>%{y}</b><br>%{x}<br>GC Rank: #%{text}<extra></extra>',
                     showscale=False,
-                    zmin=0, 
-                    zmax=180, 
+                    zmin=0,
+                    zmax=180,
                     xgap=2,
                     ygap=2,
                 ))
@@ -5020,16 +5050,15 @@ elif st.session_state.pagina_corrente == "teams":
                     plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
                     font=dict(family='Merriweather, serif', color='#1a1a1a'),
                     height=max(300, len(pivot)*22 + 60),
-                    margin=dict(l=40, r=20, t=10, b=20), 
+                    margin=dict(l=40, r=20, t=10, b=20),
                     xaxis=dict(title='', tickmode='linear', dtick=max(1,len(pivot.columns)//15),
                             tickfont=dict(size=9), side='bottom'),
                     yaxis=dict(title='', tickfont=dict(size=10)),
                 )
-                
+
                 st.markdown('<div style="margin: 0 16px;">', unsafe_allow_html=True)
                 st.plotly_chart(fig_hm, use_container_width=True)
-                
-                # ── LEGENDA AGGIORNATA CON I NUOVI LIVELLI ──
+
                 legend_hm_html = """
                 <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
                             margin-top: 8px; padding: 8px 12px; background: #F4F1EA; border: 1px solid #c8bfad; border-radius: 4px; font-family: Arial, sans-serif; font-size: 11px; color: #555;">
@@ -5065,14 +5094,13 @@ elif st.session_state.pagina_corrente == "teams":
             else:
                 st.info("Not enough data to build the roster heatmap.")
 
-            st.markdown(hr, unsafe_allow_html=True)        
-            
+            st.markdown(hr, unsafe_allow_html=True)
+
             # ──────────────────────────────────────────────────────
             # SEZIONE C: HISTORICAL PERFORMANCE
             # ──────────────────────────────────────────────────────
             st.markdown("""
                 <style>
-                /* 2. Selectbox chiara */
                 div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
                     background-color: #F4F1EA !important;
                     border: 1px solid #c8bfad !important;
@@ -5084,8 +5112,6 @@ elif st.session_state.pagina_corrente == "teams":
                     font-size: 12px !important;
                     font-weight: 700 !important;
                 }
-                
-                /* 3. Dropdown menu chiaro e 🪄 FIX: Testo degli anni forzato in NERO */
                 div[data-baseweb="popover"] ul, ul[role="listbox"] {
                     background-color: #F4F1EA !important;
                 }
@@ -5093,7 +5119,6 @@ elif st.session_state.pagina_corrente == "teams":
                     color: #1a1a1a !important;
                     background-color: #F4F1EA !important;
                 }
-                /* Colpisce i singoli span di testo annidati dentro la tendina per sovrascrivere il bianco */
                 div[data-baseweb="popover"] span, ul[role="listbox"] span, div[role="option"] span {
                     color: #1a1a1a !important;
                 }
@@ -5198,7 +5223,6 @@ elif st.session_state.pagina_corrente == "teams":
 
                 fig_strip = go.Figure()
 
-                # Tutti gli altri anni — grigio
                 df_other = df_strip[~df_strip['Selected']]
                 if not df_other.empty:
                     jitter = np.random.uniform(-0.18, 0.18, size=len(df_other))
@@ -5216,7 +5240,6 @@ elif st.session_state.pagina_corrente == "teams":
                         )),
                     ))
 
-                # Anno selezionato — giallo evidenziato
                 df_sel = df_strip[df_strip['Selected']]
                 if not df_sel.empty:
                     jitter_sel = np.random.uniform(-0.18, 0.18, size=len(df_sel))
@@ -5234,7 +5257,6 @@ elif st.session_state.pagina_corrente == "teams":
                         )),
                     ))
 
-                # Linea media per anno
                 avg_by_year = df_strip.groupby('Year')['Rank_Num'].mean().reset_index()
                 fig_strip.add_trace(go.Scatter(
                     x=avg_by_year['Year'],
@@ -5276,7 +5298,6 @@ elif st.session_state.pagina_corrente == "teams":
                     showlegend=True,
                 )
 
-                # Fascia top 10 ricalibrata
                 fig_strip.add_hrect(
                     y0=0.5, y1=10.5,
                     fillcolor='rgba(255,204,0,0.06)',
@@ -5290,7 +5311,7 @@ elif st.session_state.pagina_corrente == "teams":
                 st.markdown('</div>', unsafe_allow_html=True)
 
             st.markdown(hr, unsafe_allow_html=True)
-            
+
             # ──────────────────────────────────────────────────────
             # SEZIONE D: PALMARÈS
             # ──────────────────────────────────────────────────────
@@ -5302,7 +5323,6 @@ elif st.session_state.pagina_corrente == "teams":
                 </h3>
             """, unsafe_allow_html=True)
 
-            # Calcola tappe vinte
             df_team_riders = df_storico_clean[df_storico_clean['Team'].isin(aliases_gruppo)]
             df_merge_stages = pd.merge(
                 df_stage_h_c, df_team_riders,
@@ -5317,7 +5337,6 @@ elif st.session_state.pagina_corrente == "teams":
                 subset=['Year','Stages']
             )
 
-            # Maglie
             corridori_set = df_team_riders[['Year','Rider_Clean']].drop_duplicates()
             maglia_gialla = pd.merge(df_stage_h_c, corridori_set, left_on=['Year','Yellow_Clean'], right_on=['Year','Rider_Clean'], how='inner')
             maglia_verde  = pd.merge(df_stage_h_c, corridori_set, left_on=['Year','Green_Clean'],  right_on=['Year','Rider_Clean'], how='inner')
@@ -5328,7 +5347,6 @@ elif st.session_state.pagina_corrente == "teams":
             n_pois   = len(maglia_pois)
             n_stages_won = len(df_tappe)
 
-            # ── JERSEY RADIAL GAUGE ──
             col_gauge, col_stagewin = st.columns([1, 1.6], gap="medium")
 
             with col_gauge:
@@ -5349,13 +5367,11 @@ elif st.session_state.pagina_corrente == "teams":
                 fig_gauge = go.Figure()
                 for i, (name, val, color, label) in enumerate(gauge_items):
                     pct = val / max_days
-                    # Arco pieno (sfondo)
                     fig_gauge.add_trace(go.Barpolar(
                         r=[1], theta=[i*120 + 60], width=[80],
                         marker_color='#e8e4da', opacity=0.4,
                         showlegend=False, hoverinfo='skip',
                     ))
-                    # Arco valore
                     if val > 0:
                         fig_gauge.add_trace(go.Barpolar(
                             r=[pct], theta=[i*120 + 60], width=[80],
@@ -5374,7 +5390,6 @@ elif st.session_state.pagina_corrente == "teams":
                     legend=dict(orientation='h', y=-0.08, x=0.5, xanchor='center', font=dict(size=10)),
                     showlegend=True,
                 )
-                # Numero al centro come annotation
                 fig_gauge.add_annotation(
                     x=0.5, y=0.5, xref='paper', yref='paper',
                     text=f'<b>{n_yellow+n_green+n_pois}</b><br><span style="font-size:10px">total jersey<br>days</span>',
@@ -5453,7 +5468,6 @@ elif st.session_state.pagina_corrente == "teams":
                     st.plotly_chart(fig_sw, use_container_width=True)
 
             with col_sw2:
-                # "Loyals": corridori con più presenze
                 loyals = df_team['Rider'].value_counts().reset_index()
                 loyals.columns = ['Rider','Tours']
                 loyals['Rider'] = loyals['Rider'].str.title()
