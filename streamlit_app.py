@@ -4103,7 +4103,9 @@ elif st.session_state.pagina_corrente == "tappe":
     elif vista_corrente == "mappa":
 
         st.markdown("""
-            <span class="st-section-label-s">· Geographic Archive ·</span>
+            <span style="color:#1a1a1a;font-size:13px;font-weight:600;
+                         text-transform:uppercase;letter-spacing:1px;display:block;
+                         margin-bottom:4px;">· Geographic Archive ·</span>
             <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
                        color:#1a1a1a;margin:4px 0 4px;">
                 The Geography of Le Tour
@@ -4142,7 +4144,7 @@ elif st.session_state.pagina_corrente == "tappe":
 
         # Aggiungi coordinate
         df_mappa_anno['start_coords'] = df_mappa_anno['Origin'].apply(get_coords)
-        df_mappa_anno['end_coords'] = df_mappa_anno['Destination'].apply(get_coords)
+        df_mappa_anno['end_coords']   = df_mappa_anno['Destination'].apply(get_coords)
         df_mappa_anno = df_mappa_anno.dropna(subset=['start_coords','end_coords'])
         df_mappa_anno['start_lat'] = df_mappa_anno['start_coords'].apply(lambda x: x[0])
         df_mappa_anno['start_lon'] = df_mappa_anno['start_coords'].apply(lambda x: x[1])
@@ -4162,7 +4164,7 @@ elif st.session_state.pagina_corrente == "tappe":
                         font-family:'Merriweather',serif;display:flex;align-items:center;gap:12px;">
                 <span style="font-size:18px;font-weight:900;color:{banner_color};">{coverage}%</span>
                 <span style="font-size:11px;color:#888;">
-                    {n_stages_found} of {n_stages_total} stages geocoded from the Tour's 
+                    {n_stages_found} of {n_stages_total} stages geocoded from the Tour's
                     historic city dictionary · {int(anno_mappa)} edition
                 </span>
             </div>
@@ -4181,15 +4183,23 @@ elif st.session_state.pagina_corrente == "tappe":
             # Mappa Plotly con linee tappa
             fig_map = go.Figure()
 
+            # Dizionario per contare i tipi di tappa in tempo reale per la legenda
+            conteggio_tipi = {}
+
             # Linee di percorso colorate per tipo tappa
             for _, row in df_mappa_anno.iterrows():
                 ttype = TYPE_MAP.get(row.get('Type','').strip(), 'Other')
                 color = TYPE_COLORS.get(ttype, '#888')
+                
+                # Conta la tappa per la legenda
+                if ttype != 'Other':
+                    conteggio_tipi[ttype] = conteggio_tipi.get(ttype, 0) + 1
+
                 stage_num = row.get('Stage', '?')
-                origin = row.get('Origin','?')
-                dest = row.get('Destination','?')
-                dist = row.get('Distance', '?')
-                winner = row.get('Winner','?')
+                origin    = row.get('Origin','?')
+                dest      = row.get('Destination','?')
+                dist      = row.get('Distance', '?')
+                winner    = row.get('Winner','?')
 
                 fig_map.add_trace(go.Scattergeo(
                     lon=[row['start_lon'], row['end_lon']],
@@ -4206,7 +4216,7 @@ elif st.session_state.pagina_corrente == "tappe":
                     ),
                 ))
 
-            # Punti di partenza (cerchi)
+            # Punti di partenza (cerchi) - Scuri per risaltare sulla mappa chiara
             starts = df_mappa_anno.drop_duplicates(subset=['start_lat','start_lon'])
             fig_map.add_trace(go.Scattergeo(
                 lon=starts['start_lon'], lat=starts['start_lat'],
@@ -4227,110 +4237,114 @@ elif st.session_state.pagina_corrente == "tappe":
                             line=dict(width=2, color='#1a1a1a')),
                 text=[last['Destination']],
                 textposition='top center',
-                textfont=dict(size=10, color='#1a1a1a', family='Arial'),
+                textfont=dict(size=10, color='#1a1a1a', family='Arial'), # Testo scuro sulla mappa chiara
                 showlegend=False,
                 hovertemplate=f"<b>Final Stage Finish</b><br>{last['Destination']}<extra></extra>",
             ))
 
-            # Legenda manuale per tipo tappa
-            for ttype, color in TYPE_COLORS.items():
-                if ttype == 'Other':
-                    continue
-                df_t = df_mappa_anno[df_mappa_anno['Type_group'] == ttype]
-                if df_t.empty:
-                    continue
+            # Generazione automatica legenda
+            for ttype, count in conteggio_tipi.items():
+                color = TYPE_COLORS.get(ttype, '#888')
                 fig_map.add_trace(go.Scattergeo(
                     lon=[None], lat=[None],
                     mode='lines',
                     line=dict(width=3, color=color),
-                    name=f"{ttype} ({len(df_t)})",
+                    name=f"{ttype} ({count})",
                     showlegend=True,
                 ))
 
+            # Configurazione mappa chiara
             fig_map.update_geos(
                 showcoastlines=True, coastlinecolor='#c8bfad', coastlinewidth=1,
-                showland=True, landcolor='#F4F1EA',
-                showocean=True, oceancolor='#ddeeff',
-                showframe=False,
-                showborder=True, bordercolor='#e8e4da',
+                showland=True, landcolor='#F4F1EA',      
+                showocean=True, oceancolor='#ddeeff',    
+                showframe=True, framecolor='#e8e4da',
                 showcountries=True, countrycolor='#e8e4da',
                 projection_type='mercator',
                 center=dict(lat=46.5, lon=4.0),
                 lataxis_range=[40, 55],
                 lonaxis_range=[-6, 18],
             )
+            
+            # Configurazione contenitore mappa nero
             fig_map.update_layout(
-                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                font=dict(family='Merriweather, serif', color='#1a1a1a'),
-                height=560, margin=dict(l=0, r=0, t=10, b=0),
+                plot_bgcolor='#0a0a0a', paper_bgcolor='#0a0a0a', 
+                font=dict(family='Merriweather, serif', color='#ffffff'), 
+                height=600, 
+                margin=dict(l=0, r=0, t=50, b=40), 
                 legend=dict(
                     orientation='v', x=0.01, y=0.99,
-                    bgcolor='rgba(244,241,234,0.92)',
+                    bgcolor='rgba(244,241,234,0.92)', 
                     bordercolor='#c8bfad', borderwidth=1,
-                    font=dict(size=10),
+                    font=dict(size=10, color='#1a1a1a'), 
                 ),
                 title=dict(
                     text=f"<b>{int(anno_mappa)} Tour de France</b> — {n_stages_found} stages mapped",
-                    font=dict(size=13, family='Merriweather, serif', color='#1a1a1a'),
+                    font=dict(size=14, family='Merriweather, serif', color='#ffffff'), 
                     x=0.01, xanchor='left',
                 ),
             )
             st.plotly_chart(fig_map, use_container_width=True)
 
-            st.markdown(hr, unsafe_allow_html=True)
+        st.markdown(hr, unsafe_allow_html=True)
 
-            # ── HEATMAP CITTÀ più visitate nella storia ──
-            st.markdown("""
-                <span class="st-section-label-s">· Most Historic Cities ·</span>
-                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
-                           color:#1a1a1a;font-size:18px;margin:4px 0 4px;">
-                    The Tour's Most Visited Cities — All Time
-                </h4>
-                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
-                          font-style:italic;margin-bottom:8px;">
-                    Combined count of starts and finishes in each city across all editions.
-                </p>
-            """, unsafe_allow_html=True)
+        # ── HEATMAP CITTÀ più visitate nella storia (IN DARK MODE) ──
+        st.markdown("""
+            <span style="color:#1a1a1a;font-size:13px;font-weight:600;
+                         text-transform:uppercase;letter-spacing:1px;display:block;
+                         margin-bottom:4px;">· Most Historic Cities ·</span>
+            <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                       color:#1a1a1a;font-size:18px;margin:4px 0 4px;">
+                The Tour's Most Visited Cities — All Time
+            </h4>
+            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                      font-style:italic;margin-bottom:8px;">
+                Combined count of starts and finishes in each city across all editions.
+            </p>
+        """, unsafe_allow_html=True)
 
-            all_cities_hist = pd.concat([
-                df_coords_all[['Origin']].rename(columns={'Origin':'city'}),
-                df_coords_all[['Destination']].rename(columns={'Destination':'city'}),
-            ])
-            # Normalizza encoding
-            all_cities_hist['city'] = all_cities_hist['city'].str.strip()
-            city_counts = all_cities_hist['city'].value_counts().head(20).reset_index()
-            city_counts.columns = ['City','Appearances']
+        all_cities_hist = pd.concat([
+            df_coords_all[['Origin']].rename(columns={'Origin':'city'}),
+            df_coords_all[['Destination']].rename(columns={'Destination':'city'}),
+        ])
+        # Normalizza encoding
+        all_cities_hist['city'] = all_cities_hist['city'].str.strip()
+        city_counts = all_cities_hist['city'].value_counts().head(20).reset_index()
+        city_counts.columns = ['City','Appearances']
 
-            fig_cities = px.bar(
-                city_counts, y='City', x='Appearances', orientation='h',
-                color='Appearances',
-                color_continuous_scale=[[0,'#FFF3CD'],[0.4,'#FFCC00'],[1,'#1a1a1a']],
-                labels={'Appearances': 'Starts + Finishes'},
+        fig_cities = px.bar(
+            city_counts, y='City', x='Appearances', orientation='h',
+            color='Appearances',
+            # Nuova palette ottimizzata per il nero: da Oro Scuro a Giallo Acceso
+            color_continuous_scale=[[0,'#4a3b00'],[0.5,'#e6a800'],[1,'#ffcc00']],
+            labels={'Appearances': 'Starts + Finishes'},
+        )
+        fig_cities.update_layout(
+            # Sfondo nero come la mappa
+            plot_bgcolor='#0a0a0a', paper_bgcolor='#0a0a0a',
+            # Font bianco per i nomi delle città
+            font=dict(family='Merriweather, serif', color='#ffffff'),
+            height=480, margin=dict(l=0, r=0, t=10, b=0),
+            yaxis=dict(categoryorder='total ascending', title=''),
+            # Griglia grigio scuro invece che chiara
+            xaxis=dict(showgrid=True, gridcolor='#333333'),
+            coloraxis_showscale=False,
+            showlegend=False,
+        )
+        # Annotazione Parigi
+        paris_row = city_counts[city_counts['City']=='Paris']
+        if not paris_row.empty:
+            fig_cities.add_annotation(
+                x=paris_row['Appearances'].values[0], y='Paris',
+                text="The eternal finish line",
+                showarrow=True, arrowhead=2, arrowcolor='#cccccc', # Freccia più chiara
+                font=dict(size=9, color='#1a1a1a', family='Arial'), # Testo nero...
+                bgcolor='rgba(255,204,0,0.85)', # ...su sfondo giallo dell'etichetta
+                borderpad=4, ax=-80, ay=0,
             )
-            fig_cities.update_layout(
-                plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
-                font=dict(family='Merriweather, serif', color='#1a1a1a'),
-                height=480, margin=dict(l=0, r=0, t=10, b=0),
-                yaxis=dict(categoryorder='total ascending', title=''),
-                xaxis=dict(showgrid=True, gridcolor='#e8e4da'),
-                coloraxis_showscale=False,
-                showlegend=False,
-            )
-            # Annotazione Parigi
-            paris_row = city_counts[city_counts['City']=='Paris']
-            if not paris_row.empty:
-                fig_cities.add_annotation(
-                    x=paris_row['Appearances'].values[0], y='Paris',
-                    text="The eternal finish line",
-                    showarrow=True, arrowhead=2, arrowcolor='#888',
-                    font=dict(size=9, color='#1a1a1a', family='Arial'),
-                    bgcolor='rgba(255,204,0,0.85)', borderpad=4, ax=-80, ay=0,
-                )
-            st.plotly_chart(fig_cities, use_container_width=True)
-
+        st.plotly_chart(fig_cities, use_container_width=True)
 # ==========================================
 # SEZIONE TEAMS — CODICE COMPLETO RIDISEGNATO
-# Sostituisce: elif st.session_state.pagina_corrente == "teams":
 # ==========================================
 
 elif st.session_state.pagina_corrente == "teams":
