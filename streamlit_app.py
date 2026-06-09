@@ -4089,307 +4089,312 @@ elif st.session_state.pagina_corrente == "tappe":
     # ══════════════════════════════════════════════════════════
     elif vista_corrente == "dettaglio":
 
-        # ── INIEZIONE CSS PER FORZARE L'EXPANDER IN DARK MODE E SALVARE LE ICONE ──
-        st.markdown("""
-            <style>
-            /* 1. SCUDO PER LE ICONE: Evita che "arrow_right" compaia come testo */
-            span[class*="material-symbols"], 
-            [data-testid="stIconMaterial"], 
-            .material-symbols-rounded {
-                font-family: "Material Symbols Rounded" !important;
-            }
-
-            /* 2. STILE EXPANDER: Sfondo scuro e testi chiari */
-            [data-testid="stExpander"] {
-                background-color: #0d0d0d !important;
-                border: 1px solid #333 !important;
-                border-radius: 6px;
-            }
-            [data-testid="stExpander"] summary {
-                color: #f0ece4 !important;
-            }
-            [data-testid="stExpander"] summary p {
-                color: #f0ece4 !important;
-                font-weight: 600 !important;
-            }
-            [data-testid="stExpander"] div[role="region"] p {
-                color: #cccccc !important;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-
-        # ── TITOLO PRINCIPALE: IN NERO ──
-        st.markdown("""
-            <span style="color:#1a1a1a;font-size:13px;font-weight:600;
-                         text-transform:uppercase;letter-spacing:1px;display:block;
-                         margin-bottom:4px;">· Edition Details ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
-                       color:#1a1a1a;margin:4px 0 4px;">
-                Route & Jerseys — Stage by Stage
-            </h3>
-        """, unsafe_allow_html=True)
-
-        lista_anni = sorted([a for a in df_stage_h_filtered['Year'].unique() if a > 0], reverse=True)
-        anno_scelto = st.selectbox("📅 Select an edition:", lista_anni)
-        df_anno = df_stage_h_filtered[df_stage_h_filtered['Year'] == anno_scelto].sort_values('Stages').copy()
-
-        if df_anno.empty:
-            st.warning("No data for this edition.")
-        else:
-            # Winner parse
-            df_anno['Vincitore_Clean'] = df_anno['Winner of stage'].apply(
-                lambda x: str(x).split('(')[0].strip() if pd.notnull(x) else "N/A"
-            )
-            df_anno['Team_Stage'] = df_anno['Winner of stage'].str.extract(r'\((.*?)\)')
-            df_anno['Team_Stage'] = df_anno['Team_Stage'].fillna('—')
-
-            distanza_tot = df_anno['TotalTDFDistance'].iloc[0] if 'TotalTDFDistance' in df_anno.columns else "N/A"
-            num_tappe = len(df_anno)
-            vittorie_count = df_anno['Vincitore_Clean'].value_counts()
-            top_rider = vittorie_count.index[0] if not vittorie_count.empty else "N/A"
-            n_vittorie_top = vittorie_count.iloc[0] if not vittorie_count.empty else 0
-            vincitore_finale = df_anno['Yellow Jersey'].dropna().iloc[-1] if df_anno['Yellow Jersey'].notna().any() else "N/A"
-            cambi_maglia = max(0, (df_anno['Yellow Jersey'] != df_anno['Yellow Jersey'].shift()).sum() - 1) if df_anno['Yellow Jersey'].notna().any() else "N/A"
-
-            # ── KPI HTML ──
-            kpi_html = f"""
-            <div style="display:flex;gap:12px;margin:16px 0 24px;flex-wrap:wrap;">
-                <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
-                            border-top:3px solid #FFCC00;border-radius:4px;padding:14px 16px;
-                            font-family:'Merriweather',serif;">
-                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
-                                color:#888;font-family:Arial;margin-bottom:6px;">Total Distance</div>
-                    <div style="font-size:26px;font-weight:900;color:#f0ece4;">{distanza_tot} <span style="font-size:14px;color:#666;">km</span></div>
-                </div>
-                <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
-                            border-top:3px solid #FFCC00;border-radius:4px;padding:14px 16px;
-                            font-family:'Merriweather',serif;">
-                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
-                                color:#888;font-family:Arial;margin-bottom:6px;">Stages</div>
-                    <div style="font-size:26px;font-weight:900;color:#f0ece4;">{num_tappe}</div>
-                </div>
-                <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
-                            border-top:3px solid #4ECDC4;border-radius:4px;padding:14px 16px;
-                            font-family:'Merriweather',serif;">
-                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
-                                color:#888;font-family:Arial;margin-bottom:6px;">Stage Cannibal</div>
-                    <div style="font-size:16px;font-weight:900;color:#f0ece4;line-height:1.2;">{top_rider}</div>
-                    <div style="font-size:11px;color:#4ECDC4;margin-top:2px;">{n_vittorie_top} wins</div>
-                </div>
-                <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
-                            border-top:3px solid #FFCC00;border-radius:4px;padding:14px 16px;
-                            font-family:'Merriweather',serif;">
-                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
-                                color:#888;font-family:Arial;margin-bottom:6px;">Yellow Jersey Changes</div>
-                    <div style="font-size:26px;font-weight:900;color:#FFCC00;">{cambi_maglia}</div>
-                </div>
-                <div style="flex:1;min-width:140px;background:#0d0d0d;border:1px solid #222;
-                            border-top:3px solid #FFD700;border-radius:4px;padding:14px 16px;
-                            font-family:'Merriweather',serif;">
-                    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
-                                color:#888;font-family:Arial;margin-bottom:6px;">Final Winner</div>
-                    <div style="font-size:15px;font-weight:900;color:#FFD700;line-height:1.2;">{vincitore_finale}</div>
-                </div>
-            </div>
-            """
-            st.markdown(kpi_html, unsafe_allow_html=True)
-            st.markdown(hr, unsafe_allow_html=True)
-
-            # ── TITOLO MAGLIE: IN NERO ──
+            # ── INIEZIONE CSS PER FORZARE L'EXPANDER IN DARK MODE E SALVARE LE ICONE ──
             st.markdown("""
-                <span style="color:#1a1a1a;font-size:13px;font-weight:600;
-                             text-transform:uppercase;letter-spacing:1px;display:block;
-                             margin-bottom:4px;">· Leadership Race ·</span>
-                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
-                           color:#1a1a1a;font-size:18px;margin:4px 0 4px;">
-                    Jersey Evolution — Stage by Stage
-                </h4>
-                <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
-                          font-style:italic;margin-bottom:12px;">
-                    Select a jersey to see who led the race at each stage. 
-                    Each icon marks a leadership change.
-                </p>
+                <style>
+                /* 1. SCUDO PER LE ICONE: Evita che "arrow_right" compaia come testo */
+                span[class*="material-symbols"], 
+                [data-testid="stIconMaterial"], 
+                .material-symbols-rounded {
+                    font-family: "Material Symbols Rounded" !important;
+                }
+
+                /* 2. STILE EXPANDER: Sfondo scuro e testi chiari */
+                [data-testid="stExpander"] {
+                    background-color: #0d0d0d !important;
+                    border: 1px solid #333 !important;
+                    border-radius: 6px;
+                }
+                [data-testid="stExpander"] summary {
+                    color: #f0ece4 !important;
+                }
+                [data-testid="stExpander"] summary p {
+                    color: #f0ece4 !important;
+                    font-weight: 600 !important;
+                }
+                [data-testid="stExpander"] div[role="region"] p {
+                    color: #cccccc !important;
+                }
+                </style>
             """, unsafe_allow_html=True)
 
-            MAGLIE_CONFIG = {
-                "🟡 Yellow": {
-                    "col": "Yellow Jersey", "color": "#FFD700",
-                    "img": "https://www.bobshop.com/media/92/7a/02/1776411535/11346-1_1.png?ts=1776411535",
-                    "anno_intro": 1919,
-                    "storia": "Introduced in 1919 to reward the overall GC leader. The color matches *L'Auto* newspaper's yellow paper stock — a living advertisement.",
-                },
-                "🟢 Green": {
-                    "col": "Green jersey", "color": "#22c55e",
-                    "img": "https://lh3.googleusercontent.com/d/1d1GLPgO6NHqt4bguSBdXjs8NowirbXAu",
-                    "anno_intro": 1953,
-                    "storia": "Created in 1953 for the 50th anniversary. It rewards the points classification — the sprinters' championship.",
-                },
-                "🔴 Polka-dot": {
-                    "col": "Polka-dot jersey", "color": "#ef4444",
-                    "img": "https://lh3.googleusercontent.com/d/1sOEebeyDAuhP0Mt6I5L4poKbahfv3xky",
-                    "anno_intro": 1975,
-                    "storia": "Mountains classification since 1933, but the iconic jersey only appeared in 1975 — introduced by Chocolat Poulain, whose packaging had a similar pattern.",
-                },
-                "⚪ White": {
-                    "col": "White jersey", "color": "#d1d5db",
-                    "img": "https://lh3.googleusercontent.com/d/1DAYUL8bk7eYxd83opOKJCkYT_afuKWdp",
-                    "anno_intro": 1975,
-                    "storia": "Best young rider (under 25) in the GC. Established in 1975.",
-                },
-            }
+            # ── TITOLO PRINCIPALE: IN NERO ──
+            st.markdown("""
+                <span style="color:#1a1a1a;font-size:13px;font-weight:600;
+                            text-transform:uppercase;letter-spacing:1px;display:block;
+                            margin-bottom:4px;">· Edition Details ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
+                        color:#1a1a1a;margin:4px 0 4px;">
+                    Route & Jerseys — Stage by Stage
+                </h3>
+            """, unsafe_allow_html=True)
 
-            scelta_maglia = st.radio("Select jersey:", list(MAGLIE_CONFIG.keys()), horizontal=True)
-            cfg = MAGLIE_CONFIG[scelta_maglia]
+            lista_anni = sorted([a for a in df_stage_h_filtered['Year'].unique() if a > 0], reverse=True)
+            anno_scelto = st.selectbox("📅 Select an edition:", lista_anni)
+            df_anno = df_stage_h_filtered[df_stage_h_filtered['Year'] == anno_scelto].sort_values('Stages').copy()
 
-            with st.expander(f"ℹ️ History of the {scelta_maglia.split()[-1]} Jersey"):
-                st.markdown(cfg['storia'])
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            col_sel = cfg['col']
-            colore = cfg['color']
-            img_maglia = cfg['img']
-            anno_intro = cfg['anno_intro']
-
-            if anno_scelto < anno_intro:
-                st.markdown(f"""
-                    <div style="background:#1a1a1a;border-left:4px solid #FFCC00;
-                                padding:14px 18px;border-radius:3px;
-                                font-family:'Merriweather',serif;color:#cccccc;
-                                font-style:italic;font-size:12px;">
-                        🕰️ In <strong>{anno_scelto}</strong> this jersey did not exist yet.
-                        {cfg['storia']}
-                    </div>
-                """, unsafe_allow_html=True)
-
-            elif col_sel in df_anno.columns and df_anno[col_sel].notna().any():
-                df_leader = df_anno.dropna(subset=[col_sel]).copy()
-                ordine = df_leader[col_sel].drop_duplicates().tolist()
-
-                fig_jersey = px.line(df_leader, x='Stages', y=col_sel)
-                fig_jersey.update_traces(
-                    line=dict(color=colore, width=4),
-                    mode='lines+markers',
-                    marker=dict(size=10, color=colore, line=dict(width=2, color='white')),
-                )
-                
-               # ── ICONE MAGLIA SU OGNI SINGOLO PALLINO ──
-                for _, row in df_leader.iterrows():
-                    fig_jersey.add_layout_image(dict(
-                        source=img_maglia, xref="x", yref="y",
-                        x=row['Stages'], y=row[col_sel],
-                        sizex=1.4, sizey=0.85, 
-                        xanchor="center", yanchor="middle", layer="above"
-                    ))
-
-                fig_jersey.update_layout(
-                    plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d',
-                    font=dict(family='Merriweather, serif', color='#f0ece4'),
-                    height=max(280, len(ordine) * 55 + 60),
-                    margin=dict(l=0, r=0, t=20, b=0),
-                    xaxis=dict(title='Stage', tickmode='linear', dtick=1,
-                               showgrid=True, gridcolor='#1e1e1e',
-                               range=[df_leader['Stages'].min()-0.5, df_leader['Stages'].max()+0.5]),
-                    yaxis=dict(title='', categoryorder='array',
-                               categoryarray=ordine[::-1],
-                               showgrid=True, gridcolor='#1e1e1e',
-                               range=[-0.6, max(0.6, len(ordine)-0.4)]),
-                    showlegend=False,
-                )
-                st.plotly_chart(fig_jersey, use_container_width=True)
+            if df_anno.empty:
+                st.warning("No data for this edition.")
             else:
-                st.info(f"No data for the {scelta_maglia} jersey in {anno_scelto}.")
-
-            st.markdown(hr, unsafe_allow_html=True)
-
-            # ── BOTTOM ROW: GRAFICI IN DARK MODE CON TESTI BIANCHI ──
-            col_b1, col_b2, col_b3 = st.columns([1.1, 1, 1.4], gap="medium")
-
-            with col_b1:
-                st.markdown("""
-                    <span style="color:#f0ece4;font-size:12px;font-weight:600;
-                                 text-transform:uppercase;letter-spacing:1px;display:block;
-                                 margin-bottom:4px;">· Stage Winners ·</span>
-                    <h5 style="font-family:'Merriweather',serif;font-weight:900;
-                               color:#ffffff;font-size:14px;margin:2px 0 6px;">
-                        Most Wins This Edition
-                    </h5>
-                """, unsafe_allow_html=True)
-                df_top_wins = vittorie_count.reset_index()
-                df_top_wins.columns = ['Rider', 'Wins']
-                df_top_wins = df_top_wins[df_top_wins['Rider'] != 'N/A'].head(8)
-
-                fig_wins = px.bar(df_top_wins, y='Rider', x='Wins', orientation='h',
-                                  color_discrete_sequence=['#FFCC00'])
-                fig_wins.update_layout(
-                    yaxis=dict(categoryorder='total ascending', title=''),
-                    xaxis=dict(title='Stage wins', showgrid=True, gridcolor='#333333'),
-                    plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d', 
-                    font=dict(family='Merriweather, serif', color='#f0ece4'), 
-                    height=280, margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
+                # Winner parse
+                df_anno['Vincitore_Clean'] = df_anno['Winner of stage'].apply(
+                    lambda x: str(x).split('(')[0].strip() if pd.notnull(x) else "N/A"
                 )
-                st.plotly_chart(fig_wins, use_container_width=True)
+                df_anno['Team_Stage'] = df_anno['Winner of stage'].str.extract(r'\((.*?)\)')
+                df_anno['Team_Stage'] = df_anno['Team_Stage'].fillna('—')
 
-            with col_b2:
+                distanza_tot = df_anno['TotalTDFDistance'].iloc[0] if 'TotalTDFDistance' in df_anno.columns else "N/A"
+                num_tappe = len(df_anno)
+                vittorie_count = df_anno['Vincitore_Clean'].value_counts()
+                top_rider = vittorie_count.index[0] if not vittorie_count.empty else "N/A"
+                n_vittorie_top = vittorie_count.iloc[0] if not vittorie_count.empty else 0
+                vincitore_finale = df_anno['Yellow Jersey'].dropna().iloc[-1] if df_anno['Yellow Jersey'].notna().any() else "N/A"
+                cambi_maglia = max(0, (df_anno['Yellow Jersey'] != df_anno['Yellow Jersey'].shift()).sum() - 1) if df_anno['Yellow Jersey'].notna().any() else "N/A"
+
+                # ── KPI HTML ──
+                kpi_html = f"""
+                <div style="display:flex;gap:12px;margin:16px 0 24px;flex-wrap:wrap;">
+                    <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
+                                border-top:3px solid #FFCC00;border-radius:4px;padding:14px 16px;
+                                font-family:'Merriweather',serif;">
+                        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
+                                    color:#888;font-family:Arial;margin-bottom:6px;">Total Distance</div>
+                        <div style="font-size:26px;font-weight:900;color:#f0ece4;">{distanza_tot} <span style="font-size:14px;color:#666;">km</span></div>
+                    </div>
+                    <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
+                                border-top:3px solid #FFCC00;border-radius:4px;padding:14px 16px;
+                                font-family:'Merriweather',serif;">
+                        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
+                                    color:#888;font-family:Arial;margin-bottom:6px;">Stages</div>
+                        <div style="font-size:26px;font-weight:900;color:#f0ece4;">{num_tappe}</div>
+                    </div>
+                    <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
+                                border-top:3px solid #4ECDC4;border-radius:4px;padding:14px 16px;
+                                font-family:'Merriweather',serif;">
+                        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
+                                    color:#888;font-family:Arial;margin-bottom:6px;">Stage Cannibal</div>
+                        <div style="font-size:16px;font-weight:900;color:#f0ece4;line-height:1.2;">{top_rider}</div>
+                        <div style="font-size:11px;color:#4ECDC4;margin-top:2px;">{n_vittorie_top} wins</div>
+                    </div>
+                    <div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #222;
+                                border-top:3px solid #FFCC00;border-radius:4px;padding:14px 16px;
+                                font-family:'Merriweather',serif;">
+                        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
+                                    color:#888;font-family:Arial;margin-bottom:6px;">Yellow Jersey Changes</div>
+                        <div style="font-size:26px;font-weight:900;color:#FFCC00;">{cambi_maglia}</div>
+                    </div>
+                    <div style="flex:1;min-width:140px;background:#0d0d0d;border:1px solid #222;
+                                border-top:3px solid #FFD700;border-radius:4px;padding:14px 16px;
+                                font-family:'Merriweather',serif;">
+                        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
+                                    color:#888;font-family:Arial;margin-bottom:6px;">Final Winner</div>
+                        <div style="font-size:15px;font-weight:900;color:#FFD700;line-height:1.2;">{vincitore_finale}</div>
+                    </div>
+                </div>
+                """
+                st.markdown(kpi_html, unsafe_allow_html=True)
+                st.markdown(hr, unsafe_allow_html=True)
+
+                # ── TITOLO MAGLIE: IN NERO ──
                 st.markdown("""
-                    <span style="color:#f0ece4;font-size:12px;font-weight:600;
-                                 text-transform:uppercase;letter-spacing:1px;display:block;
-                                 margin-bottom:4px;">· Team Dominance ·</span>
-                    <h5 style="font-family:'Merriweather',serif;font-weight:900;
-                               color:#ffffff;font-size:14px;margin:2px 0 6px;">
-                        Wins by Team
-                    </h5>
+                    <span style="color:#1a1a1a;font-size:13px;font-weight:600;
+                                text-transform:uppercase;letter-spacing:1px;display:block;
+                                margin-bottom:4px;">· Leadership Race ·</span>
+                    <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                            color:#1a1a1a;font-size:18px;margin:4px 0 4px;">
+                        Jersey Evolution — Stage by Stage
+                    </h4>
+                    <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                            font-style:italic;margin-bottom:12px;">
+                        Select a jersey to see who led the race at each stage. 
+                        Each icon marks a leadership change.
+                    </p>
                 """, unsafe_allow_html=True)
-                team_counts = df_anno['Team_Stage'].value_counts().reset_index()
-                team_counts.columns = ['Team', 'Wins']
-                team_counts = team_counts[team_counts['Team'] != '—'].head(8)
 
-                fig_teams = px.pie(team_counts, values='Wins', names='Team', hole=0.55,
-                                   color_discrete_sequence=['#FFCC00','#FF6B6B','#4ECDC4',
-                                                            '#A29BFE','#FD79A8','#FDCB6E',
-                                                            '#55efc4','#e17055'])
-                fig_teams.update_traces(
-                    textposition='inside', textinfo='label+value',
-                    hovertemplate='<b>%{label}</b><br>%{value} stages<extra></extra>',
-                    marker=dict(line=dict(color='#0d0d0d', width=2)), 
-                )
-                fig_teams.update_layout(
-                    showlegend=False, 
-                    plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d', 
-                    font=dict(family='Merriweather, serif', color='#f0ece4'), 
-                    height=280, margin=dict(l=0, r=0, t=0, b=0),
-                )
-                st.plotly_chart(fig_teams, use_container_width=True)
+                MAGLIE_CONFIG = {
+                    "🟡 Yellow": {
+                        "col": "Yellow Jersey", "color": "#FFD700",
+                        "img": "https://www.bobshop.com/media/92/7a/02/1776411535/11346-1_1.png?ts=1776411535",
+                        "anno_intro": 1919,
+                        "storia": "Introduced in 1919 to reward the overall GC leader. The color matches *L'Auto* newspaper's yellow paper stock — a living advertisement.",
+                    },
+                    "🟢 Green": {
+                        "col": "Green jersey", "color": "#22c55e",
+                        "img": "https://lh3.googleusercontent.com/d/1d1GLPgO6NHqt4bguSBdXjs8NowirbXAu",
+                        "anno_intro": 1953,
+                        "storia": "Created in 1953 for the 50th anniversary. It rewards the points classification — the sprinters' championship.",
+                    },
+                    "🔴 Polka-dot": {
+                        "col": "Polka-dot jersey", "color": "#ef4444",
+                        "img": "https://lh3.googleusercontent.com/d/1sOEebeyDAuhP0Mt6I5L4poKbahfv3xky",
+                        "anno_intro": 1975,
+                        "storia": "Mountains classification since 1933, but the iconic jersey only appeared in 1975 — introduced by Chocolat Poulain, whose packaging had a similar pattern.",
+                    },
+                    "⚪ White": {
+                        "col": "White jersey", "color": "#d1d5db",
+                        "img": "https://lh3.googleusercontent.com/d/1DAYUL8bk7eYxd83opOKJCkYT_afuKWdp",
+                        "anno_intro": 1975,
+                        "storia": "Best young rider (under 25) in the GC. Established in 1975.",
+                    },
+                }
 
-            with col_b3:
-                st.markdown("""
-                    <span style="color:#f0ece4;font-size:12px;font-weight:600;
-                                 text-transform:uppercase;letter-spacing:1px;display:block;
-                                 margin-bottom:4px;">· Route ·</span>
-                    <h5 style="font-family:'Merriweather',serif;font-weight:900;
-                               color:#ffffff;font-size:14px;margin:2px 0 6px;">
-                        Stage-by-Stage Itinerary
-                    </h5>
-                """, unsafe_allow_html=True)
-                df_route = df_anno[['Stages','Start','End','Vincitore_Clean']].copy()
-                df_route.columns = ['#','Start','Finish','Stage Winner']
-                df_route['#'] = df_route['#'].apply(lambda x: int(x) if pd.notna(x) else '?')
-                st.dataframe(df_route, use_container_width=True, hide_index=True, height=280)
+                scelta_maglia = st.radio("Select jersey:", list(MAGLIE_CONFIG.keys()), horizontal=True)
+                cfg = MAGLIE_CONFIG[scelta_maglia]
+
+                with st.expander(f"ℹ️ History of the {scelta_maglia.split()[-1]} Jersey"):
+                    st.markdown(cfg['storia'])
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                col_sel = cfg['col']
+                colore = cfg['color']
+                img_maglia = cfg['img']
+                anno_intro = cfg['anno_intro']
+
+                if anno_scelto < anno_intro:
+                    st.markdown(f"""
+                        <div style="background:#1a1a1a;border-left:4px solid #FFCC00;
+                                    padding:14px 18px;border-radius:3px;
+                                    font-family:'Merriweather',serif;color:#cccccc;
+                                    font-style:italic;font-size:12px;">
+                            🕰️ In <strong>{anno_scelto}</strong> this jersey did not exist yet.
+                            {cfg['storia']}
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                elif col_sel in df_anno.columns:
+                    # 1. Pulizia rigorosa: rimuoviamo i veri nulli e le stringhe 'Nan'/'NaN' ecc.
+                    df_leader = df_anno.dropna(subset=[col_sel]).copy()
+                    valori_invalidi = ['Nan', 'NaN', 'nan', 'N/A', '', 'None']
+                    df_leader = df_leader[~df_leader[col_sel].astype(str).str.strip().isin(valori_invalidi)]
+
+                    if df_leader.empty:
+                        st.warning(f"⚠️ Dati non disponibili per la maglia {scelta_maglia.split()[-1]} in questa edizione.")
+                    else:
+                        ordine = df_leader[col_sel].drop_duplicates().tolist()
+
+                        fig_jersey = px.line(df_leader, x='Stages', y=col_sel)
+                        fig_jersey.update_traces(
+                            line=dict(color=colore, width=4),
+                            mode='lines+markers',
+                            marker=dict(size=10, color=colore, line=dict(width=2, color='white')),
+                        )
+                        
+                        # ── ICONE MAGLIA SU OGNI SINGOLO PALLINO ──
+                        for _, row in df_leader.iterrows():
+                            fig_jersey.add_layout_image(dict(
+                                source=img_maglia, xref="x", yref="y",
+                                x=row['Stages'], y=row[col_sel],
+                                sizex=1.4, sizey=0.85, 
+                                xanchor="center", yanchor="middle", layer="above"
+                            ))
+
+                        fig_jersey.update_layout(
+                            plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d',
+                            font=dict(family='Merriweather, serif', color='#f0ece4'),
+                            height=max(280, len(ordine) * 55 + 60),
+                            margin=dict(l=0, r=0, t=20, b=0),
+                            xaxis=dict(title='Stage', tickmode='linear', dtick=1,
+                                    showgrid=True, gridcolor='#1e1e1e',
+                                    range=[df_leader['Stages'].min()-0.5, df_leader['Stages'].max()+0.5]),
+                            yaxis=dict(title='', categoryorder='array',
+                                    categoryarray=ordine[::-1],
+                                    showgrid=True, gridcolor='#1e1e1e',
+                                    range=[-0.6, max(0.6, len(ordine)-0.4)]),
+                            showlegend=False,
+                        )
+                        st.plotly_chart(fig_jersey, use_container_width=True)
+                else:
+                    st.info(f"No data for the {scelta_maglia} jersey in {anno_scelto}.")
+
+                st.markdown(hr, unsafe_allow_html=True)
+
+                # ── BOTTOM ROW: GRAFICI IN DARK MODE CON TESTI BIANCHI ──
+                col_b1, col_b2, col_b3 = st.columns([1.1, 1, 1.4], gap="medium")
+
+                with col_b1:
+                    st.markdown("""
+                        <span style="color:#f0ece4;font-size:12px;font-weight:600;
+                                    text-transform:uppercase;letter-spacing:1px;display:block;
+                                    margin-bottom:4px;">· Stage Winners ·</span>
+                        <h5 style="font-family:'Merriweather',serif;font-weight:900;
+                                color:#ffffff;font-size:14px;margin:2px 0 6px;">
+                            Most Wins This Edition
+                        </h5>
+                    """, unsafe_allow_html=True)
+                    df_top_wins = vittorie_count.reset_index()
+                    df_top_wins.columns = ['Rider', 'Wins']
+                    df_top_wins = df_top_wins[df_top_wins['Rider'] != 'N/A'].head(8)
+
+                    fig_wins = px.bar(df_top_wins, y='Rider', x='Wins', orientation='h',
+                                    color_discrete_sequence=['#FFCC00'])
+                    fig_wins.update_layout(
+                        yaxis=dict(categoryorder='total ascending', title=''),
+                        xaxis=dict(title='Stage wins', showgrid=True, gridcolor='#333333'),
+                        plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d', 
+                        font=dict(family='Merriweather, serif', color='#f0ece4'), 
+                        height=280, margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
+                    )
+                    st.plotly_chart(fig_wins, use_container_width=True)
+
+                with col_b2:
+                    st.markdown("""
+                        <span style="color:#f0ece4;font-size:12px;font-weight:600;
+                                    text-transform:uppercase;letter-spacing:1px;display:block;
+                                    margin-bottom:4px;">· Team Dominance ·</span>
+                        <h5 style="font-family:'Merriweather',serif;font-weight:900;
+                                color:#ffffff;font-size:14px;margin:2px 0 6px;">
+                            Wins by Team
+                        </h5>
+                    """, unsafe_allow_html=True)
+                    team_counts = df_anno['Team_Stage'].value_counts().reset_index()
+                    team_counts.columns = ['Team', 'Wins']
+                    team_counts = team_counts[team_counts['Team'] != '—'].head(8)
+
+                    fig_teams = px.pie(team_counts, values='Wins', names='Team', hole=0.55,
+                                    color_discrete_sequence=['#FFCC00','#FF6B6B','#4ECDC4',
+                                                                '#A29BFE','#FD79A8','#FDCB6E',
+                                                                '#55efc4','#e17055'])
+                    fig_teams.update_traces(
+                        textposition='inside', textinfo='label+value',
+                        hovertemplate='<b>%{label}</b><br>%{value} stages<extra></extra>',
+                        marker=dict(line=dict(color='#0d0d0d', width=2)), 
+                    )
+                    fig_teams.update_layout(
+                        showlegend=False, 
+                        plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d', 
+                        font=dict(family='Merriweather, serif', color='#f0ece4'), 
+                        height=280, margin=dict(l=0, r=0, t=0, b=0),
+                    )
+                    st.plotly_chart(fig_teams, use_container_width=True)
+
+                with col_b3:
+                    st.markdown("""
+                        <span style="color:#f0ece4;font-size:12px;font-weight:600;
+                                    text-transform:uppercase;letter-spacing:1px;display:block;
+                                    margin-bottom:4px;">· Route ·</span>
+                        <h5 style="font-family:'Merriweather',serif;font-weight:900;
+                                color:#ffffff;font-size:14px;margin:2px 0 6px;">
+                            Stage-by-Stage Itinerary
+                        </h5>
+                    """, unsafe_allow_html=True)
+                    df_route = df_anno[['Stages','Start','End','Vincitore_Clean']].copy()
+                    df_route.columns = ['#','Start','Finish','Stage Winner']
+                    df_route['#'] = df_route['#'].apply(lambda x: int(x) if pd.notna(x) else '?')
+                    st.dataframe(df_route, use_container_width=True, hide_index=True, height=280)
     # ══════════════════════════════════════════════════════════
     # VISTA 3 — GEOGRAPHIC MAP 
     # ══════════════════════════════════════════════════════════
     elif vista_corrente == "mappa":
 
-
-
-      ##MAPPA CON GPX
+        # ── MAPPA CON GPX
         import streamlit as st
         import pandas as pd
         import folium
         from streamlit_folium import st_folium
         import io
         import requests
-      # ── Custom CSS ────────────────────────────────────────────────────────────────
+
         # ── Custom CSS ────────────────────────────────────────────────────────────────
         st.markdown("""
             <style>
@@ -4407,7 +4412,7 @@ elif st.session_state.pagina_corrente == "tappe":
                 font-family: 'Merriweather', Georgia, serif; 
                 font-size: 24px; 
                 font-weight: 900;
-                color: #1a1a1a; 
+                color: #000000 !important; /* FORZATO IN NERO PURO */
                 margin: 4px 0 4px;
             }
             .subtitle {
@@ -4418,25 +4423,25 @@ elif st.session_state.pagina_corrente == "tappe":
                 margin-bottom: 16px;
             }
             
-            /* 2. Forza il testo della selectbox in bianco (se necessario per il contrasto) */
+            /* 2. Forza il testo della selectbox in bianco */
             div[data-testid="stSelectbox"] label p {
                 color: white !important;
             }
 
-            /* 3. Stile per le Card delle Statistiche (Nere isolate su fondo Tema) */
+            /* 3. Stile per le Card delle Statistiche */
             .outline-card {
-                background-color: #1a1a1a; /* Sfondo nero per la card */
-                border: 1px solid #333333; /* Bordo sottile grigio scuro */
-                border-left: 4px solid #FFD700; /* Accento giallo Tour de France */
+                background-color: #1a1a1a; 
+                border: 1px solid #333333; 
+                border-left: 4px solid #FFD700; 
                 padding: 12px 16px;
                 border-radius: 6px;
                 margin-bottom: 15px;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.15); /* Leggera ombra per l'effetto sollevato */
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
             }
             .outline-val {
                 font-size: 26px;
                 font-weight: bold;
-                color: #ffffff; /* Numeri in bianco brillante */
+                color: #ffffff;
                 line-height: 1;
                 margin-bottom: 4px;
             }
@@ -4444,15 +4449,49 @@ elif st.session_state.pagina_corrente == "tappe":
                 font-size: 13px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                color: #aaaaaa; /* Etichette in grigio chiaro per non distrarre dai numeri */
+                color: #aaaaaa;
+            }
+
+            /* 4. SCUDO PER LE ICONE: Evita il bug del testo "arrow_right" sovrapposto */
+            span[class*="material-symbols"], 
+            [data-testid="stIconMaterial"], 
+            .material-symbols-rounded {
+                font-family: "Material Symbols Rounded" !important;
+            }
+
+            /* 5. STILE EXPANDER: Sfondo scuro costante (anche al click o hover) */
+            [data-testid="stExpander"], 
+            [data-testid="stExpander"] > details {
+                background-color: #1a1a1a !important; 
+                border: 1px solid #333333 !important; 
+                border-radius: 6px;
+                margin-top: 5px; 
+                margin-bottom: 15px;
+            }
+            
+            /* Forza lo sfondo scuro su focus, hover e active */
+            [data-testid="stExpander"] summary,
+            [data-testid="stExpander"] summary:hover,
+            [data-testid="stExpander"] summary:focus,
+            [data-testid="stExpander"] summary:active {
+                background-color: #1a1a1a !important;
+                color: #f0ece4 !important;
+            }
+            
+            [data-testid="stExpander"] summary p {
+                color: #f0ece4 !important;
+                font-weight: 600 !important;
+            }
+            [data-testid="stExpander"] div[role="region"] p, 
+            [data-testid="stExpander"] div[role="region"] span {
+                color: #cccccc !important;
             }
             </style>
             
             <span class="geo-archive">· Geographic Archive ·</span>
             <h3 class="main-title">The Geography of Le Tour</h3>
             <p class="subtitle">
-                Select an edition to visualize its route. Cities are geocoded from a curated dictionary
-                of the ~200 most historic Tour locations.
+                Explore the modern era of Le Tour (2022–2025). Select an edition to visualize its route, with cities geocoded from a curated dictionary of historic Tour locations.
             </p>
         """, unsafe_allow_html=True)
 
@@ -4465,9 +4504,8 @@ elif st.session_state.pagina_corrente == "tappe":
         }
         STAGES_FILE_ID = "1eCqMb1JKq2yYqchkrBcDy_CdeH3_lZArsgdUX6f4Tao"
 
-        # Sheet names per anno nel file caratteristiche
         STAGE_SHEET_NAMES = {
-            2022: 0,   # primo foglio
+            2022: 0,
             2023: 1,
             2024: 2,
             2025: 3,
@@ -4483,6 +4521,16 @@ elif st.session_state.pagina_corrente == "tappe":
             "ttt":        "#FF8A65",
         }
 
+        # Dizionario descrittivo (Glossario in Inglese)
+        STAGE_INFO = {
+            "flat": "Sprint stages, flat profiles typically ending in a bunch sprint.",
+            "hills": "Rolling terrain with short, punchy climbs, ideal for puncheurs and breakaways.",
+            "mountains": "The queen stages. Massive elevation gains that shape the General Classification.",
+            "cobbles": "Sections of cobbled roads that test the limits of both riders and mechanics.",
+            "itt": "Individual Time Trial. A solo race against the clock.",
+            "ttt": "Team Time Trial. A synchronized team effort focusing on pure aerodynamics."
+        }
+
         def gdrive_url(file_id: str) -> str:
             return f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=xlsx"
 
@@ -4494,7 +4542,6 @@ elif st.session_state.pagina_corrente == "tappe":
             r.raise_for_status()
             df = pd.read_excel(io.BytesIO(r.content))
             df.columns = df.columns.str.strip().str.lower()
-            # Estrai numero tappa da source_file  (es. "stage-11-parcours.gpx" → 11)
             if "source_file" in df.columns:
                 df["stage_num"] = df["source_file"].str.extract(r"stage-?(\d+)", expand=False).astype(float).astype("Int64")
             return df
@@ -4507,7 +4554,6 @@ elif st.session_state.pagina_corrente == "tappe":
             sheet_index = STAGE_SHEET_NAMES[year]
             df = pd.read_excel(io.BytesIO(r.content), sheet_name=sheet_index)
             df.columns = df.columns.str.strip().str.lower()
-            # Prima colonna = numero tappa se non è già 'stage' o simile
             first_col = df.columns[0]
             if first_col not in ("stage", "tappa", "n", "num"):
                 df = df.rename(columns={first_col: "stage_num"})
@@ -4542,14 +4588,12 @@ elif st.session_state.pagina_corrente == "tappe":
                 if len(seg) < 2:
                     continue
 
-                # Info tappa
                 info_row = stages_df[stages_df["stage_num"] == sn]
                 if not info_row.empty:
                     row = info_row.iloc[0]
                     s_type = row.get("type", "")
                     color  = stage_color(s_type)
 
-                    # Costruisci tooltip HTML
                     start_city  = row.get("start", "–")
                     finish_city = row.get("finish", "–")
                     km_val      = row.get("km", "–")
@@ -4557,17 +4601,16 @@ elif st.session_state.pagina_corrente == "tappe":
                     <div style="font-family:'Barlow',sans-serif;background:#1a1a1a;color:#f0f0f0;
                                 padding:10px 14px;border-radius:6px;border-left:3px solid {color};
                                 min-width:180px">
-                    <b style="font-size:1rem;color:{color}">Tappa {int(sn)}</b><br>
+                    <b style="font-size:1rem;color:{color}">Stage {int(sn)}</b><br>
                     <span style="font-size:0.85rem">🏁 {start_city} → {finish_city}</span><br>
                     <span style="font-size:0.8rem;color:#aaa">📏 {km_val} km &nbsp;|&nbsp; 🏔 {s_type}</span>
                     </div>"""
                 else:
                     color        = "#FFD700"
-                    tooltip_html = f"<b>Tappa {int(sn)}</b>"
+                    tooltip_html = f"<b>Stage {int(sn)}</b>"
 
                 coords = list(zip(seg["latitude"], seg["longitude"]))
 
-                # Linea tappa
                 folium.PolyLine(
                     locations=coords,
                     color=color,
@@ -4576,7 +4619,6 @@ elif st.session_state.pagina_corrente == "tappe":
                     tooltip=folium.Tooltip(tooltip_html, sticky=True),
                 ).add_to(m)
 
-                # Marker inizio tappa
                 folium.CircleMarker(
                     location=coords[0],
                     radius=5,
@@ -4584,7 +4626,7 @@ elif st.session_state.pagina_corrente == "tappe":
                     fill=True,
                     fill_color=color,
                     fill_opacity=1.0,
-                    tooltip=folium.Tooltip(f"<b style='color:{color}'>Start T{int(sn)}</b>", sticky=False),
+                    tooltip=folium.Tooltip(f"<b style='color:{color}'>Start S{int(sn)}</b>", sticky=False),
                 ).add_to(m)
 
             return m
@@ -4594,36 +4636,22 @@ elif st.session_state.pagina_corrente == "tappe":
         col_sel, col_legend = st.columns([1, 3])
 
         with col_sel:
-    # Iniezione del CSS per forzare il testo in bianco
-            st.markdown(
-                """
-                <style>
-                div[data-testid="stSelectbox"] label p {
-                    color: white !important;
-                }
-                </style>
-                """, 
-                unsafe_allow_html=True
-            )
-            
-            # Il tuo codice originale
             year = st.selectbox("Select year:", [2022, 2023, 2024, 2025], index=0)
             
         # ── Caricamento dati ──────────────────────────────────────────────────────────
-               
-        
-        with st.spinner("Caricamento dati GPX..."):
+        with st.spinner("Loading GPX data..."):
             try:
                 gpx_df    = load_gpx(year)
                 stages_df = load_stages(year)
                 load_ok   = True
             except Exception as e:
                 load_ok = False
-                st.error(f"⚠️ Errore nel caricamento dei file: {e}\n\n"
-                        "Assicurati che i file Google Drive siano condivisi con **'Chiunque abbia il link'**.")
+                st.error(f"⚠️ Error loading files: {e}\n\n"
+                        "Make sure the Google Drive files are shared with **'Anyone with the link'**.")
 
         if load_ok:
             with col_legend:
+                # Legenda a pallini
                 cols = st.columns(len(TYPE_COLORS))
                 for i, (t, c) in enumerate(TYPE_COLORS.items()):
                     cols[i].markdown(
@@ -4633,9 +4661,22 @@ elif st.session_state.pagina_corrente == "tappe":
                         f'</div>',
                         unsafe_allow_html=True
                     )
+                
+                # GLOSSARIO in Inglese
+                with st.expander("📖 Glossary: Stage Types"):
+                    for k, desc in STAGE_INFO.items():
+                        color = TYPE_COLORS.get(k, "#fff")
+                        st.markdown(f'''
+                            <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:10px;">
+                                <div style="width:12px; height:12px; border-radius:50%; background:{color}; margin-top:4px; flex-shrink:0;"></div>
+                                <div>
+                                    <b style="color:#f0ece4; text-transform:uppercase; font-size:13px;">{k}</b><br>
+                                    <span style="color:#aaa; font-size:12px;">{desc}</span>
+                                </div>
+                            </div>
+                        ''', unsafe_allow_html=True)
 
             # ── Stats ──────────────────────────────────────────────────────────────────
-           # ── Stats ──────────────────────────────────────────────────────────────────
             n_stages   = gpx_df["stage_num"].nunique()
             total_km   = stages_df["km"].sum() if "km" in stages_df.columns else "–"
             n_mountain = (stages_df["type"].str.lower().str.contains("mountain", na=False).sum()
@@ -4663,13 +4704,13 @@ elif st.session_state.pagina_corrente == "tappe":
             st.markdown("<br>", unsafe_allow_html=True)
             
             # ── Mappa ──────────────────────────────────────────────────────────────────
-            with st.spinner("Costruzione mappa..."):
+            with st.spinner("Building map..."):
                 m = build_map(gpx_df, stages_df)
 
             st_folium(m, width="100%", height=620, returned_objects=[])
 
             # ── Tabella tappe ──────────────────────────────────────────────────────────
-            with st.expander("📋 Dettaglio tutte le tappe"):
+            with st.expander("📋 All Stages Detail"):
                 display_cols = [c for c in ["stage_num", "start", "finish", "km", "type"] if c in stages_df.columns]
                 st.dataframe(
                     stages_df[display_cols].sort_values("stage_num"),
@@ -4678,6 +4719,8 @@ elif st.session_state.pagina_corrente == "tappe":
                 )
 
 
+
+      
 
 
 
