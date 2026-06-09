@@ -85,10 +85,6 @@ if "nav" in st.query_params and st.query_params["nav"] == "home":
 if "pagina_corrente" not in st.session_state:
     st.session_state.pagina_corrente = "home"
 
-
-# ==========================================
-# 3. CSS E STILE DELLA BARRA NERA E SFONDO
-# ==========================================
 # ==========================================
 # 3. CSS E STILE DELLA BARRA NERA E SFONDO
 # ==========================================
