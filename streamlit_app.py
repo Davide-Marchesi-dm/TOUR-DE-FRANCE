@@ -4380,9 +4380,16 @@ elif st.session_state.pagina_corrente == "tappe":
     # ══════════════════════════════════════════════════════════
     elif vista_corrente == "mappa":
 
-        
-      ##MAPPA VECCHIA DA SISTEMARE CON NUOVO DATASET E GEOCODING
-      
+
+
+      ##MAPPA CON GPX
+        import streamlit as st
+        import pandas as pd
+        import folium
+        from streamlit_folium import st_folium
+        import io
+        import requests
+      # ── Custom CSS ────────────────────────────────────────────────────────────────
         st.markdown("""
             <span style="color:#1a1a1a;font-size:13px;font-weight:600;
                          text-transform:uppercase;letter-spacing:1px;display:block;
@@ -4398,177 +4405,220 @@ elif st.session_state.pagina_corrente == "tappe":
             </p>
         """, unsafe_allow_html=True)
 
-        lista_anni_mappa = sorted([a for a in df_coords_all['Year'].dropna().unique()
-                                   if a > 0], reverse=True)
-        anno_mappa = st.selectbox("📅 Select edition:", lista_anni_mappa, key="select_mappa")
+        # ── Google Drive file IDs ─────────────────────────────────────────────────────
+        GPX_FILE_IDS = {
+            2022: "1Th96j4LkuVSiJBIcUtbyMRB8eo0zA9ig",
+            2023: "1pPUMY-TLMw1nqr_T2uUuSmUiL-kJ0cNp",
+            2024: "1YY7OAiTaaBKrDa32GB39V2ohi96nnI8I",
+            2025: "1wFVSCvy34nfIGbCuFXFkHBcUSiTfdr5n",
+        }
+        STAGES_FILE_ID = "1eCqMb1JKq2yYqchkrBcDy_CdeH3_lZArsgdUX6f4Tao"
 
-        df_mappa_anno = df_coords_all[df_coords_all['Year'] == anno_mappa].copy()
+        # Sheet names per anno nel file caratteristiche
+        STAGE_SHEET_NAMES = {
+            2022: 0,   # primo foglio
+            2023: 1,
+            2024: 2,
+            2025: 3,
+        }
 
-        # Geocoding con dizionario hardcoded
-        def get_coords(city_name):
-            if pd.isna(city_name):
-                return None
-            city_clean = str(city_name).strip()
-            # Fix encoding
-            city_clean = city_clean.replace('Ã©','é').replace('Ã¨','è').replace('Ã\xaa','ê')
-            city_clean = city_clean.replace('Ã§','ç').replace('Ã®','î').replace('Ã´','ô')
-            city_clean = city_clean.replace('Ã»','û').replace('Ã ','à').replace('Ã¹','ù')
-            city_clean = city_clean.replace('Ã«','ë').replace('Ã¯','ï').replace('DÃ¼sseldorf','Düsseldorf')
-            # Lookup
-            if city_clean in CITY_COORDS:
-                return CITY_COORDS[city_clean]
-            # Partial match
-            for k, v in CITY_COORDS.items():
-                if city_clean.lower() in k.lower() or k.lower() in city_clean.lower():
+        # Colori per tipo di tappa
+        TYPE_COLORS = {
+            "flat":       "#4FC3F7",
+            "hills":      "#81C784",
+            "mountains":  "#EF5350",
+            "cobbles":    "#CE93D8",
+            "itt":        "#FFD54F",
+            "ttt":        "#FF8A65",
+        }
+
+        def gdrive_url(file_id: str) -> str:
+            return f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=xlsx"
+
+        @st.cache_data(show_spinner=False)
+        def load_gpx(year: int) -> pd.DataFrame:
+            file_id = GPX_FILE_IDS[year]
+            url = gdrive_url(file_id)
+            r = requests.get(url, timeout=30)
+            r.raise_for_status()
+            df = pd.read_excel(io.BytesIO(r.content))
+            df.columns = df.columns.str.strip().str.lower()
+            # Estrai numero tappa da source_file  (es. "stage-11-parcours.gpx" → 11)
+            if "source_file" in df.columns:
+                df["stage_num"] = df["source_file"].str.extract(r"stage-?(\d+)", expand=False).astype(float).astype("Int64")
+            return df
+
+        @st.cache_data(show_spinner=False)
+        def load_stages(year: int) -> pd.DataFrame:
+            url = gdrive_url(STAGES_FILE_ID)
+            r = requests.get(url, timeout=30)
+            r.raise_for_status()
+            sheet_index = STAGE_SHEET_NAMES[year]
+            df = pd.read_excel(io.BytesIO(r.content), sheet_name=sheet_index)
+            df.columns = df.columns.str.strip().str.lower()
+            # Prima colonna = numero tappa se non è già 'stage' o simile
+            first_col = df.columns[0]
+            if first_col not in ("stage", "tappa", "n", "num"):
+                df = df.rename(columns={first_col: "stage_num"})
+            else:
+                df = df.rename(columns={first_col: "stage_num"})
+            df["stage_num"] = pd.to_numeric(df["stage_num"], errors="coerce").astype("Int64")
+            return df
+
+        def stage_color(stage_type: str) -> str:
+            if pd.isna(stage_type):
+                return "#FFD700"
+            key = str(stage_type).lower().strip()
+            for k, v in TYPE_COLORS.items():
+                if k in key:
                     return v
-            return None
+            return "#FFD700"
 
-        # Aggiungi coordinate
-        df_mappa_anno['start_coords'] = df_mappa_anno['Origin'].apply(get_coords)
-        df_mappa_anno['end_coords']   = df_mappa_anno['Destination'].apply(get_coords)
-        df_mappa_anno = df_mappa_anno.dropna(subset=['start_coords','end_coords'])
-        df_mappa_anno['start_lat'] = df_mappa_anno['start_coords'].apply(lambda x: x[0])
-        df_mappa_anno['start_lon'] = df_mappa_anno['start_coords'].apply(lambda x: x[1])
-        df_mappa_anno['end_lat']   = df_mappa_anno['end_coords'].apply(lambda x: x[0])
-        df_mappa_anno['end_lon']   = df_mappa_anno['end_coords'].apply(lambda x: x[1])
+        def build_map(gpx_df: pd.DataFrame, stages_df: pd.DataFrame) -> folium.Map:
+            center_lat = gpx_df["latitude"].mean()
+            center_lon = gpx_df["longitude"].mean()
 
-        n_stages_found = len(df_mappa_anno)
-        n_stages_total = len(df_coords_all[df_coords_all['Year'] == anno_mappa])
+            m = folium.Map(
+                location=[center_lat, center_lon],
+                zoom_start=6,
+                tiles="CartoDB dark_matter",
+            )
 
-        coverage = int(n_stages_found / max(n_stages_total, 1) * 100)
+            stage_nums = sorted(gpx_df["stage_num"].dropna().unique())
 
-        # Banner copertura
-        banner_color = '#22c55e' if coverage >= 70 else '#FFCC00' if coverage >= 40 else '#FF6B6B'
-        st.markdown(f"""
-            <div style="background:#111;border:1px solid #2a2a2a;border-left:4px solid {banner_color};
-                        padding:10px 16px;border-radius:3px;margin-bottom:16px;
-                        font-family:'Merriweather',serif;display:flex;align-items:center;gap:12px;">
-                <span style="font-size:18px;font-weight:900;color:{banner_color};">{coverage}%</span>
-                <span style="font-size:11px;color:#888;">
-                    {n_stages_found} of {n_stages_total} stages geocoded from the Tour's
-                    historic city dictionary · {int(anno_mappa)} edition
-                </span>
-            </div>
-        """, unsafe_allow_html=True)
+            for sn in stage_nums:
+                seg = gpx_df[gpx_df["stage_num"] == sn].copy()
+                if len(seg) < 2:
+                    continue
 
-        if n_stages_found == 0:
-            st.markdown("""
-                <div style="background:#f5f0e6;border-left:4px solid #c8bfad;padding:14px 18px;
-                            border-radius:3px;font-family:'Merriweather',serif;color:#666;
-                            font-style:italic;font-size:12px;">
-                    No stages could be geocoded for this edition. The cities may use historical
-                    spellings not yet in the dictionary.
-                </div>
-            """, unsafe_allow_html=True)
-        else:
-            # Mappa Plotly con linee tappa
-            fig_map = go.Figure()
+                # Info tappa
+                info_row = stages_df[stages_df["stage_num"] == sn]
+                if not info_row.empty:
+                    row = info_row.iloc[0]
+                    s_type = row.get("type", "")
+                    color  = stage_color(s_type)
 
-            # Dizionario per contare i tipi di tappa in tempo reale per la legenda
-            conteggio_tipi = {}
+                    # Costruisci tooltip HTML
+                    start_city  = row.get("start", "–")
+                    finish_city = row.get("finish", "–")
+                    km_val      = row.get("km", "–")
+                    tooltip_html = f"""
+                    <div style="font-family:'Barlow',sans-serif;background:#1a1a1a;color:#f0f0f0;
+                                padding:10px 14px;border-radius:6px;border-left:3px solid {color};
+                                min-width:180px">
+                    <b style="font-size:1rem;color:{color}">Tappa {int(sn)}</b><br>
+                    <span style="font-size:0.85rem">🏁 {start_city} → {finish_city}</span><br>
+                    <span style="font-size:0.8rem;color:#aaa">📏 {km_val} km &nbsp;|&nbsp; 🏔 {s_type}</span>
+                    </div>"""
+                else:
+                    color        = "#FFD700"
+                    tooltip_html = f"<b>Tappa {int(sn)}</b>"
 
-            # Linee di percorso colorate per tipo tappa
-            for _, row in df_mappa_anno.iterrows():
-                ttype = TYPE_MAP.get(row.get('Type','').strip(), 'Other')
-                color = TYPE_COLORS.get(ttype, '#888')
-                
-                # Conta la tappa per la legenda
-                if ttype != 'Other':
-                    conteggio_tipi[ttype] = conteggio_tipi.get(ttype, 0) + 1
+                coords = list(zip(seg["latitude"], seg["longitude"]))
 
-                stage_num = row.get('Stage', '?')
-                origin    = row.get('Origin','?')
-                dest      = row.get('Destination','?')
-                dist      = row.get('Distance', '?')
-                winner    = row.get('Winner','?')
-
-                fig_map.add_trace(go.Scattergeo(
-                    lon=[row['start_lon'], row['end_lon']],
-                    lat=[row['start_lat'], row['end_lat']],
-                    mode='lines',
-                    line=dict(width=3, color=color),
+                # Linea tappa
+                folium.PolyLine(
+                    locations=coords,
+                    color=color,
+                    weight=3.5,
                     opacity=0.85,
-                    showlegend=False,
-                    hovertemplate=(
-                        f"<b>Stage {stage_num}</b> — {ttype}<br>"
-                        f"{origin} → {dest}<br>"
-                        f"Distance: {dist} km<br>"
-                        f"Winner: {winner}<extra></extra>"
-                    ),
-                ))
+                    tooltip=folium.Tooltip(tooltip_html, sticky=True),
+                ).add_to(m)
 
-            # Punti di partenza (cerchi) - Scuri per risaltare sulla mappa chiara
-            starts = df_mappa_anno.drop_duplicates(subset=['start_lat','start_lon'])
-            fig_map.add_trace(go.Scattergeo(
-                lon=starts['start_lon'], lat=starts['start_lat'],
-                mode='markers',
-                marker=dict(size=7, color='#1a1a1a', opacity=0.7,
-                            line=dict(width=1.5, color='white')),
-                showlegend=False,
-                hovertemplate='<b>%{customdata}</b><extra></extra>',
-                customdata=starts['Origin'],
-            ))
+                # Marker inizio tappa
+                folium.CircleMarker(
+                    location=coords[0],
+                    radius=5,
+                    color=color,
+                    fill=True,
+                    fill_color=color,
+                    fill_opacity=1.0,
+                    tooltip=folium.Tooltip(f"<b style='color:{color}'>Start T{int(sn)}</b>", sticky=False),
+                ).add_to(m)
 
-            # Punto finale (stella) — ultimo arrivo
-            last = df_mappa_anno.iloc[-1]
-            fig_map.add_trace(go.Scattergeo(
-                lon=[last['end_lon']], lat=[last['end_lat']],
-                mode='markers+text',
-                marker=dict(size=16, color='#FFCC00', symbol='star',
-                            line=dict(width=2, color='#1a1a1a')),
-                text=[last['Destination']],
-                textposition='top center',
-                textfont=dict(size=10, color='#1a1a1a', family='Arial'), # Testo scuro sulla mappa chiara
-                showlegend=False,
-                hovertemplate=f"<b>Final Stage Finish</b><br>{last['Destination']}<extra></extra>",
-            ))
+            return m
 
-            # Generazione automatica legenda
-            for ttype, count in conteggio_tipi.items():
-                color = TYPE_COLORS.get(ttype, '#888')
-                fig_map.add_trace(go.Scattergeo(
-                    lon=[None], lat=[None],
-                    mode='lines',
-                    line=dict(width=3, color=color),
-                    name=f"{ttype} ({count})",
-                    showlegend=True,
-                ))
+        # ── Layout ────────────────────────────────────────────────────────────────────
+       
+        col_sel, col_legend = st.columns([1, 3])
 
-            # Configurazione mappa chiara
-            fig_map.update_geos(
-                showcoastlines=True, coastlinecolor='#c8bfad', coastlinewidth=1,
-                showland=True, landcolor='#F4F1EA',      
-                showocean=True, oceancolor='#ddeeff',    
-                showframe=True, framecolor='#e8e4da',
-                showcountries=True, countrycolor='#e8e4da',
-                projection_type='mercator',
-                center=dict(lat=46.5, lon=4.0),
-                lataxis_range=[40, 55],
-                lonaxis_range=[-6, 18],
+        with col_sel:
+    # Iniezione del CSS per forzare il testo in bianco
+            st.markdown(
+                """
+                <style>
+                div[data-testid="stSelectbox"] label p {
+                    color: white !important;
+                }
+                </style>
+                """, 
+                unsafe_allow_html=True
             )
             
-            # Configurazione contenitore mappa nero
-            fig_map.update_layout(
-                plot_bgcolor='#0a0a0a', paper_bgcolor='#0a0a0a', 
-                font=dict(family='Merriweather, serif', color='#ffffff'), 
-                height=600, 
-                margin=dict(l=0, r=0, t=50, b=40), 
-                legend=dict(
-                    orientation='v', x=0.01, y=0.99,
-                    bgcolor='rgba(244,241,234,0.92)', 
-                    bordercolor='#c8bfad', borderwidth=1,
-                    font=dict(size=10, color='#1a1a1a'), 
-                ),
-                title=dict(
-                    text=f"<b>{int(anno_mappa)} Tour de France</b> — {n_stages_found} stages mapped",
-                    font=dict(size=14, family='Merriweather, serif', color='#ffffff'), 
-                    x=0.01, xanchor='left',
-                ),
-            )
-            st.plotly_chart(fig_map, use_container_width=True)
+            # Il tuo codice originale
+            year = st.selectbox("Select year:", [2022, 2023, 2024, 2025], index=0)
+            
+        # ── Caricamento dati ──────────────────────────────────────────────────────────
+               
+        
+        with st.spinner("Caricamento dati GPX..."):
+            try:
+                gpx_df    = load_gpx(year)
+                stages_df = load_stages(year)
+                load_ok   = True
+            except Exception as e:
+                load_ok = False
+                st.error(f"⚠️ Errore nel caricamento dei file: {e}\n\n"
+                        "Assicurati che i file Google Drive siano condivisi con **'Chiunque abbia il link'**.")
 
-        st.markdown(hr, unsafe_allow_html=True)
+        if load_ok:
+            with col_legend:
+                cols = st.columns(len(TYPE_COLORS))
+                for i, (t, c) in enumerate(TYPE_COLORS.items()):
+                    cols[i].markdown(
+                        f'<div style="display:flex;align-items:center;gap:6px">'
+                        f'<div style="width:12px;height:12px;border-radius:50%;background:{c}"></div>'
+                        f'<span style="font-size:0.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.06em">{t}</span>'
+                        f'</div>',
+                        unsafe_allow_html=True
+                    )
 
+            # ── Stats ──────────────────────────────────────────────────────────────────
+            n_stages   = gpx_df["stage_num"].nunique()
+            total_km   = stages_df["km"].sum() if "km" in stages_df.columns else "–"
+            n_mountain = (stages_df["type"].str.lower().str.contains("mountain", na=False).sum()
+                        if "type" in stages_df.columns else "–")
+
+            s1, s2, s3 = st.columns(3)
+            for col, val, lbl in [(s1, n_stages, "Tappe"), (s2, f"{total_km:.0f}" if isinstance(total_km, float) else total_km, "km totali"), (s3, n_mountain, "Tappe montagna")]:
+                col.markdown(
+                    f'<div class="metric"><div class="val">{val}</div><div class="lbl">{lbl}</div></div>',
+                    unsafe_allow_html=True
+                )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # ── Mappa ──────────────────────────────────────────────────────────────────
+            with st.spinner("Costruzione mappa..."):
+                m = build_map(gpx_df, stages_df)
+
+            st_folium(m, width="100%", height=620, returned_objects=[])
+
+            # ── Tabella tappe ──────────────────────────────────────────────────────────
+            with st.expander("📋 Dettaglio tutte le tappe"):
+                display_cols = [c for c in ["stage_num", "start", "finish", "km", "type"] if c in stages_df.columns]
+                st.dataframe(
+                    stages_df[display_cols].sort_values("stage_num"),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+
+
+
+
+
+       
         # ── HEATMAP CITTÀ più visitate nella storia (IN DARK MODE) ──
         st.markdown("""
             <span style="color:#1a1a1a;font-size:13px;font-weight:600;
