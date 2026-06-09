@@ -5157,10 +5157,10 @@ elif st.session_state.pagina_corrente == "teams":
 
             def rank_color(r):
                 if r == 1:   return '#FFD700'
-                if r <= 3:   return '#E2E8F0'  # Argento più luminoso e freddo, stacca molto meglio
+                if r <= 3:   return '#E2E8F0'
                 if r <= 10:  return '#CD7F32'
                 if r <= 20:  return '#4ECDC4'
-                return '#8892B0'               # Grigio-azzurro medio, leggibile sul nero senza essere invadente
+                return '#8892B0'
 
             def rank_label(r):
                 if r == 1:   return '🏆 GC Victory'
@@ -5178,11 +5178,10 @@ elif st.session_state.pagina_corrente == "teams":
             fig_timeline = go.Figure()
             fig_timeline.add_trace(go.Scatter(
                 x=df_by_year['Year'], y=[0] * len(df_by_year),
-                mode='lines', line=dict(color='#333333', width=1.5),
+                mode='lines', line=dict(color='#aaaaaa', width=1.5),
                 showlegend=False, hoverinfo='skip',
             ))
 
-            # Assicurati di aggiornare anche i colori in questo ciclo per far combaciare la legenda
             for lbl, color in [
                 ('🏆 GC Victory', '#FFD700'), ('🥈 Podium', '#E2E8F0'),
                 ('Top 10', '#CD7F32'), ('Top 20', '#4ECDC4'), ('Participant', '#8892B0')
@@ -5193,7 +5192,7 @@ elif st.session_state.pagina_corrente == "teams":
                     x=df_cat['Year'], y=[0] * len(df_cat),
                     mode='markers',
                     marker=dict(size=df_cat['size'], color=color,
-                                line=dict(width=2, color='#0d0d0d'), symbol='circle'),
+                                line=dict(width=2, color='#F4F1EA'), symbol='circle'),
                     name=lbl,
                     hovertemplate=(
                         '<b>%{customdata[0]}</b><br>'
@@ -5213,28 +5212,27 @@ elif st.session_state.pagina_corrente == "teams":
                 fig_timeline.add_annotation(
                     x=row['Year'], y=0,
                     text=f"🏆 {int(row['Year'])}",
-                    showarrow=True, arrowhead=0, arrowcolor='#FFD700',
-                    font=dict(size=9, color='#FFD700', family='Arial'),
+                    showarrow=True, arrowhead=0, arrowcolor='#996600',
+                    font=dict(size=9, color='#996600', family='Arial'),
                     ay=-36, ax=0, bgcolor='rgba(0,0,0,0.0)',
                 )
 
             fig_timeline.update_layout(
-                plot_bgcolor='#0d0d0d', 
-                paper_bgcolor='#0d0d0d',
-                font=dict(family='Merriweather, serif', color='#f0ece4'),
-                height=200, 
+                plot_bgcolor='#F4F1EA',
+                paper_bgcolor='#F4F1EA',
+                font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                height=200,
                 margin=dict(l=0, r=0, t=30, b=10),
-                xaxis=dict(title='', showgrid=False, tickfont=dict(size=10)),
+                xaxis=dict(title='', showgrid=False, tickfont=dict(size=10), color='#1a1a1a'),
                 yaxis=dict(visible=False, range=[-0.5, 0.6]),
-                # MODIFICA: Qui forziamo il colore e la leggibilità della legenda
                 legend=dict(
-                    orientation='h', 
-                    y=-0.3, 
-                    x=0.5, 
+                    orientation='h',
+                    y=-0.3,
+                    x=0.5,
                     xanchor='center',
-                    font=dict(size=12, color='#ffffff', family='Arial, sans-serif'), # Font più grande e bianco puro
-                    bgcolor='rgba(0,0,0,0.5)', # Sfondo semi-trasparente per staccare dal fondo nero
-                    bordercolor='#444',
+                    font=dict(size=12, color='#1a1a1a', family='Arial, sans-serif'),
+                    bgcolor='rgba(244,241,234,0.8)',
+                    bordercolor='#ccc',
                     borderwidth=1
                 ),
                 showlegend=True,
@@ -5242,7 +5240,7 @@ elif st.session_state.pagina_corrente == "teams":
             st.plotly_chart(fig_timeline, use_container_width=True)
             st.markdown(hr, unsafe_allow_html=True)
 
-            # ──────────────────────────────────────────────────────────
+                    # ──────────────────────────────────────────────────────────
             # C. ACCORDION TEAM ROLES
             # ──────────────────────────────────────────────────────────
             if 'roles_open' not in st.session_state:
@@ -5261,70 +5259,70 @@ elif st.session_state.pagina_corrente == "teams":
 
             if st.session_state.roles_open:
                 st.components.v1.html("""
-                    <div style="background:#0d0d0d;border-bottom:1px solid #333;padding:16px 20px;
+                    <div style="background:#F4F1EA;border-bottom:1px solid #ccc;padding:16px 20px;
                                 font-family:'Merriweather',Georgia,serif;margin-top:-8px;">
-                    <p style="font-size:12px;color:#aaa;line-height:1.7;margin:0 0 14px">
+                    <p style="font-size:12px;color:#444;line-height:1.7;margin:0 0 14px">
                         A professional cycling team is not a collection of solo athletes — it is a precisely structured unit
                         where every rider has a defined function. Understanding these roles transforms how you read the roster heatmap below.
                     </p>
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
 
-                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #333;background:#1a1a1a;">
+                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #ccc;background:#ffffff;">
                             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                                <div style="width:9px;height:9px;border-radius:50%;background:#FFCC00;flex-shrink:0"></div>
-                                <span style="font-size:13px;font-weight:700;color:#f0ece4;">Team captain</span>
+                                <div style="width:9px;height:9px;border-radius:50%;background:#b8960c;flex-shrink:0"></div>
+                                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Team captain</span>
                             </div>
-                            <p style="font-size:11px;color:#aaa;line-height:1.65;margin:0;">The designated GC leader. The entire team rides in service of this rider on key mountain stages and time trials. All tactical decisions revolve around protecting and advancing the captain's result.</p>
-                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#332b00;color:#FFCC00;">GC leader</span>
+                            <p style="font-size:11px;color:#555;line-height:1.65;margin:0;">The designated GC leader. The entire team rides in service of this rider on key mountain stages and time trials. All tactical decisions revolve around protecting and advancing the captain's result.</p>
+                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#fff4cc;color:#7a5c00;">GC leader</span>
                         </div>
 
-                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #333;background:#1a1a1a;">
+                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #ccc;background:#ffffff;">
                             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                                <div style="width:9px;height:9px;border-radius:50%;background:#4ECDC4;flex-shrink:0"></div>
-                                <span style="font-size:13px;font-weight:700;color:#f0ece4;">Domestique</span>
+                                <div style="width:9px;height:9px;border-radius:50%;background:#0e9488;flex-shrink:0"></div>
+                                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Domestique</span>
                             </div>
-                            <p style="font-size:11px;color:#aaa;line-height:1.65;margin:0;">The backbone of any team. Domestiques sacrifice their own race to serve the captain — fetching water bottles, chasing attacks, setting tempo on climbs, and shielding the leader from wind. Rarely in results, but indispensable.</p>
-                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#0d3331;color:#4ECDC4;">selfless worker</span>
+                            <p style="font-size:11px;color:#555;line-height:1.65;margin:0;">The backbone of any team. Domestiques sacrifice their own race to serve the captain — fetching water bottles, chasing attacks, setting tempo on climbs, and shielding the leader from wind. Rarely in results, but indispensable.</p>
+                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#ccf5f2;color:#0a5450;">selfless worker</span>
                         </div>
 
-                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #333;background:#1a1a1a;">
+                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #ccc;background:#ffffff;">
                             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                                <div style="width:9px;height:9px;border-radius:50%;background:#FF6B6B;flex-shrink:0"></div>
-                                <span style="font-size:13px;font-weight:700;color:#f0ece4;">Climbing domestique</span>
+                                <div style="width:9px;height:9px;border-radius:50%;background:#e53e3e;flex-shrink:0"></div>
+                                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Climbing domestique</span>
                             </div>
-                            <p style="font-size:11px;color:#aaa;line-height:1.65;margin:0;">A specialist capable of maintaining pace on steep mountain passes. Sets a relentless rhythm that cracks rival teams, then peels off deep in the climb to let the captain race alone to the summit.</p>
-                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#331515;color:#FF6B6B;">mountain worker</span>
+                            <p style="font-size:11px;color:#555;line-height:1.65;margin:0;">A specialist capable of maintaining pace on steep mountain passes. Sets a relentless rhythm that cracks rival teams, then peels off deep in the climb to let the captain race alone to the summit.</p>
+                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#fde8e8;color:#9b1c1c;">mountain worker</span>
                         </div>
 
-                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #333;background:#1a1a1a;">
+                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #ccc;background:#ffffff;">
                             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                                <div style="width:9px;height:9px;border-radius:50%;background:#aaa;flex-shrink:0"></div>
-                                <span style="font-size:13px;font-weight:700;color:#f0ece4;">Lead-out man</span>
+                                <div style="width:9px;height:9px;border-radius:50%;background:#888;flex-shrink:0"></div>
+                                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Lead-out man</span>
                             </div>
-                            <p style="font-size:11px;color:#aaa;line-height:1.65;margin:0;">Critical for sprinter teams. Drives at maximum speed in the final kilometres directly in front of the sprinter, clearing a path and delivering them to the perfect launch point. One of cycling's most technically demanding roles.</p>
-                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#333;color:#ccc;">sprint train</span>
+                            <p style="font-size:11px;color:#555;line-height:1.65;margin:0;">Critical for sprinter teams. Drives at maximum speed in the final kilometres directly in front of the sprinter, clearing a path and delivering them to the perfect launch point. One of cycling's most technically demanding roles.</p>
+                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#eeeeee;color:#444;">sprint train</span>
                         </div>
 
-                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #333;background:#1a1a1a;">
+                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #ccc;background:#ffffff;">
                             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                                 <div style="width:9px;height:9px;border-radius:50%;background:#7F77DD;flex-shrink:0"></div>
-                                <span style="font-size:13px;font-weight:700;color:#f0ece4;">Super-domestique</span>
+                                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Super-domestique</span>
                             </div>
-                            <p style="font-size:11px;color:#aaa;line-height:1.65;margin:0;">Talented enough to be a captain elsewhere, but supports a stronger teammate. Takes secondary leadership if the captain abandons, and can be unleashed on breakaways to secure bonus time or stage wins.</p>
-                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#1d1b33;color:#9b94f0;">versatile asset</span>
+                            <p style="font-size:11px;color:#555;line-height:1.65;margin:0;">Talented enough to be a captain elsewhere, but supports a stronger teammate. Takes secondary leadership if the captain abandons, and can be unleashed on breakaways to secure bonus time or stage wins.</p>
+                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#ebebff;color:#3b359e;">versatile asset</span>
                         </div>
 
-                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #333;background:#1a1a1a;">
+                        <div style="border-radius:6px;padding:12px 14px;border:1px solid #ccc;background:#ffffff;">
                             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                                 <div style="width:9px;height:9px;border-radius:50%;background:#D85A30;flex-shrink:0"></div>
-                                <span style="font-size:13px;font-weight:700;color:#f0ece4;">Breakaway specialist</span>
+                                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Breakaway specialist</span>
                             </div>
-                            <p style="font-size:11px;color:#aaa;line-height:1.65;margin:0;">Given freedom to join early escapes. Since they don't threaten the GC, rivals let them go. This earns the team stage wins, polka-dot points, and crucial television exposure for sponsors throughout the race.</p>
-                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#33170a;color:#f28561;">stage hunter</span>
+                            <p style="font-size:11px;color:#555;line-height:1.65;margin:0;">Given freedom to join early escapes. Since they don't threaten the GC, rivals let them go. This earns the team stage wins, polka-dot points, and crucial television exposure for sponsors throughout the race.</p>
+                            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:7px;font-weight:600;background:#fde8d8;color:#7a2e0e;">stage hunter</span>
                         </div>
 
                     </div>
-                    <p style="font-size:11px;color:#888;margin:14px 0 0;line-height:1.6;font-style:italic;">
+                    <p style="font-size:11px;color:#777;margin:14px 0 0;line-height:1.6;font-style:italic;">
                         In the roster heatmap below, brighter cells often indicate captains or super-domestiques.
                         Long streaks of dark cells are the hallmark of a loyal domestique who rode in the shadows of the team's success.
                     </p>
@@ -5377,8 +5375,8 @@ elif st.session_state.pagina_corrente == "teams":
                     x=[int(c) for c in pivot_inv.columns],
                     y=[r.title() for r in pivot_inv.index],
                     colorscale=[
-                        [0.0,  '#111111'],
-                        [0.01, '#1a1a1a'],
+                        [0.0,  '#e8e4da'],
+                        [0.01, '#ddd9cf'],
                         [0.4,  '#193326'],
                         [0.75, '#D4A373'],
                         [0.88, '#FF9F1C'],
@@ -5394,24 +5392,27 @@ elif st.session_state.pagina_corrente == "teams":
                     xgap=2, ygap=2,
                 ))
                 fig_hm.update_layout(
-                    plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d',
-                    font=dict(family='Merriweather, serif', color='#f0ece4'),
+                    plot_bgcolor='#F4F1EA',
+                    paper_bgcolor='#F4F1EA',
+                    font=dict(family='Merriweather, serif', color='#1a1a1a'),
                     height=max(300, len(pivot) * 22 + 60),
                     margin=dict(l=40, r=20, t=10, b=20),
-                    xaxis=dict(title='', tickmode='linear',
-                               dtick=max(1, len(pivot.columns) // 15),
-                               tickfont=dict(size=9), side='bottom'),
-                    yaxis=dict(title='', tickfont=dict(size=10)),
+                    xaxis=dict(
+                        title='', tickmode='linear',
+                        dtick=max(1, len(pivot.columns) // 15),
+                        tickfont=dict(size=9), side='bottom', color='#1a1a1a',
+                    ),
+                    yaxis=dict(title='', tickfont=dict(size=10), color='#1a1a1a'),
                 )
                 st.plotly_chart(fig_hm, use_container_width=True)
 
                 st.markdown("""
                     <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
-                                gap:12px;padding:8px 12px;background:#1a1a1a;border:1px solid #333;
-                                border-radius:4px;font-family:Arial,sans-serif;font-size:11px;color:#ccc;">
+                                gap:12px;padding:8px 12px;background:#F4F1EA;border:1px solid #ccc;
+                                border-radius:4px;font-family:Arial,sans-serif;font-size:11px;color:#333;">
                         <div style="display:flex;align-items:center;gap:15px;">
                             <span style="display:flex;align-items:center;gap:5px;">
-                                <span style="display:inline-block;width:12px;height:12px;background:#FFFFFF;border-radius:2px;border:1px solid #555;"></span>
+                                <span style="display:inline-block;width:12px;height:12px;background:#FFFFFF;border-radius:2px;border:1px solid #aaa;"></span>
                                 <strong>#1 Win</strong>
                             </span>
                             <span style="display:flex;align-items:center;gap:5px;">
@@ -5427,7 +5428,7 @@ elif st.session_state.pagina_corrente == "teams":
                                 Mid Pack
                             </span>
                             <span style="display:flex;align-items:center;gap:5px;">
-                                <span style="display:inline-block;width:12px;height:12px;background:#1a1a1a;border-radius:2px;border:1px solid #333;"></span>
+                                <span style="display:inline-block;width:12px;height:12px;background:#ddd9cf;border-radius:2px;border:1px solid #bbb;"></span>
                                 Back Pack / DNF
                             </span>
                         </div>
@@ -5441,25 +5442,25 @@ elif st.session_state.pagina_corrente == "teams":
 
             st.markdown(hr, unsafe_allow_html=True)
 
-            # ──────────────────────────────────────────────────────────
+                        # ──────────────────────────────────────────────────────────
             # E. HISTORICAL PERFORMANCE
             # ──────────────────────────────────────────────────────────
             st.markdown("""
                 <div style="padding:0 16px 8px;">
                     <span class="t-section-label">· Historical Performance ·</span>
                     <h3 style="font-family:'Merriweather',Georgia,serif;font-size:22px;font-weight:900;
-                               color:#1a1a1a;margin:4px 0 4px;">
+                            color:#1a1a1a;margin:4px 0 4px;">
                         All-Time Placements &amp; Edition Spotlight
                     </h3>
                     <p style="font-family:'Merriweather',serif;font-size:11px;color:#888;
-                              font-style:italic;margin-bottom:8px;line-height:1.5;">
+                            font-style:italic;margin-bottom:8px;line-height:1.5;">
                         Select an edition on the left to spotlight that year in the scatter plot.
-                        Each dot = one rider. Yellow = selected year. The red dotted line tracks the team's average GC rank over time.
+                        Each dot = one rider. Red = selected year. Grey = all other editions.
                     </p>
                 </div>
             """, unsafe_allow_html=True)
 
-            col_p1, col_p2 = st.columns([1.2, 1], gap="medium")
+            col_p1, col_p2 = st.columns(2, gap="medium")
 
             with col_p1:
                 anni_team = sorted(df_team['Year'].dropna().unique(), reverse=True)
@@ -5479,9 +5480,9 @@ elif st.session_state.pagina_corrente == "teams":
                 best_yr_row = df_by_year.loc[df_by_year['best_rank'].idxmin()] if not df_by_year.empty else None
                 if best_yr_row is not None and int(best_yr_row['Year']) == anno_sel:
                     st.markdown(
-                        '<div style="background:rgba(255,215,0,0.08);border:1px solid #FFD700;'
+                        '<div style="background:rgba(184,150,12,0.10);border:1px solid #b8960c;'
                         'border-radius:4px;padding:8px 12px;margin-bottom:8px;'
-                        'font-family:Merriweather,serif;font-size:11px;color:#f0ece4;">'
+                        'font-family:Merriweather,serif;font-size:11px;color:#1a1a1a;">'
                         '⭐ <strong>Best edition in franchise history</strong></div>',
                         unsafe_allow_html=True,
                     )
@@ -5490,17 +5491,17 @@ elif st.session_state.pagina_corrente == "teams":
                 for _, row in df_anno_team.iterrows():
                     gc = row['Final GC']
                     if gc == "DNF":
-                        bg, col_c, pre = "#4a1515", "#ffcccc", ""
+                        bg, col_c, pre = "#fde8e8", "#9b1c1c", ""
                     else:
                         n = int(gc)
-                        if n == 1:       bg, col_c, pre = "#4a3b00", "#ffe066", "🏆 "
-                        elif n <= 3:     bg, col_c, pre = "#333333", "#cccccc", ""
-                        elif n <= 10:    bg, col_c, pre = "#0d403d", "#80ded9", ""
-                        else:            bg, col_c, pre = "#1a1a1a", "#888888", ""
+                        if n == 1:       bg, col_c, pre = "#fff4cc", "#7a5c00", "🏆 "
+                        elif n <= 3:     bg, col_c, pre = "#f0ece4", "#444444", ""
+                        elif n <= 10:    bg, col_c, pre = "#ccf5f2", "#0a5450", ""
+                        else:            bg, col_c, pre = "#f4f1ea", "#888888", ""
 
                     rows_html += (
-                        '<tr style="border-bottom:1px solid #333;">'
-                        f'<td style="padding:8px 12px;font-family:Merriweather,serif;font-size:12px;color:#ccc;">{row["Rider"]}</td>'
+                        '<tr style="border-bottom:1px solid #e8e4da;">'
+                        f'<td style="padding:8px 12px;font-family:Merriweather,serif;font-size:12px;color:#1a1a1a;">{row["Rider"]}</td>'
                         f'<td style="padding:8px 12px;text-align:center;">'
                         f'<span style="background:{bg};color:{col_c};font-size:11px;font-weight:700;'
                         f'padding:2px 10px;border-radius:20px;font-family:Arial,sans-serif;">{pre}{gc}</span>'
@@ -5508,14 +5509,14 @@ elif st.session_state.pagina_corrente == "teams":
                     )
 
                 st.markdown(
-                    '<div style="background:#0d0d0d;border:1px solid #333;border-radius:4px;'
-                    'overflow:hidden;margin-top:4px;max-height:320px;overflow-y:auto;">'
-                    '<table style="width:100%;border-collapse:collapse;background:#0d0d0d;">'
-                    '<thead><tr style="background:#1a1a1a;border-bottom:2px solid #333;">'
+                    '<div style="background:#ffffff;border:1px solid #ccc;border-radius:4px;'
+                    'overflow:hidden;margin-top:4px;max-height:340px;overflow-y:auto;">'
+                    '<table style="width:100%;border-collapse:collapse;background:#ffffff;">'
+                    '<thead><tr style="background:#F4F1EA;border-bottom:2px solid #ccc;">'
                     '<th style="padding:10px 12px;text-align:left;font-family:Arial,sans-serif;'
-                    'font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#f0ece4;font-weight:700;">Rider</th>'
+                    'font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#1a1a1a;font-weight:700;">Rider</th>'
                     '<th style="padding:10px 12px;text-align:center;font-family:Arial,sans-serif;'
-                    'font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#f0ece4;font-weight:700;">Final GC</th>'
+                    'font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#1a1a1a;font-weight:700;">Final GC</th>'
                     '</tr></thead>'
                     f'<tbody>{rows_html}</tbody>'
                     '</table></div>',
@@ -5536,8 +5537,8 @@ elif st.session_state.pagina_corrente == "teams":
                         y=df_other['Rank_Num'],
                         mode='markers',
                         name='Other editions',
-                        marker=dict(size=6, color='#555555', opacity=0.6,
-                                    line=dict(width=0)),
+                        marker=dict(size=7, color='rgba(143,188,143,0.35)',
+                                    line=dict(width=0.5, color='#aaa')),
                         hovertemplate='<b>%{customdata[0]}</b><br>%{customdata[1]}<br>GC rank: #%{y:.0f}<extra></extra>',
                         customdata=list(zip(
                             df_other['Rider'].str.title(),
@@ -5553,8 +5554,8 @@ elif st.session_state.pagina_corrente == "teams":
                         y=df_sel['Rank_Num'],
                         mode='markers',
                         name=f'{anno_sel} edition',
-                        marker=dict(size=11, color='#FFCC00', opacity=1.0,
-                                    line=dict(width=1.5, color='#0d0d0d')),
+                        marker=dict(size=11, color='#ff4b4b', opacity=1.0,
+                                    line=dict(width=1.5, color='rgba(255,255,255,0.8)')),
                         hovertemplate='<b>%{customdata[0]}</b><br>%{customdata[1]}<br>GC rank: #%{y:.0f}<extra></extra>',
                         customdata=list(zip(
                             df_sel['Rider'].str.title(),
@@ -5562,41 +5563,36 @@ elif st.session_state.pagina_corrente == "teams":
                         )),
                     ))
 
-                avg_by_year = df_strip.groupby('Year')['Rank_Num'].mean().reset_index()
-                fig_strip.add_trace(go.Scatter(
-                    x=avg_by_year['Year'],
-                    y=avg_by_year['Rank_Num'],
-                    mode='lines',
-                    name='Team avg rank',
-                    line=dict(color='#FF6B6B', width=1.5, dash='dot'),
-                    hovertemplate='<b>%{x}</b><br>Avg GC rank: #%{y:.1f}<extra></extra>',
-                ))
-
                 fig_strip.update_layout(
-                    plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d',
-                    font=dict(family='Merriweather, serif', color='#f0ece4'),
-                    height=360, margin=dict(l=50, r=20, t=10, b=50),
+                    plot_bgcolor='#F4F1EA',
+                    paper_bgcolor='#F4F1EA',
+                    font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                    height=400,
+                    margin=dict(l=50, r=20, t=30, b=50),
+                    title=dict(text='All-Time Roster Placements', font=dict(size=13, color='#1a1a1a')),
                     xaxis=dict(
                         title='Year', showgrid=False, tickmode='linear',
                         dtick=max(1, (df_strip['Year'].max() - df_strip['Year'].min()) // 8),
-                        tickfont=dict(size=10), title_font=dict(size=11),
+                        tickfont=dict(size=10), title_font=dict(size=11), color='#1a1a1a',
                     ),
                     yaxis=dict(
                         title='GC rank (lower = better)', autorange='reversed',
-                        showgrid=True, gridcolor='#333333',
-                        tickfont=dict(size=10), title_font=dict(size=11),
+                        showgrid=True, gridcolor='#e8e4da',
+                        tickfont=dict(size=10), title_font=dict(size=11), color='#1a1a1a',
                     ),
-                    legend=dict(orientation='h', y=-0.22, x=0.5, xanchor='center',
-                                font=dict(size=10, family='Arial'),
-                                bgcolor='rgba(0,0,0,0)'),
-                    showlegend=True,
+                    legend=dict(
+                        orientation='h', y=-0.18, x=0.5, xanchor='center',
+                        font=dict(size=10, family='Arial', color='#1a1a1a'),
+                        bgcolor='rgba(244,241,234,0)',
+                    ),
+                    showlegend=False,
                 )
 
                 fig_strip.add_hrect(
                     y0=0.5, y1=10.5,
-                    fillcolor='rgba(255,204,0,0.1)', line_width=0,
+                    fillcolor='rgba(255,204,0,0.12)', line_width=0,
                     annotation_text='Top 10 zone',
-                    annotation_font=dict(size=9, color='#FFCC00', family='Arial', weight='bold'),
+                    annotation_font=dict(size=9, color='#996600', family='Arial', weight='bold'),
                     annotation_position='top right',
                 )
 
@@ -5651,23 +5647,51 @@ elif st.session_state.pagina_corrente == "teams":
             """, unsafe_allow_html=True)
 
             st.markdown(f"""
-                <div style="display:flex;gap:20px;justify-content:center;margin-bottom:30px;">
-                    <div style="flex:1;padding:15px;text-align:center;border:2px solid #FFD700;
-                                background-color:#0d0d0d;border-radius:4px;">
-                        <h4 style="margin:0;color:#FFD700;font-family:Georgia,serif;font-size:14px;">Days in Yellow</h4>
-                        <h2 style="margin:10px 0 0;color:#FFD700;font-size:24px;font-weight:bold;">{n_yellow}</h2>
+                <style>
+                .polka-jersey-box {{
+                    background-color: #ffffff;
+                    background-image: radial-gradient(circle, #e53e3e 3px, transparent 3px);
+                    background-size: 20px 20px;
+                    border: 2px solid #c53030;
+                    flex: 1;
+                    padding: 18px 15px;
+                    text-align: center;
+                    border-radius: 4px;
+                    min-width: 110px;
+                }}
+                </style>
+                <div style="display:flex;gap:20px;justify-content:center;margin-bottom:30px;flex-wrap:wrap;">
+                    <div style="flex:1;min-width:110px;padding:18px 15px;text-align:center;
+                                background-color:#FFD700;border:2px solid #b8960c;border-radius:4px;">
+                        <h4 style="margin:0 0 8px;color:#1a1a1a;font-family:'Merriweather',Georgia,serif;
+                                   font-size:13px;font-weight:900;letter-spacing:1px;">
+                            🟡 Days in Yellow
+                        </h4>
+                        <div style="font-size:34px;font-weight:900;color:#1a1a1a;
+                                    font-family:'Merriweather',Georgia,serif;line-height:1;">
+                            {n_yellow}
+                        </div>
                     </div>
-                    <div style="flex:1;padding:15px;text-align:center;border:2px solid #22c55e;
-                                background-color:#0d0d0d;border-radius:4px;">
-                        <h4 style="margin:0;color:#22c55e;font-family:Georgia,serif;font-size:14px;">Days in Green</h4>
-                        <h2 style="margin:10px 0 0;color:#22c55e;font-size:24px;font-weight:bold;">{n_green}</h2>
+                    <div style="flex:1;min-width:110px;padding:18px 15px;text-align:center;
+                                background-color:#16a34a;border:2px solid #166534;border-radius:4px;">
+                        <h4 style="margin:0 0 8px;color:#ffffff;font-family:'Merriweather',Georgia,serif;
+                                   font-size:13px;font-weight:900;letter-spacing:1px;">
+                            🟢 Days in Green
+                        </h4>
+                        <div style="font-size:34px;font-weight:900;color:#ffffff;
+                                    font-family:'Merriweather',Georgia,serif;line-height:1;">
+                            {n_green}
+                        </div>
                     </div>
-                    <div style="flex:1;padding:15px;text-align:center;border:2px solid #ef4444;
-                                background-color:#0d0d0d;border-radius:4px;">
-                        <h4 style="margin:0;color:#ef4444;font-family:Georgia,serif;
-                                   padding:5px;font-size:14px;">Days in Polka dot</h4>
-                        <h2 style="margin:5px 0 0;color:#ef4444;
-                                   padding:5px;display:inline-block;font-size:24px;font-weight:bold;">{n_pois}</h2>
+                    <div class="polka-jersey-box">
+                        <h4 style="margin:0 0 8px;color:#1a1a1a;font-family:'Merriweather',Georgia,serif;
+                                   font-size:13px;font-weight:900;letter-spacing:1px;">
+                            🔴 Days in Polka Dot
+                        </h4>
+                        <div style="font-size:34px;font-weight:900;color:#c53030;
+                                    font-family:'Merriweather',Georgia,serif;line-height:1;">
+                            {n_pois}
+                        </div>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
@@ -5691,20 +5715,24 @@ elif st.session_state.pagina_corrente == "teams":
                     x=vittorie_anno['Year'], y=vittorie_anno['wins'],
                     marker=dict(
                         color=vittorie_anno['wins'],
-                        colorscale=[[0, '#332b00'], [0.5, '#FFCC00'], [1, '#f0ece4']],
+                        colorscale=[[0, '#c8c0a8'], [0.5, '#FFCC00'], [1, '#1a1a1a']],
                         line=dict(width=0),
                     ),
                     hovertemplate='<b>%{x}</b><br>Stage wins: %{y}<extra></extra>',
                 ))
                 fig_bar.update_layout(
-                    plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d',
-                    font=dict(family='Merriweather, serif', color='#f0ece4'),
-                    height=280, margin=dict(l=0, r=0, t=10, b=0),
-                    xaxis=dict(title='', showgrid=False, tickfont=dict(size=9)),
-                    yaxis=dict(title='Stage Wins', showgrid=True, gridcolor='#333333'),
+                    plot_bgcolor='#F4F1EA',
+                    paper_bgcolor='#F4F1EA',
+                    font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                    height=280,
+                    margin=dict(l=0, r=0, t=10, b=0),
+                    xaxis=dict(title='', showgrid=False, tickfont=dict(size=9), color='#1a1a1a'),
+                    yaxis=dict(title='Stage Wins', showgrid=True, gridcolor='#e8e4da', color='#1a1a1a'),
                     showlegend=False,
-                    title=dict(text=f'Total stage wins: <b>{n_stages_won}</b>',
-                               font=dict(size=12, color='#f0ece4')),
+                    title=dict(
+                        text=f'Total stage wins: <b>{n_stages_won}</b>',
+                        font=dict(size=12, color='#1a1a1a'),
+                    ),
                 )
                 st.plotly_chart(fig_bar, use_container_width=True)
             else:
@@ -5736,15 +5764,17 @@ elif st.session_state.pagina_corrente == "teams":
                     fig_sw = px.bar(
                         top_sw, y='Winner of stage', x='Wins', orientation='h',
                         color='Wins',
-                        color_continuous_scale=[[0, '#333333'], [0.5, '#FFCC00'], [1, '#FF6B6B']],
+                        color_continuous_scale=[[0, '#c8c0a8'], [0.5, '#FFCC00'], [1, '#FF6B6B']],
                         labels={'Winner of stage': '', 'Wins': 'Stage Wins'},
                     )
                     fig_sw.update_layout(
-                        plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d',
-                        font=dict(family='Merriweather, serif', color='#f0ece4'),
-                        height=320, margin=dict(l=0, r=0, t=10, b=0),
-                        yaxis=dict(categoryorder='total ascending', title=''),
-                        xaxis=dict(showgrid=True, gridcolor='#333333'),
+                        plot_bgcolor='#F4F1EA',
+                        paper_bgcolor='#F4F1EA',
+                        font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                        height=320,
+                        margin=dict(l=0, r=0, t=10, b=0),
+                        yaxis=dict(categoryorder='total ascending', title='', color='#1a1a1a'),
+                        xaxis=dict(showgrid=True, gridcolor='#e8e4da', color='#1a1a1a'),
                         coloraxis_showscale=False,
                     )
                     st.plotly_chart(fig_sw, use_container_width=True)
@@ -5758,16 +5788,18 @@ elif st.session_state.pagina_corrente == "teams":
                 fig_loyals = px.bar(
                     loyals, y='Rider', x='Tours', orientation='h',
                     color='Tours',
-                    color_continuous_scale=[[0, '#333333'], [0.5, '#4ECDC4'], [1, '#f0ece4']],
+                    color_continuous_scale=[[0, '#c8c0a8'], [0.5, '#4ECDC4'], [1, '#1a1a1a']],
                     labels={'Rider': '', 'Tours': 'Tour Appearances'},
                 )
                 fig_loyals.update_layout(
-                    plot_bgcolor='#0d0d0d', paper_bgcolor='#0d0d0d',
-                    font=dict(family='Merriweather, serif', color='#f0ece4'),
-                    height=320, margin=dict(l=0, r=0, t=10, b=0),
-                    yaxis=dict(categoryorder='total ascending', title=''),
-                    xaxis=dict(showgrid=True, gridcolor='#333333'),
+                    plot_bgcolor='#F4F1EA',
+                    paper_bgcolor='#F4F1EA',
+                    font=dict(family='Merriweather, serif', color='#1a1a1a'),
+                    height=320,
+                    margin=dict(l=0, r=0, t=10, b=0),
+                    yaxis=dict(categoryorder='total ascending', title='', color='#1a1a1a'),
+                    xaxis=dict(showgrid=True, gridcolor='#e8e4da', color='#1a1a1a'),
                     coloraxis_showscale=False,
-                    title=dict(text='The Franchise Loyals', font=dict(size=13, color='#f0ece4')),
+                    title=dict(text='The Franchise Loyals', font=dict(size=13, color='#1a1a1a')),
                 )
                 st.plotly_chart(fig_loyals, use_container_width=True)
