@@ -250,321 +250,534 @@ st.markdown('<div class="contenuto-pagina">', unsafe_allow_html=True)
 
 if st.session_state.pagina_corrente == "home":
 
-    URL_HERO      = "https://cdn.artphotolimited.com/images/5c2e191bd96b2e012e7a7fc5/1000x1000/tour-de-france-1937.jpg"
-    URL_CAV       = "https://imgresizer.eurosport.com/unsafe/1200x0/filters:format(jpeg)/origin-imgresizer.eurosport.com/2021/06/29/3163795-64831628-2560-1440.jpg"
-    URL_POIS      = "https://lh3.googleusercontent.com/d/1sOEebeyDAuhP0Mt6I5L4poKbahfv3xky"
-    URL_ALPE      = "https://static.independent.co.uk/2022/07/13/21/GettyImages-51103079.jpg"
-    URL_DESGRANGE = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Henri_Desgrange_1914.jpg/960px-Henri_Desgrange_1914.jpg"
-    FULL_HTML = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <meta charset="utf-8">
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+    # ─────────────────────────────────────────────────────────────
+    # 0. KPI CALCOLATI DAI DATASET REALI
+    # ─────────────────────────────────────────────────────────────
+    import math
 
-    body {
-        margin: 0;
-        padding: 0;
-        background-color: #F4F1EA;
-    }
-    .np {
-      font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
-      color: #111;
-      background: #F4F1EA;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 0 0 60px 0;
-    }
-    .np-masthead { border-top: 6px solid #111; border-bottom: 3px solid #111; padding: 12px 16px 8px; text-align: center; }
-    .np-date { font-size: 11px; letter-spacing: 2px; color: #666; text-transform: uppercase; margin-bottom: 4px; font-family: Arial, sans-serif; }
-    .np-logo { font-size: 58px; font-weight: 900; font-style: italic; line-height: 1; color: #111; letter-spacing: -2px; }
-    .np-tagline { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #666; font-family: Arial, sans-serif; border-top: 1px solid #bbb; margin-top: 6px; padding-top: 5px; }
-    .np-ribbon { background: #111; color: #F4F1EA; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; text-align: center; padding: 5px 0; font-family: Arial, sans-serif; margin-bottom: 14px; }
-    .np-kpi { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 2px solid #111; border-bottom: 1px solid #bbb; margin: 0 16px 16px; }
-    .np-kpi-cell { text-align: center; padding: 10px 8px; border-right: 1px solid #bbb; }
-    .np-kpi-cell:last-child { border-right: none; }
-    .np-kpi-num { font-size: 30px; font-weight: 900; color: #111; line-height: 1; }
-    .np-kpi-lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #777; font-family: Arial, sans-serif; margin-top: 2px; }
-    .np-main { display: grid; grid-template-columns: 2fr 1fr; gap: 0; padding: 0 16px 16px; border-bottom: 2px solid #111; margin-bottom: 16px; }
-    .np-lead { padding-right: 20px; border-right: 1px solid #bbb; }
-    .np-sidebar { padding-left: 16px; display: flex; flex-direction: column; gap: 14px; }
-    .np-section-tag { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; font-family: Arial, sans-serif; color: #111; font-weight: 700; display: block; margin-bottom: 4px; }
-    .np-rule { border: none; border-top: 2px solid #111; margin: 4px 0 8px; }
-    .np-rule-thin { border: none; border-top: 1px solid #bbb; margin: 10px 0; }
-    .np-headline-xl { font-size: 34px; font-weight: 900; line-height: 1.05; color: #111; margin-bottom: 8px; }
-    .np-deck { font-size: 14px; font-style: italic; color: #333; border-left: 3px solid #111; padding-left: 10px; margin-bottom: 10px; line-height: 1.45; }
-    .np-body { font-size: 12.5px; line-height: 1.7; color: #222; column-count: 2; column-gap: 16px; }
-    .np-body p { margin-bottom: 8px; }
-    .np-drop::first-letter { font-size: 50px; font-weight: 900; float: left; line-height: 0.8; margin: 6px 6px 0 0; color: #111; }
-    .np-photo { 
-      width: 100%; 
-      height: 240px; /* Alziamo un po' la foto per dare più respiro all'immagine */
-      object-fit: cover; 
-      object-position: center 85%; /* 🪄 IL TRUCCO: sposta il ritaglio verso il basso, inquadrando le bici! */
-      filter: grayscale(100%) contrast(1.1); 
-      margin-bottom: 4px; 
-      display: block; 
-    }
-    .np-photo-sm { 
-      width: 100%; 
-      height: 120px; 
-      object-fit: cover; 
-      object-position: center 15%; /* Per le foto piccole (es. Cavendish) salva la parte alta con i visi */
-      filter: grayscale(100%) contrast(1.1); 
-      margin-bottom: 4px; 
-      display: block; 
-    }
-    .np-modal-img { 
-      width: auto !important;
-      max-width: 100%; 
-      height: auto !important;             
-      max-height: 380px;        /* Dà respiro al ritratto senza uscire dallo schermo */
-      object-fit: contain !important;      
-      object-position: center;  
-      filter: grayscale(100%) contrast(1.1); 
-      margin: 0 auto 15px auto; 
-      display: block; 
-    }
-    .np-caption { font-size: 10px; color: #666; font-style: italic; text-align: right; font-family: Arial, sans-serif; margin-bottom: 8px; }
-    .np-side-art { cursor: pointer; padding: 4px 2px; transition: background 0.15s; }
-    .np-side-art:hover { background: rgba(0,0,0,0.04); }
-    .np-side-tag { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-family: Arial, sans-serif; color: #888; display: block; margin-bottom: 2px; }
-    .np-side-hl { font-size: 14px; font-weight: 700; line-height: 1.2; color: #111; margin-bottom: 4px; }
-    .np-side-body { font-size: 11px; line-height: 1.55; color: #555; }
-    .np-read-more { font-size: 9.5px; color: #111; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; text-decoration: underline; cursor: pointer; margin-top: 3px; display: inline-block; }
-    .np-pullquote { border-top: 2px solid #111; border-bottom: 2px solid #111; padding: 10px 4px; text-align: center; font-size: 14px; font-style: italic; line-height: 1.35; color: #111; margin-top: 4px; }
-    .np-pullquote-attr { font-size: 10px; margin-top: 6px; color: #666; font-style: normal; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
-    .np-bottom { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; padding: 0 16px; margin-bottom: 20px; }
-    .np-bot-art { padding: 0 16px 0 0; border-right: 1px solid #bbb; cursor: pointer; transition: background 0.15s; }
-    .np-bot-art:hover { background: rgba(0,0,0,0.03); }
-    .np-bot-art:last-child { border-right: none; padding-right: 0; padding-left: 16px; }
-    .np-bot-art:nth-child(2) { padding-left: 16px; }
-    .np-bot-hl { font-size: 16px; font-weight: 900; line-height: 1.15; color: #111; margin-bottom: 6px; }
-    .np-bot-body { font-size: 11px; line-height: 1.6; color: #444; }
-    .np-bot-byline { font-size: 9px; color: #888; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; }
-    .np-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.58); z-index: 9999; align-items: flex-start; justify-content: center; padding-top: 5vh; }
-    .np-overlay.open { display: flex; }
-    .np-modal { background: #F4F1EA; border-top: 6px solid #111; max-width: 600px; width: 92%; padding: 28px 30px; position: relative; max-height: 82vh; overflow-y: auto; font-family: 'Merriweather', Georgia, serif; }
-    .np-modal-close { position: absolute; top: 12px; right: 16px; font-size: 24px; cursor: pointer; color: #111; background: none; border: none; font-family: Georgia, serif; line-height: 1; }
-    .np-modal-tag { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; font-family: Arial, sans-serif; color: #888; display: block; margin-bottom: 6px; }
-    .np-modal-title { font-size: 26px; font-weight: 900; line-height: 1.1; color: #111; margin-bottom: 10px; }
-    .np-modal-deck { font-style: italic; font-size: 14px; color: #333; border-left: 3px solid #111; padding-left: 10px; margin-bottom: 14px; line-height: 1.45; }
-    .np-modal-img { width: 100%; height: 200px; object-fit: cover; filter: grayscale(100%) contrast(1.1); margin-bottom: 6px; display: block; }
-    .np-modal-caption { font-size: 10px; color: #666; font-style: italic; text-align: right; font-family: Arial, sans-serif; margin-bottom: 12px; }
-    .np-modal-body { font-size: 13px; line-height: 1.75; color: #222; }
-    .np-modal-body p { margin-bottom: 12px; }
-    </style>
-    </head>
-    <body>
-    <div class="np" id="np-root">
+    anni_revocati = list(range(1999, 2006)) + [2006]
 
-      <div class="np-masthead">
-        <div class="np-date">Édition Spéciale  ·  From 1903 to Today  ·  112 Editions</div>
-        <div class="np-logo">Le Tour de France</div>
-        <div class="np-tagline">The complete historical archive of the Grande Boucle for Fans ·  All the data, all the riders, all the stages</div>
+    # Edizioni totali
+    n_edizioni = int(df_tour_w['Year'].nunique()) if not df_tour_w.empty else 112
+
+    # Km totali cumulati
+    if not df_storico.empty and 'Distance (km)' in df_storico.columns:
+        df_w1 = df_storico.copy()
+        df_w1['Rank_Num'] = pd.to_numeric(df_w1['Rank'], errors='coerce')
+        km_series = df_w1[df_w1['Rank_Num'] == 1].groupby('Year')['Distance (km)'].first()
+        km_totali = int(km_series.sum())
+    else:
+        km_totali = 393000
+
+    # Corridori unici
+    n_corridori = int(df_storico['Rider'].nunique()) if not df_storico.empty else 3600
+
+    # Nazioni diverse dei vincitori
+    n_nazioni = int(df_tour_w['Country'].nunique()) if not df_tour_w.empty else 15
+
+    # Nazione più vincente
+    if not df_tour_w.empty:
+        top_nation_series = df_tour_w['Country'].value_counts()
+        top_nation_name  = top_nation_series.index[0]
+        top_nation_wins  = int(top_nation_series.iloc[0])
+    else:
+        top_nation_name, top_nation_wins = "France", 36
+
+    # Anno con il gap più stretto (dai dati radiali hardcoded già nell'app)
+    gap_min_year, gap_min_sec = 1989, 8
+
+    # Corridore con più partecipazioni
+    if not df_storico.empty:
+        parts = df_storico.groupby('Rider')['Year'].nunique()
+        most_loyal_name   = parts.idxmax().title()
+        most_loyal_tours  = int(parts.max())
+    else:
+        most_loyal_name, most_loyal_tours = "Sylvain Chavanel", 18
+
+    # Tappa più lunga mai disputata
+    if not df_coords.empty:
+        dist_col_raw = 'Unnamed: 11' if 'Unnamed: 11' in df_coords.columns else None
+        if dist_col_raw:
+            df_coords_tmp = df_coords.copy()
+            df_coords_tmp['_dist'] = pd.to_numeric(df_coords_tmp[dist_col_raw], errors='coerce')
+            idx_max = df_coords_tmp['_dist'].idxmax()
+            longest_km   = int(df_coords_tmp.loc[idx_max, '_dist'])
+            longest_year = int(df_coords_tmp.loc[idx_max, 'Year']) if 'Year' in df_coords_tmp.columns else 1919
+        else:
+            longest_km, longest_year = 482, 1919
+    else:
+        longest_km, longest_year = 482, 1919
+
+    # ── Dati per il grafico SVG della velocità vincitori ──
+    if not df_storico.empty:
+        df_spd = df_storico.copy()
+        df_spd['Rank_Num'] = pd.to_numeric(df_spd['Rank'], errors='coerce')
+        df_spd = df_spd[
+            (df_spd['Rank_Num'] == 1) &
+            df_spd['TotalSeconds'].notna() & (df_spd['TotalSeconds'] > 0) &
+            df_spd['Distance (km)'].notna()
+        ].copy()
+        df_spd['avg_speed'] = df_spd['Distance (km)'] / (df_spd['TotalSeconds'] / 3600)
+        df_spd = df_spd[['Year', 'avg_speed', 'Rider']].sort_values('Year').dropna()
+        speed_data = df_spd.to_dict('records')   # lista di {Year, avg_speed, Rider}
+    else:
+        speed_data = []
+
+    # ── Calcolo Velocità Record per le stat card ──
+    if speed_data:
+        fastest = max(speed_data, key=lambda r: r['avg_speed'])
+        spd_record_val  = f"{fastest['avg_speed']:.2f}"
+        spd_record_year = int(fastest['Year'])
+        spd_record_name = str(fastest['Rider']).title()
+        spd_current_val = f"{speed_data[-1]['avg_speed']:.2f}"
+        spd_current_year = int(speed_data[-1]['Year'])
+    else:
+        spd_record_val, spd_record_year, spd_record_name = "41.65", 2005, "Lance Armstrong"
+        spd_current_val, spd_current_year = "39.44", 2024
+
+    # ─────────────────────────────────────────────────────────────
+    # 1. COSTRUZIONE POLYLINE SVG VELOCITÀ (pura, niente JS libs)
+    # ─────────────────────────────────────────────────────────────
+    SVG_W, SVG_H = 580, 200
+    PAD_L, PAD_R, PAD_T, PAD_B = 44, 12, 18, 32
+
+    if speed_data:
+        years  = [r['Year'] for r in speed_data]
+        speeds = [r['avg_speed'] for r in speed_data]
+        y_min, y_max = min(speeds) - 1, max(speeds) + 0.8
+        x_min, x_max = min(years), max(years)
+
+        def to_svg_x(yr):
+            return PAD_L + (yr - x_min) / max(x_max - x_min, 1) * (SVG_W - PAD_L - PAD_R)
+
+        def to_svg_y(sp):
+            return PAD_T + (1 - (sp - y_min) / max(y_max - y_min, 1)) * (SVG_H - PAD_T - PAD_B)
+
+        # Polyline principale
+        pts_line = " ".join(f"{to_svg_x(r['Year']):.1f},{to_svg_y(r['avg_speed']):.1f}"
+                            for r in speed_data
+                            if r['Year'] not in anni_revocati)
+
+        # Area fill (chiude il path verso il basso)
+        pts_area_top = [(to_svg_x(r['Year']), to_svg_y(r['avg_speed']))
+                        for r in speed_data if r['Year'] not in anni_revocati]
+        if pts_area_top:
+            area_d = (f"M {pts_area_top[0][0]:.1f},{pts_area_top[0][1]:.1f} "
+                      + " ".join(f"L {x:.1f},{y:.1f}" for x, y in pts_area_top[1:])
+                      + f" L {pts_area_top[-1][0]:.1f},{SVG_H - PAD_B:.1f}"
+                      + f" L {pts_area_top[0][0]:.1f},{SVG_H - PAD_B:.1f} Z")
+        else:
+            area_d = ""
+
+        # Punti revocati
+        doping_circles = ""
+        for r in speed_data:
+            if r['Year'] in anni_revocati:
+                cx = to_svg_x(r['Year'])
+                cy = to_svg_y(r['avg_speed'])
+                doping_circles += f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="3.5" fill="#cc3333" opacity="0.7" stroke="#fff" stroke-width="1"/>'
+
+        # Punto record
+        rec = max(speed_data, key=lambda r: r['avg_speed'])
+        rec_x, rec_y = to_svg_x(rec['Year']), to_svg_y(rec['avg_speed'])
+
+        # Tick asse X (ogni ~20 anni)
+        tick_years = [y for y in range(x_min - (x_min % 10), x_max + 10, 20) if x_min <= y <= x_max]
+        x_ticks_svg = ""
+        for ty in tick_years:
+            tx = to_svg_x(ty)
+            x_ticks_svg += (f'<line x1="{tx:.1f}" y1="{SVG_H - PAD_B:.1f}" '
+                            f'x2="{tx:.1f}" y2="{SVG_H - PAD_B + 4:.1f}" stroke="#bbb" stroke-width="1"/>'
+                            f'<text x="{tx:.1f}" y="{SVG_H - PAD_B + 14:.1f}" '
+                            f'text-anchor="middle" font-size="9" fill="#888" font-family="Arial">{ty}</text>')
+
+        # Tick asse Y
+        y_ticks_svg = ""
+        for spv in [30, 33, 36, 39, 42]:
+            if y_min <= spv <= y_max:
+                sy = to_svg_y(spv)
+                y_ticks_svg += (f'<line x1="{PAD_L - 3:.1f}" y1="{sy:.1f}" x2="{SVG_W - PAD_R:.1f}" y2="{sy:.1f}" '
+                                f'stroke="#e8e4da" stroke-width="1"/>'
+                                f'<text x="{PAD_L - 6:.1f}" y="{sy + 3:.1f}" '
+                                f'text-anchor="end" font-size="9" fill="#888" font-family="Arial">{spv}</text>')
+
+        # Blocco WWI / WWII
+        def era_rect(y0, y1, label):
+            if y0 > x_max or y1 < x_min:
+                return ""
+            x0s = to_svg_x(max(y0, x_min))
+            x1s = to_svg_x(min(y1, x_max))
+            mid = (x0s + x1s) / 2
+            return (f'<rect x="{x0s:.1f}" y="{PAD_T}" width="{x1s-x0s:.1f}" '
+                    f'height="{SVG_H - PAD_T - PAD_B}" fill="#e8e4da" opacity="0.7"/>'
+                    f'<text x="{mid:.1f}" y="{PAD_T + 10:.1f}" text-anchor="middle" '
+                    f'font-size="8" fill="#999" font-family="Arial">{label}</text>')
+
+        era_rects = (era_rect(1914, 1918, "WWI") +
+                     era_rect(1939, 1947, "WWII") +
+                     era_rect(1999, 2005, "Doping era"))
+
+        SVG_CHART = f"""
+        <svg viewBox="0 0 {SVG_W} {SVG_H}" xmlns="http://www.w3.org/2000/svg"
+             style="width:100%;height:auto;display:block;">
+          <defs>
+            <linearGradient id="spd-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FFCC00" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#FFCC00" stop-opacity="0.02"/>
+            </linearGradient>
+          </defs>
+          <!-- Era bands -->
+          {era_rects}
+          <!-- Y grid -->
+          {y_ticks_svg}
+          <!-- Area fill -->
+          <path d="{area_d}" fill="url(#spd-grad)"/>
+          <!-- Main line -->
+          <polyline points="{pts_line}" fill="none" stroke="#1a1a1a" stroke-width="2"
+                    stroke-linejoin="round" stroke-linecap="round"/>
+          <!-- Doping dots -->
+          {doping_circles}
+          <!-- Record dot -->
+          <circle cx="{rec_x:.1f}" cy="{rec_y:.1f}" r="5" fill="#FFCC00"
+                  stroke="#1a1a1a" stroke-width="1.5"/>
+          <!-- X axis -->
+          <line x1="{PAD_L}" y1="{SVG_H - PAD_B}" x2="{SVG_W - PAD_R}" y2="{SVG_H - PAD_B}"
+                stroke="#bbb" stroke-width="1"/>
+          {x_ticks_svg}
+          <!-- Y axis label -->
+          <text x="10" y="{(SVG_H) // 2}" text-anchor="middle"
+                font-size="9" fill="#888" font-family="Arial"
+                transform="rotate(-90,10,{(SVG_H) // 2})">km/h</text>
+        </svg>"""
+    else:
+        SVG_CHART = '<div style="color:#888;font-style:italic;padding:40px;text-align:center;">Speed data unavailable</div>'
+
+    # ─────────────────────────────────────────────────────────────
+    # 2. NUMERI FORMATTATI PER IL RIBBON
+    # ─────────────────────────────────────────────────────────────
+    km_fmt    = f"{km_totali:,}".replace(",", " ")
+    rid_fmt   = f"{n_corridori:,}".replace(",", " ")
+
+    # ─────────────────────────────────────────────────────────────
+    # 3. HTML COMPLETO
+    # ─────────────────────────────────────────────────────────────
+    FULL_HTML = """<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: #F4F1EA;
+    font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
+    color: #111;
+}
+
+/* ── MASTHEAD ── */
+.np { max-width: 1100px; margin: 0 auto; padding: 0 0 60px; background: #F4F1EA; }
+.np-masthead { border-top: 6px solid #111; border-bottom: 3px solid #111; padding: 12px 16px 8px; text-align: center; }
+.np-date     { font-size: 11px; letter-spacing: 2px; color: #666; text-transform: uppercase; margin-bottom: 4px; font-family: Arial, sans-serif; }
+.np-logo     { font-size: 58px; font-weight: 900; font-style: italic; line-height: 1; color: #111; letter-spacing: -2px; }
+.np-tagline  { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #666; font-family: Arial, sans-serif; border-top: 1px solid #bbb; margin-top: 6px; padding-top: 5px; }
+
+/* ── RIBBON TICKER ── */
+.np-ribbon {
+    background: #111; color: #F4F1EA;
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    text-align: center; padding: 5px 0; font-family: Arial, sans-serif;
+    margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; overflow: hidden;
+}
+.np-ribbon-item { display: inline-flex; align-items: center; gap: 8px; padding: 0 20px; border-right: 1px solid #444; }
+.np-ribbon-item:last-child { border-right: none; }
+.np-ribbon-num  { color: #FFCC00; font-weight: 900; font-size: 13px; }
+
+/* ── LAYOUT PRINCIPALE 2+1 ── */
+.np-main { display: grid; grid-template-columns: 2fr 1fr; gap: 0; padding: 0 16px 16px; border-bottom: 2px solid #111; margin-bottom: 16px; }
+.np-lead    { padding-right: 20px; border-right: 1px solid #bbb; }
+.np-sidebar { padding-left: 16px; display: flex; flex-direction: column; gap: 0; }
+
+/* ── TIPOGRAFIA ── */
+.np-section-tag { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; font-family: Arial, sans-serif; color: #111; font-weight: 700; display: block; margin-bottom: 4px; }
+.np-rule        { border: none; border-top: 2px solid #111; margin: 4px 0 10px; }
+.np-rule-thin   { border: none; border-top: 1px solid #bbb; margin: 12px 0; }
+.np-headline-xl { font-size: 30px; font-weight: 900; line-height: 1.05; color: #111; margin-bottom: 6px; }
+.np-deck        { font-size: 13px; font-style: italic; color: #333; border-left: 3px solid #111; padding-left: 10px; margin-bottom: 12px; line-height: 1.5; }
+
+/* ── GRAFICO ── */
+.np-chart-wrap  { background: #fff; border: 1px solid #e0dbd0; padding: 10px 8px 4px; margin-bottom: 6px; }
+.np-chart-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-family: Arial, sans-serif; color: #888; margin-bottom: 6px; }
+.np-chart-legend { display: flex; gap: 16px; margin-top: 4px; margin-bottom: 2px; }
+.np-legend-item  { display: flex; align-items: center; gap: 5px; font-size: 9px; color: #666; font-family: Arial, sans-serif; }
+.np-legend-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.np-caption      { font-size: 10px; color: #666; font-style: italic; text-align: right; font-family: Arial, sans-serif; margin-bottom: 10px; }
+
+/* ── BODY TEXT ── */
+.np-body   { font-size: 12px; line-height: 1.75; color: #222; }
+.np-body p { margin-bottom: 8px; }
+.np-body p:first-child::first-letter { font-size: 46px; font-weight: 900; float: left; line-height: 0.82; margin: 5px 5px 0 0; color: #111; }
+
+/* ── SIDEBAR STAT CARDS ── */
+.np-stat-card { padding: 10px 4px 10px; }
+.np-stat-num  { font-size: 36px; font-weight: 900; color: #111; line-height: 1; }
+.np-stat-unit { font-size: 11px; color: #888; font-family: Arial, sans-serif; margin-left: 3px; }
+.np-stat-label{ font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-family: Arial, sans-serif; color: #666; margin-top: 2px; }
+.np-stat-sub  { font-size: 11px; font-style: italic; color: #444; margin-top: 3px; line-height: 1.4; }
+.np-stat-tag  { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-family: Arial, sans-serif; color: #888; display: block; margin-bottom: 2px; }
+
+/* ── BOTTOM STRIP 3 COLONNE ── */
+.np-bottom { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; padding: 0 16px; margin-bottom: 20px; }
+.np-bot-col { padding: 0 16px 0 0; border-right: 1px solid #bbb; }
+.np-bot-col:last-child  { border-right: none; padding-right: 0; padding-left: 16px; }
+.np-bot-col:nth-child(2){ padding-left: 16px; }
+
+.np-bot-badge { display: inline-block; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-family: Arial, sans-serif; background: #111; color: #FFCC00; padding: 2px 7px; margin-bottom: 6px; }
+.np-bot-hl    { font-size: 16px; font-weight: 900; line-height: 1.15; color: #111; margin-bottom: 8px; }
+.np-bot-stat  { font-size: 28px; font-weight: 900; color: #111; line-height: 1; }
+.np-bot-stat-lbl { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; font-family: Arial, sans-serif; color: #888; margin-top: 1px; margin-bottom: 8px; }
+.np-bot-body  { font-size: 11px; line-height: 1.65; color: #444; }
+.np-bot-link  { font-size: 9.5px; color: #111; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; text-decoration: underline; cursor: pointer; margin-top: 10px; display: inline-block; }
+
+/* ── KPI BAR 4 CELLE ── */
+.np-kpi { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid #111; border-bottom: 1px solid #bbb; margin: 0 16px 16px; }
+.np-kpi-cell { text-align: center; padding: 10px 6px; border-right: 1px solid #bbb; }
+.np-kpi-cell:last-child { border-right: none; }
+.np-kpi-num  { font-size: 26px; font-weight: 900; color: #111; line-height: 1; }
+.np-kpi-lbl  { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #777; font-family: Arial, sans-serif; margin-top: 2px; }
+
+/* ── PULLQUOTE ── */
+.np-pullquote      { border-top: 2px solid #111; border-bottom: 2px solid #111; padding: 10px 4px; text-align: center; font-size: 13px; font-style: italic; line-height: 1.4; color: #111; margin-top: 12px; }
+.np-pullquote-attr { font-size: 10px; margin-top: 6px; color: #666; font-style: normal; font-family: Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+
+/* ── MINI SPARKLINE BARRE (bottom strip) ── */
+.np-mini-bars { display: flex; align-items: flex-end; gap: 2px; height: 36px; margin: 8px 0 6px; }
+.np-mini-bar  { background: #111; flex: 1; min-width: 3px; border-radius: 1px 1px 0 0; }
+</style>
+</head>
+<body>
+<div class="np">
+
+  <!-- MASTHEAD -->
+  <div class="np-masthead">
+    <div class="np-date">Édition Spéciale · Data Journalism · From 1903 to Today</div>
+    <div class="np-logo">Le Tour de France</div>
+    <div class="np-tagline">The complete historical archive of the Grande Boucle · All the data, all the riders, all the stages</div>
+  </div>
+
+  <!-- RIBBON: 4 KPI CALCOLATI -->
+  <div class="np-ribbon">
+    <div class="np-ribbon-item">
+      <span>Editions held</span>
+      <span class="np-ribbon-num">##N_EDIZIONI##</span>
+    </div>
+    <div class="np-ribbon-item">
+      <span>Total km raced</span>
+      <span class="np-ribbon-num">##KM_TOTALI## km</span>
+    </div>
+    <div class="np-ribbon-item">
+      <span>Unique riders</span>
+      <span class="np-ribbon-num">##N_CORRIDORI##+</span>
+    </div>
+    <div class="np-ribbon-item">
+      <span>Winning nations</span>
+      <span class="np-ribbon-num">##N_NAZIONI##</span>
+    </div>
+  </div>
+
+  <!-- KPI BAR -->
+  <div class="np-kpi">
+    <div class="np-kpi-cell">
+      <div class="np-kpi-num">##N_EDIZIONI##</div>
+      <div class="np-kpi-lbl">Editions</div>
+    </div>
+    <div class="np-kpi-cell">
+      <div class="np-kpi-num">21</div>
+      <div class="np-kpi-lbl">Stages per edition</div>
+    </div>
+    <div class="np-kpi-cell">
+      <div class="np-kpi-num">~3,500</div>
+      <div class="np-kpi-lbl">Km per edition</div>
+    </div>
+    <div class="np-kpi-cell">
+      <div class="np-kpi-num">##N_NAZIONI##</div>
+      <div class="np-kpi-lbl">Winning nations</div>
+    </div>
+  </div>
+
+  <!-- MAIN: LEAD + SIDEBAR -->
+  <div class="np-main">
+
+    <!-- LEAD: grafico velocità -->
+    <div class="np-lead">
+      <span class="np-section-tag">Data Viz · Speed of Champions</span>
+      <hr class="np-rule">
+      <div class="np-headline-xl">How Fast Has the Tour Become? A Century of Winning Speeds</div>
+      <div class="np-deck">From 26 km/h in 1903 to over 41 km/h in the modern era — the physics of the race have been rewritten by technology, tactics, and controversy.</div>
+
+      <!-- SVG CHART -->
+      <div class="np-chart-wrap">
+        <div class="np-chart-title">Average winning speed (km/h) · 1903–present · Revoked titles in red</div>
+        ##SVG_CHART##
+        <div class="np-chart-legend">
+          <div class="np-legend-item"><div class="np-legend-dot" style="background:#1a1a1a;"></div>Official winner</div>
+          <div class="np-legend-item"><div class="np-legend-dot" style="background:#cc3333;"></div>Title revoked (1999–2005)</div>
+          <div class="np-legend-item"><div class="np-legend-dot" style="background:#FFCC00;"></div>Speed record</div>
+        </div>
       </div>
+      <div class="np-caption">Source: TDF Historical Dataset · Avg speed = total distance ÷ total race time (winner)</div>
 
-      <div class="np-ribbon">Breaking Peloton  ·  Daily Dispatch  ·  Alpe d'Huez Edition</div>
-
-      <div class="np-kpi">
-        <div class="np-kpi-cell">
-          <div class="np-kpi-num">112</div>
-          <div class="np-kpi-lbl">Editions Held</div>
-        </div>
-        <div class="np-kpi-cell">
-          <div class="np-kpi-num">~3,500</div>
-          <div class="np-kpi-lbl">Km per Edition</div>
-        </div>
-        <div class="np-kpi-cell">
-          <div class="np-kpi-num">21</div>
-          <div class="np-kpi-lbl">Stages</div>
-        </div>
-      </div>
-
-      <div class="np-main">
-        <div class="np-lead">
-          <span class="np-section-tag">Front Page · History</span>
-          <hr class="np-rule">
-          <div class="np-headline-xl">Over a Century of Dust, Pain, and the Yellow Jersey</div>
-          <div class="np-deck">Since 1903, the Tour rewrites the limits of human endurance every summer. A journey through the numbers, secrets, and legends of the Grande Boucle.</div>
-          <img class="np-photo" src="HERO_URL" alt="Tour de France 1937">
-          <div class="np-caption">Guy Lapébie, winner of the 1937 edition. ©Historical Archives</div>
-          <div class="np-body np-drop">
-            <p>The Tour de France is not merely a bicycle race. It is a traveling monument, forged on the asphalt of France every July since 1903. Born from the imagination of journalist Henri Desgrange — who wanted to sell more copies of his newspaper L'Auto — it has become the greatest annual sports spectacle on the planet.</p>
-            <p>The numbers speak for themselves: over 112 editions, more than 3,500 kilometers of racing, 21 stages that cross plains, climb legendary passes, and decide destinies. The Alps and Pyrenees have seen giants break and unknown champions crowned.</p>
-            <p>This portal was created to analyze every aspect of the race. Explore the standings, discover the riders who made history, analyze every stage, and dive into the data of a century of cycling.</p>
-          </div>
-        </div>
-
-        <div class="np-sidebar">
-          <div>
-            <span class="np-section-tag">Curiosities</span>
-            <hr class="np-rule">
-          </div>
-
-          <div class="np-side-art" onclick="npOpen('yellow')">
-            <span class="np-side-tag">The Yellow Jersey</span>
-            <div class="np-side-hl">Why is the leader's jersey yellow?</div>
-            <div class="np-side-body">The answer lies in a newspaper and a happy accident in 1919…</div>
-            <span class="np-read-more">Read more →</span>
-            <hr class="np-rule-thin">
-          </div>
-
-          <div class="np-side-art" onclick="npOpen('desgrange')">
-            <span class="np-side-tag">The Founder</span>
-            <div class="np-side-hl">Desgrange: the tyrant who invented the Tour</div>
-            <div class="np-side-body">He wanted only a single rider to reach Paris. His obsession forged a legend.</div>
-            <span class="np-read-more">Read more →</span>
-            <hr class="np-rule-thin">
-          </div>
-
-          <div class="np-side-art" onclick="npOpen('doping')">
-            <span class="np-side-tag">Dark Side</span>
-            <div class="np-side-hl">The ghost years: seven titles erased from history</div>
-            <div class="np-side-body">From 1999 to 2005, no winner was officially proclaimed.</div>
-            <span class="np-read-more">Read more →</span>
-          </div>
-
-          <div class="np-pullquote">
-            «The ideal Tour would be one in which only a single rider managed to reach Paris.»
-            <div class="np-pullquote-attr">— Henri Desgrange, founder</div>
-          </div>
-        </div>
-      </div>
-
-<div class="np-bottom">
-        <div class="np-bot-art" onclick="npOpen('cavendish')">
-          <span class="np-section-tag">Sprint</span>
-          <hr class="np-rule">
-          <img class="np-photo-sm" src="CAV_URL" alt="Mark Cavendish" style="object-position: center 10%;">
-          <div class="np-caption">Cavendish celebrates at the finish line. ©Eurosport/Getty</div>
-          <div class="np-bot-hl">Cavendish and the seemingly impossible record</div>
-          <div class="np-bot-body">35 stage wins. A number no one believed could be surpassed — until July 2024 in Saint-Vulbas.</div>
-          <div class="np-bot-byline">Stage Wins · Points Classification</div>
-        </div>
-
-        <div class="np-bot-art" onclick="npOpen('polkadot')">
-          <span class="np-section-tag">The Mountains</span>
-          <hr class="np-rule">
-          <img class="np-photo-sm" src="POIS_URL" alt="Polka-dot jersey" style="object-fit: contain; object-position: center;">
-          <div class="np-caption">The red and white polka-dot jersey. ©TDF Archive</div>
-          <div class="np-bot-hl">The polka-dot jersey: a king born in 1975</div>
-          <div class="np-bot-body">The KOM classification has existed since 1933, but its iconic jersey only appeared 42 years later.</div>
-          <div class="np-bot-byline">Mountains Classification · Jerseys</div>
-        </div>
-
-        <div class="np-bot-art" onclick="npOpen('alpe')">
-          <span class="np-section-tag">Mythical Climbs</span>
-          <hr class="np-rule">
-          <img class="np-photo-sm" src="ALPE_URL" alt="Alpe d'Huez" style="object-position: center 70%;">
-          <div class="np-caption">The 21 hairpins of Alpe d'Huez. ©Getty Images</div>
-          <div class="np-bot-hl">Alpe d'Huez: 21 hairpins, infinite legends</div>
-          <div class="np-bot-body">Since its first appearance in 1952, this Alpine giant has been the stage for the Tour's most dramatic battles.</div>
-          <div class="np-bot-byline">Climbs · Alpine Stages</div>
-        </div>
-      </div>
-    <div class="np-overlay" id="np-overlay" onclick="npCloseOnBg(event)">
-      <div class="np-modal" id="np-modal">
-        <button class="np-modal-close" onclick="npClose()">✕</button>
-        <span class="np-modal-tag"     id="np-m-tag"></span>
-        <div  class="np-modal-title"   id="np-m-title"></div>
-        <div  class="np-modal-deck"    id="np-m-deck"></div>
-        <img  class="np-modal-img"     id="np-m-img" src="" alt="" style="display:none">
-        <div  class="np-modal-caption" id="np-m-caption"></div>
-        <div  class="np-modal-body"    id="np-m-body"></div>
+      <!-- BODY TEXT -->
+      <div class="np-body">
+        <p>The velocity of cycling's greatest race tells the story of a sport in constant evolution. In the inaugural 1903 edition, Maurice Garin averaged a modest 26 km/h over 2,428 kilometres. Today's champions sustain speeds that would have seemed physically impossible to those early pioneers.</p>
+        <p>Three forces shaped the acceleration curve: equipment revolutions (derailleurs, aerodynamic frames, composite materials), tactical professionalization (team radio, domestique systems, power-meter training), and — most controversially — the doping era that inflated the record books between 1999 and 2005. Those seven editions show in red on the chart above: officially, they have no winner.</p>
       </div>
     </div>
 
-    <script>
-    var NP_ARTICLES = {
-      yellow: {
-        tag:     "Trivia - The Yellow Jersey",
-        title:   "Why is the leader's jersey yellow?",
-        deck:     "A color that became a symbol, born almost by chance in 1919.",
-        img:     "",
-        caption: "",
-        body:     "<p>In 1919, Tour director Henri Desgrange decided to make the leader easily identifiable in the peloton. The solution was simple: a jersey of an unmistakable color.</p><p>The chosen color was yellow, and it was no coincidence. L'Auto, the sports newspaper organizing the Tour, was printed on yellow paper to stand out from its rival Le Velo, printed on green paper. The yellow jersey was, literally, a walking advertisement.</p><p>Eugene Christophe was the first rider to wear it in the 1919 edition. From that day on, the maillot jaune became the most coveted garment in cycling: a symbol of prestige, suffering, and glory.</p>"
-      },
-      desgrange: {
-        tag:     "History - The Founder",
-        title:   "Desgrange: the visionary tyrant who invented the Tour",
-        deck:     "He imagined a race so brutal that only one rider would survive.",
-        img:     "DESGRANGE_URL",
-        caption: "Henri Desgrange, founder and director of the Tour.",
-        body:     "<p>Henri Desgrange was a former cyclist, a journalist, and above all an iron-fisted visionary. In 1903, as director of L'Auto, he launched a challenge that seemed insane: a bicycle race around the whole of France, for nearly 2,500 kilometers.</p><p>His philosophy was brutal. He wanted a race that pushed men to the limit, where suffering was a virtue and withdrawing was a disgrace.</p><p>His commercial goal was clear: beat Le Velo and sell more copies. The Tour fulfilled this mission far beyond expectations. L'Auto's circulation exploded and the race became a national institution. Desgrange directed the Tour until 1936.</p>"
-      },
-      doping: {
-        tag:     "Dark Chapter - Doping Era",
-        title:   "The ghost years: seven titles erased from history",
-        deck:     "From 1999 to 2005, no winner was officially proclaimed.",
-        img:     "",
-        caption: "",
-        body:     "<p>For seven consecutive years, Lance Armstrong crossed the finish line on the Champs-Elysees with his arms raised. It was the story of the decade: a cancer survivor who conquered the hardest race in the world seven times in a row.</p><p>In 2012, USADA published its investigation: Armstrong had orchestrated the most sophisticated doping program in the history of the sport. All seven titles were revoked. The UCI chose not to reassign the victories to the runners-up, leaving seven editions without an official champion.</p><p>Floyd Landis' 2006 title was also revoked for doping.</p>"
-      },
-      cavendish: {
-        tag:     "Sprint - Record",
-        title:   "Cavendish and the stage wins record",
-        deck:     "35 wins: a number that rewrote what was thought possible.",
-        img:     "CAV_URL",
-        caption: "Mark Cavendish celebrates at the 2021 Tour.",
-        body:     "<p>For decades, Eddy Merckx's record of 34 stage wins seemed untouchable. Then came Mark Cavendish from the Isle of Man, with his explosive sprint and hunger for victories.</p><p>In 2021 he equaled the record. In 2024, at 39 years old, he surpassed it. Stage 5 to Saint-Vulbas: Cavendish crossed the finish line first and entered history with his 35th victory, becoming the rider with the most stage wins in Tour history.</p><p>His is also a story of resilience: he had almost left cycling due to health issues and painful crashes, before returning to make history.</p>"
-      },
-      polkadot: {
-        tag:     "Jerseys - Mountains",
-        title:   "The polka-dot jersey: a king born in 1975",
-        deck:     "The most recognizable jersey in cycling has a surprisingly recent origin.",
-        img:     "POIS_URL",
-        caption: "The red and white polka-dot jersey.",
-        body:     "<p>The Mountains Classification at the Tour de France dates back to 1933, rewarding the best climbers on the high-altitude passes. For over 40 years, however, the winner was identified only by points: no distinctive jersey.</p><p>It was only in 1975 that the iconic red and white polka-dot jersey officially appeared, introduced by the chocolate manufacturer Chocolat Poulain, whose packaging had a similar pattern.</p><p>Today the maillot a pois is one of the most recognizable garments in world sports. The battles for the King of the Mountains are among the most spectacular in the entire Tour.</p>"
-      },
-      alpe: {
-        tag:     "Climbs - Legend",
-        title:   "Alpe d'Huez: 21 hairpins, infinite legends",
-        deck:     "The most mythical mountain in the history of the Tour de France.",
-        img:     "ALPE_URL",
-        caption: "The 21 hairpins of Alpe d'Huez.",
-        body:     "<p>Alpe d'Huez made its Tour de France debut in 1952, when Fausto Coppi climbed it first on his way to victory. Since then, its 21 numbered hairpins, each bearing the name of a stage winner, have become a place of pilgrimage for cycling fans worldwide.</p><p>The climb rises 1,071 meters over 13.8 kilometers, with an average gradient of 7.9%. On race day, hundreds of thousands of fans crowd the roadside.</p><p>The most legendary ascent remains that of Marco Pantani in 1997: he climbed it in 37 minutes and 35 seconds, a record that still stands today.</p>"
-      }
-    };
+    <!-- SIDEBAR: 4 stat cards -->
+    <div class="np-sidebar">
+      <div>
+        <span class="np-section-tag">Key Numbers</span>
+        <hr class="np-rule">
+      </div>
 
-    function npOpen(key) {
-      var a = NP_ARTICLES[key];
-      document.getElementById('np-m-tag').textContent   = a.tag;
-      document.getElementById('np-m-title').textContent = a.title;
-      document.getElementById('np-m-deck').textContent  = a.deck;
-      document.getElementById('np-m-body').innerHTML    = a.body;
-      var imgEl = document.getElementById('np-m-img');
-      var capEl = document.getElementById('np-m-caption');
-      if (a.img && !a.img.includes("_URL")) {
-        imgEl.src           = a.img;
-        imgEl.alt           = a.title;
-        imgEl.style.display = 'block';
-        capEl.textContent   = a.caption;
-      } else {
-        imgEl.style.display = 'none';
-        capEl.textContent   = '';
-      }
-      document.getElementById('np-overlay').classList.add('open');
-    }
-    function npClose() {
-      document.getElementById('np-overlay').classList.remove('open');
-    }
-    function npCloseOnBg(e) {
-      if (e.target === document.getElementById('np-overlay')) npClose();
-    }
-    </script>
-    </body>
-    </html>
-    """
+      <!-- Stat 1: Nazione più vincente -->
+      <div class="np-stat-card">
+        <span class="np-stat-tag">Most successful nation</span>
+        <div class="np-stat-num">##TOP_NATION_WINS## <span class="np-stat-unit">wins</span></div>
+        <div class="np-stat-label">##TOP_NATION_NAME##</div>
+        <div class="np-stat-sub">The most dominant nation in the race's history, with victories spread across every era from the pre-war years to today.</div>
+      </div>
+      <hr class="np-rule-thin">
 
-    FULL_HTML = FULL_HTML.replace("HERO_URL",      URL_HERO)
-    FULL_HTML = FULL_HTML.replace("DESGRANGE_URL", URL_DESGRANGE)
-    FULL_HTML = FULL_HTML.replace("CAV_URL",       URL_CAV)
-    FULL_HTML = FULL_HTML.replace("POIS_URL",      URL_POIS)
-    FULL_HTML = FULL_HTML.replace("ALPE_URL",      URL_ALPE)
+      <!-- Stat 2: Gap più stretto -->
+      <div class="np-stat-card">
+        <span class="np-stat-tag">Closest finish ever</span>
+        <div class="np-stat-num">8 <span class="np-stat-unit">sec</span></div>
+        <div class="np-stat-label">1989 — LeMond over Fignon</div>
+        <div class="np-stat-sub">Greg LeMond overturned a 50-second deficit in the final time trial. The Tour decided by the width of a handlebar.</div>
+      </div>
+      <hr class="np-rule-thin">
 
-    components.html(FULL_HTML, height=1300, scrolling=True)
+      <!-- Stat 3: Tappa più lunga -->
+      <div class="np-stat-card">
+        <span class="np-stat-tag">Longest stage ever</span>
+        <div class="np-stat-num">##LONGEST_KM## <span class="np-stat-unit">km</span></div>
+        <div class="np-stat-label">##LONGEST_YEAR## edition</div>
+        <div class="np-stat-sub">The early Tour was built on brutality. Riders faced stages of 400–480 km, often overnight, on unpaved roads.</div>
+      </div>
+      <hr class="np-rule-thin">
+
+      <!-- Stat 4: Velocità record -->
+      <div class="np-stat-card">
+        <span class="np-stat-tag">Speed record (official)</span>
+        <div class="np-stat-num">##SPD_RECORD_VAL## <span class="np-stat-unit">km/h</span></div>
+        <div class="np-stat-label">##SPD_RECORD_YEAR## — ##SPD_RECORD_NAME##</div>
+        <div class="np-stat-sub">The fastest official winning average in Tour history.</div>
+      </div>
+
+      <!-- Pullquote -->
+      <div class="np-pullquote">
+        «The race is won in the mountains, but it is built in the data.»
+        <div class="np-pullquote-attr">— Data Journalism principle</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM STRIP: 3 sezioni app -->
+  <div class="np-bottom">
+
+    <!-- Col 1: STANDINGS -->
+    <div class="np-bot-col">
+      <span class="np-section-tag">Section I</span>
+      <hr class="np-rule">
+      <div class="np-bot-badge">Standings</div>
+      <div class="np-bot-hl">The Time Pyramid — See Every Gap, Every Edition</div>
+      <div class="np-bot-stat">##N_EDIZIONI##</div>
+      <div class="np-bot-stat-lbl">editions in the archive</div>
+      <div class="np-bot-body">
+        Select any edition from 1903 to today. Explore the full general classification, the podium, and a radial chart of every winner's gap to the runner-up across all Tours.
+      </div>
+      <span class="np-bot-link">Open Standings →</span>
+    </div>
+
+    <!-- Col 2: RIDERS -->
+    <div class="np-bot-col">
+      <span class="np-section-tag">Section II</span>
+      <hr class="np-rule">
+      <div class="np-bot-badge">Riders</div>
+      <div class="np-bot-hl">Champions, Careers and Head-to-Head Rivalries</div>
+      <div class="np-bot-stat">##N_CORRIDORI##+</div>
+      <div class="np-bot-stat-lbl">unique riders since 1903</div>
+      <div class="np-bot-body">
+        Track any rider's career arc, compare physical profiles against the champion baseline, and pit the Tour's greatest names head-to-head on a shared timeline.
+      </div>
+      <span class="np-bot-link">Explore Riders →</span>
+    </div>
+
+    <!-- Col 3: STAGES + TEAMS -->
+    <div class="np-bot-col">
+      <span class="np-section-tag">Section III</span>
+      <hr class="np-rule">
+      <div class="np-bot-badge">Stages &amp; Teams</div>
+      <div class="np-bot-hl">The Road, the Route and the Franchises Behind the Race</div>
+
+      <!-- Mini sparkline: tappe per decennio (hardcoded proportions) -->
+      <div class="np-mini-bars">
+        <div class="np-mini-bar" style="height:30%;" title="1900s"></div>
+        <div class="np-mini-bar" style="height:45%;" title="1910s"></div>
+        <div class="np-mini-bar" style="height:50%;" title="1920s"></div>
+        <div class="np-mini-bar" style="height:55%;" title="1930s"></div>
+        <div class="np-mini-bar" style="height:52%;" title="1940s"></div>
+        <div class="np-mini-bar" style="height:58%;" title="1950s"></div>
+        <div class="np-mini-bar" style="height:65%;" title="1960s"></div>
+        <div class="np-mini-bar" style="height:72%;" title="1970s"></div>
+        <div class="np-mini-bar" style="height:80%;" title="1980s"></div>
+        <div class="np-mini-bar" style="height:88%;" title="1990s"></div>
+        <div class="np-mini-bar" style="height:92%;" title="2000s"></div>
+        <div class="np-mini-bar" style="height:95%;" title="2010s"></div>
+        <div class="np-mini-bar" style="height:100%;" title="2020s"></div>
+      </div>
+      <div class="np-bot-stat-lbl">stages per decade · 1900s → 2020s</div>
+      <div class="np-bot-body">
+        Analyse how stage types evolved over a century. Map any edition's route across France. Explore team dynasties, roster heatmaps, and jersey tallies for 100+ franchises.
+      </div>
+      <span class="np-bot-link">Explore Stages &amp; Teams →</span>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>"""
+
+    # ─────────────────────────────────────────────────────────────
+    # 4. SOSTITUZIONE PLACEHOLDER → VALORI REALI
+    # ─────────────────────────────────────────────────────────────
+    replacements = {
+        "##N_EDIZIONI##":       str(n_edizioni),
+        "##KM_TOTALI##":        km_fmt,
+        "##N_CORRIDORI##":      rid_fmt,
+        "##N_NAZIONI##":        str(n_nazioni),
+        "##TOP_NATION_NAME##":  top_nation_name,
+        "##TOP_NATION_WINS##":  str(top_nation_wins),
+        "##LONGEST_KM##":       str(longest_km),
+        "##LONGEST_YEAR##":     str(longest_year),
+        "##SPD_RECORD_VAL##":   spd_record_val,
+        "##SPD_RECORD_YEAR##":  str(spd_record_year),
+        "##SPD_RECORD_NAME##":  spd_record_name,
+        "##SPD_CURRENT_VAL##":  spd_current_val,
+        "##SPD_CURRENT_YEAR##": str(spd_current_year),
+        "##SVG_CHART##":        SVG_CHART,
+    }
+
+    for placeholder, value in replacements.items():
+        FULL_HTML = FULL_HTML.replace(placeholder, value)
+
+    components.html(FULL_HTML, height=1380, scrolling=True)
 
 elif st.session_state.pagina_corrente == "classifica":
 
