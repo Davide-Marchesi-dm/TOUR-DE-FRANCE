@@ -9,6 +9,10 @@ import time
 import pydeck as pdk
 import streamlit.components.v1 as components
 import numpy as np
+import folium
+from streamlit_folium import st_folium
+import io
+import requests
 
 
 # 1. Configurazione della pagina
@@ -4376,6 +4380,9 @@ elif st.session_state.pagina_corrente == "tappe":
     # ══════════════════════════════════════════════════════════
     elif vista_corrente == "mappa":
 
+        
+      ##MAPPA VECCHIA DA SISTEMARE CON NUOVO DATASET E GEOCODING
+      
         st.markdown("""
             <span style="color:#1a1a1a;font-size:13px;font-weight:600;
                          text-transform:uppercase;letter-spacing:1px;display:block;

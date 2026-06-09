@@ -6,3 +6,8 @@ pycountry
 plotly
 geopy
 pydeck
+folium
+streamlit-folium
+requests
+xlrd
+ 
