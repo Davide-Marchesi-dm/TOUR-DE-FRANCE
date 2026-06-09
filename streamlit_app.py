@@ -4390,16 +4390,56 @@ elif st.session_state.pagina_corrente == "tappe":
         import io
         import requests
       # ── Custom CSS ────────────────────────────────────────────────────────────────
+        # ── Custom CSS ────────────────────────────────────────────────────────────────
         st.markdown("""
-            <span style="color:#1a1a1a;font-size:13px;font-weight:600;
-                         text-transform:uppercase;letter-spacing:1px;display:block;
-                         margin-bottom:4px;">· Geographic Archive ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
-                       color:#1a1a1a;margin:4px 0 4px;">
-                The Geography of Le Tour
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;
-                      font-style:italic;margin-bottom:16px;">
+            <style>
+            /* Il tuo CSS originale per i titoli */
+            .geo-archive {
+                color: #1a1a1a; font-size: 13px; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 1px; display: block;
+                margin-bottom: 4px;
+            }
+            .main-title {
+                font-family: 'Merriweather', Georgia, serif; font-size: 24px; font-weight: 900;
+                color: #1a1a1a; margin: 4px 0 4px;
+            }
+            .subtitle {
+                font-family: 'Merriweather', serif; font-size: 12px; color: #666;
+                font-style: italic; margin-bottom: 16px;
+            }
+            
+            /* Forza testo selectbox bianco (il tuo CSS precedente) */
+            div[data-testid="stSelectbox"] label p {
+                color: white !important;
+            }
+
+            /* NUOVO CSS per le Card delle Statistiche (Opzione 2) */
+            .outline-card {
+                border: 1px solid #333333;
+                border-left: 4px solid #FFD700;
+                padding: 12px 16px;
+                border-radius: 6px;
+                margin-bottom: 15px;
+                background-color: transparent;
+            }
+            .outline-val {
+                font-size: 26px;
+                font-weight: bold;
+                color: #ffffff;
+                line-height: 1;
+                margin-bottom: 4px;
+            }
+            .outline-lbl {
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: #999999;
+            }
+            </style>
+            
+            <span class="geo-archive">· Geographic Archive ·</span>
+            <h3 class="main-title">The Geography of Le Tour</h3>
+            <p class="subtitle">
                 Select an edition to visualize its route. Cities are geocoded from a curated dictionary
                 of the ~200 most historic Tour locations.
             </p>
@@ -4584,20 +4624,33 @@ elif st.session_state.pagina_corrente == "tappe":
                     )
 
             # ── Stats ──────────────────────────────────────────────────────────────────
+           # ── Stats ──────────────────────────────────────────────────────────────────
+            # ── Stats ──────────────────────────────────────────────────────────────────
             n_stages   = gpx_df["stage_num"].nunique()
             total_km   = stages_df["km"].sum() if "km" in stages_df.columns else "–"
             n_mountain = (stages_df["type"].str.lower().str.contains("mountain", na=False).sum()
                         if "type" in stages_df.columns else "–")
 
             s1, s2, s3 = st.columns(3)
-            for col, val, lbl in [(s1, n_stages, "Tappe"), (s2, f"{total_km:.0f}" if isinstance(total_km, float) else total_km, "km totali"), (s3, n_mountain, "Tappe montagna")]:
+            
+            stats_data = [
+                (s1, n_stages, "Stages"), 
+                (s2, f"{total_km:.0f}" if isinstance(total_km, float) else total_km, "Total km"), 
+                (s3, n_mountain, "Mountain Stages")
+            ]
+
+            for col, val, lbl in stats_data:
                 col.markdown(
-                    f'<div class="metric"><div class="val">{val}</div><div class="lbl">{lbl}</div></div>',
+                    f'''
+                    <div class="outline-card">
+                        <div class="outline-val">{val}</div>
+                        <div class="outline-lbl">{lbl}</div>
+                    </div>
+                    ''',
                     unsafe_allow_html=True
                 )
 
             st.markdown("<br>", unsafe_allow_html=True)
-
             # ── Mappa ──────────────────────────────────────────────────────────────────
             with st.spinner("Costruzione mappa..."):
                 m = build_map(gpx_df, stages_df)
