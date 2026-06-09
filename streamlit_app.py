@@ -4393,39 +4393,50 @@ elif st.session_state.pagina_corrente == "tappe":
         # ── Custom CSS ────────────────────────────────────────────────────────────────
         st.markdown("""
             <style>
-            /* Il tuo CSS originale per i titoli */
+            /* 1. Stili per le intestazioni e i testi descrittivi */
             .geo-archive {
-                color: #1a1a1a; font-size: 13px; font-weight: 600;
-                text-transform: uppercase; letter-spacing: 1px; display: block;
+                color: #1a1a1a; 
+                font-size: 13px; 
+                font-weight: 600;
+                text-transform: uppercase; 
+                letter-spacing: 1px; 
+                display: block;
                 margin-bottom: 4px;
             }
             .main-title {
-                font-family: 'Merriweather', Georgia, serif; font-size: 24px; font-weight: 900;
-                color: #1a1a1a; margin: 4px 0 4px;
+                font-family: 'Merriweather', Georgia, serif; 
+                font-size: 24px; 
+                font-weight: 900;
+                color: #1a1a1a; 
+                margin: 4px 0 4px;
             }
             .subtitle {
-                font-family: 'Merriweather', serif; font-size: 12px; color: #666;
-                font-style: italic; margin-bottom: 16px;
+                font-family: 'Merriweather', serif; 
+                font-size: 12px; 
+                color: #666;
+                font-style: italic; 
+                margin-bottom: 16px;
             }
             
-            /* Forza testo selectbox bianco (il tuo CSS precedente) */
+            /* 2. Forza il testo della selectbox in bianco (se necessario per il contrasto) */
             div[data-testid="stSelectbox"] label p {
                 color: white !important;
             }
 
-            /* NUOVO CSS per le Card delle Statistiche (Opzione 2) */
+            /* 3. Stile per le Card delle Statistiche (Nere isolate su fondo Tema) */
             .outline-card {
-                border: 1px solid #333333;
-                border-left: 4px solid #FFD700;
+                background-color: #1a1a1a; /* Sfondo nero per la card */
+                border: 1px solid #333333; /* Bordo sottile grigio scuro */
+                border-left: 4px solid #FFD700; /* Accento giallo Tour de France */
                 padding: 12px 16px;
                 border-radius: 6px;
                 margin-bottom: 15px;
-                background-color: transparent;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15); /* Leggera ombra per l'effetto sollevato */
             }
             .outline-val {
                 font-size: 26px;
                 font-weight: bold;
-                color: #ffffff;
+                color: #ffffff; /* Numeri in bianco brillante */
                 line-height: 1;
                 margin-bottom: 4px;
             }
@@ -4433,7 +4444,7 @@ elif st.session_state.pagina_corrente == "tappe":
                 font-size: 13px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                color: #999999;
+                color: #aaaaaa; /* Etichette in grigio chiaro per non distrarre dai numeri */
             }
             </style>
             
@@ -4625,7 +4636,6 @@ elif st.session_state.pagina_corrente == "tappe":
 
             # ── Stats ──────────────────────────────────────────────────────────────────
            # ── Stats ──────────────────────────────────────────────────────────────────
-            # ── Stats ──────────────────────────────────────────────────────────────────
             n_stages   = gpx_df["stage_num"].nunique()
             total_km   = stages_df["km"].sum() if "km" in stages_df.columns else "–"
             n_mountain = (stages_df["type"].str.lower().str.contains("mountain", na=False).sum()
@@ -4634,9 +4644,9 @@ elif st.session_state.pagina_corrente == "tappe":
             s1, s2, s3 = st.columns(3)
             
             stats_data = [
-                (s1, n_stages, "Stages"), 
-                (s2, f"{total_km:.0f}" if isinstance(total_km, float) else total_km, "Total km"), 
-                (s3, n_mountain, "Mountain Stages")
+                (s1, n_stages, "STAGES"), 
+                (s2, f"{total_km:.0f}" if isinstance(total_km, float) else total_km, "TOTAL KM"), 
+                (s3, n_mountain, "MOUNTAIN STAGES")
             ]
 
             for col, val, lbl in stats_data:
@@ -4651,6 +4661,7 @@ elif st.session_state.pagina_corrente == "tappe":
                 )
 
             st.markdown("<br>", unsafe_allow_html=True)
+            
             # ── Mappa ──────────────────────────────────────────────────────────────────
             with st.spinner("Costruzione mappa..."):
                 m = build_map(gpx_df, stages_df)
