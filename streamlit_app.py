@@ -90,6 +90,7 @@ if "pagina_corrente" not in st.session_state:
     st.session_state.pagina_corrente = "home"
 
 # ==========================================
+# ==========================================
 # 3. CSS E STILE DELLA BARRA NERA E SFONDO
 # ==========================================
 st.markdown("""
@@ -4216,26 +4217,41 @@ elif st.session_state.pagina_corrente == "tappe":
                         "col": "Yellow Jersey", "color": "#FFD700",
                         "img": "https://www.bobshop.com/media/92/7a/02/1776411535/11346-1_1.png?ts=1776411535",
                         "anno_intro": 1919,
-                        "storia": "Introduced in 1919 to reward the overall GC leader. The color matches *L'Auto* newspaper's yellow paper stock — a living advertisement.",
-                    },
+                        "storia": """**3 Things You (Probably) Didn't Know About the Yellow Jersey:**
+
+* 🗞️ **The newsprint tribute:** Introduced in 1919, it is yellow because *L'Auto* (the newspaper that founded the race) was printed on yellow paper. Previously, the leader only wore a green armband.
+* 🐤 **A tough debut:** The first rider to wear it, Eugène Christophe, hated it because it made him look like a canary, prompting the rest of the peloton to mock him with bird noises.
+* ✍️ **An indelible signature:** To this day, every Yellow Jersey bears the initials **"HD"** on the chest, honoring the creator of the Tour, Henri Desgrange."""
+    },
                     "🟢 Green": {
                         "col": "Green jersey", "color": "#22c55e",
                         "img": "https://lh3.googleusercontent.com/d/1d1GLPgO6NHqt4bguSBdXjs8NowirbXAu",
                         "anno_intro": 1953,
-                        "storia": "Created in 1953 for the 50th anniversary. It rewards the points classification — the sprinters' championship.",
-                    },
+                        "storia": """**3 Things You (Probably) Didn't Know About the Green Jersey:**
+
+* 🎂 **Born for the 50th Anniversary:** Introduced in 1953 to celebrate the Tour's half-century mark. The goal was to maintain public interest and reward sprinters, who rarely had a shot at the overall GC title against the climbers.
+* 🌿 **Why green?** It's all about the sponsor. The first commercial partner for this classification was *La Belle Jardinière*, a famous Parisian clothing retailer whose corporate color was green.
+* 🏆 **The Sprinter's Crown:** Today, it remains the ultimate prize for the most consistent finisher, often described as the "King of the Sprints" jersey."""
+},
                     "🔴 Polka-dot": {
                         "col": "Polka-dot jersey", "color": "#ef4444",
                         "img": "https://lh3.googleusercontent.com/d/1sOEebeyDAuhP0Mt6I5L4poKbahfv3xky",
                         "anno_intro": 1975,
-                        "storia": "Mountains classification since 1933, but the iconic jersey only appeared in 1975 — introduced by Chocolat Poulain, whose packaging had a similar pattern.",
-                    },
+                        "storia": """**3 Things You (Probably) Didn't Know About the Polka-Dot Jersey:**
+
+* 🏔️ **Old Ranking, Young Jersey:** The award for the best climber (King of the Mountains) has existed since 1933, but the leader didn't have a distinct jersey to wear until 1975!
+* 🍫 **The Chocolate Dots:** The iconic white jersey with red polka dots was forced by the sponsor of the time: *Chocolat Poulain*. The famous French chocolate brand wrapped its bars in this exact pattern. It was so popular with the public that the design was kept even after the sponsor changed.
+* 🔝 **The Climber's Pride:** Today, wearing the "maillot à pois" is the ultimate dream for any climber, representing mastery over the most grueling mountain passes of the Tour."""
+},
                     "⚪ White": {
                         "col": "White jersey", "color": "#d1d5db",
                         "img": "https://lh3.googleusercontent.com/d/1DAYUL8bk7eYxd83opOKJCkYT_afuKWdp",
                         "anno_intro": 1975,
-                        "storia": "Best young rider (under 25) in the GC. Established in 1975.",
-                    },
+                        "storia": """**3 Things You (Probably) Didn't Know About the White Jersey:**
+
+* 🔄 **A Total Identity Shift:** Today, it rewards the best young rider (under 25) in the general classification. However, when it was introduced in 1968, it awarded something completely different: the "Combined Classification," based on a rider's average performance across GC, points, and mountains.
+* ⚡ **The Exclusive Club:** Winning the White Jersey is a clear sign of a future legend. Winning both White and Yellow in the same year—like Tadej Pogačar and Egan Bernal did—is the mark of a true cycling prodigy who dominates at a very young age.
+* 👓 **Modern Sponsorship:** While the rules have evolved, the jersey remains a prestigious showcase for cycling's rising stars, currently sponsored by the opticians Krys."""},
                 }
 
                 scelta_maglia = st.radio("Select jersey:", list(MAGLIE_CONFIG.keys()), horizontal=True)
@@ -4788,13 +4804,18 @@ elif st.session_state.pagina_corrente == "teams":
         import unicodedata, re
 
         # ══════════════════════════════════════════════════════════════
-        # 1. CSS UNIFICATO E FULL DARK MODE
+        # 1. CSS UNIFICATO E FULL DARK MODE (CON FIX SFONDO BEIGE)
         # ══════════════════════════════════════════════════════════════
         st.markdown("""
             <style>
             @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
 
             /* ── LAYOUT GENERALE ── */
+            /* Forza lo sfondo nativo di Streamlit a essere beige per eliminare le fasce scure */
+            .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+                background-color: #F4F1EA !important;
+            }
+
             .teams-masthead {
                 border-top: 5px solid #1a1a1a;
                 border-bottom: 2px solid #1a1a1a;
@@ -4819,7 +4840,7 @@ elif st.session_state.pagina_corrente == "teams":
 
             /* ── SELECTBOX: etichetta ── */
             div[data-testid="stSelectbox"] label p {
-                color: #1a1a1a !important;
+                color: #ffffff !important;
                 font-family: 'Merriweather', Georgia, serif !important;
                 font-weight: 700 !important;
             }
@@ -5063,8 +5084,22 @@ elif st.session_state.pagina_corrente == "teams":
 
         default_idx = (all_selectable.index("Ineos / Sky (2010–present)")
                        if "Ineos / Sky (2010–present)" in all_selectable else 0)
-        team_scelto = st.selectbox("🚴 Select a team or franchise:", all_selectable, index=default_idx)
+        
+        # Sovrascriviamo la label nativa con un Markdown customizzato nero
+        st.markdown("""
+            <p style="color:#1a1a1a; font-family:'Merriweather', Georgia, serif; font-weight:700; margin-bottom: 4px;">
+                🚴 Select a team or franchise:
+            </p>
+        """, unsafe_allow_html=True)
 
+        # Creiamo la selectbox nascondendo la sua etichetta di default
+        team_scelto = st.selectbox(
+            "🚴 Select a team or franchise:", 
+            all_selectable, 
+            index=default_idx, 
+            label_visibility="collapsed"
+        )
+        
         aliases_gruppo = TEAM_GROUPS.get(team_scelto, [team_scelto])
         df_team = df_storico[df_storico['Team'].isin(aliases_gruppo)].copy()
         df_team['Rank_Num'] = pd.to_numeric(df_team['Rank'], errors='coerce')
@@ -5725,7 +5760,7 @@ elif st.session_state.pagina_corrente == "teams":
                     paper_bgcolor='#F4F1EA',
                     font=dict(family='Merriweather, serif', color='#1a1a1a'),
                     height=280,
-                    margin=dict(l=0, r=0, t=10, b=0),
+                    margin=dict(l=0, r=0, t=50, b=0),
                     xaxis=dict(title='', showgrid=False, tickfont=dict(size=9), color='#1a1a1a'),
                     yaxis=dict(title='Stage Wins', showgrid=True, gridcolor='#e8e4da', color='#1a1a1a'),
                     showlegend=False,
@@ -5796,7 +5831,7 @@ elif st.session_state.pagina_corrente == "teams":
                     paper_bgcolor='#F4F1EA',
                     font=dict(family='Merriweather, serif', color='#1a1a1a'),
                     height=320,
-                    margin=dict(l=0, r=0, t=10, b=0),
+                    margin=dict(l=0, r=0, t=40, b=0),
                     yaxis=dict(categoryorder='total ascending', title='', color='#1a1a1a'),
                     xaxis=dict(showgrid=True, gridcolor='#e8e4da', color='#1a1a1a'),
                     coloraxis_showscale=False,
