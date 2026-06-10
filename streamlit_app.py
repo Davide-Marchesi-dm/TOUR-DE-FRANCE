@@ -4119,15 +4119,17 @@ elif st.session_state.pagina_corrente == "tappe":
                 </style>
             """, unsafe_allow_html=True)
 
-            # ── TITOLO PRINCIPALE: IN NERO ──
+           # ── TITOLO PRINCIPALE: IN NERO CON MARGINI ──
             st.markdown("""
-                <span style="color:#1a1a1a;font-size:13px;font-weight:600;
-                            text-transform:uppercase;letter-spacing:1px;display:block;
-                            margin-bottom:4px;">· Edition Details ·</span>
-                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
-                        color:#1a1a1a;margin:4px 0 4px;">
-                    Route & Jerseys — Stage by Stage
-                </h3>
+                <div style="padding: 12px 2rem 16px;">
+                    <span style="color:#1a1a1a;font-size:13px;font-weight:600;
+                                text-transform:uppercase;letter-spacing:1px;display:block;
+                                margin-bottom:4px;">· Edition Details ·</span>
+                    <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
+                                color:#1a1a1a;margin:0;">
+                        Route & Jerseys — Stage by Stage
+                    </h3>
+                </div>
             """, unsafe_allow_html=True)
 
             lista_anni = sorted([a for a in df_stage_h_filtered['Year'].unique() if a > 0], reverse=True)
@@ -4196,20 +4198,23 @@ elif st.session_state.pagina_corrente == "tappe":
                 st.markdown(kpi_html, unsafe_allow_html=True)
                 st.markdown(hr, unsafe_allow_html=True)
 
-                # ── TITOLO MAGLIE: IN NERO ──
+                # ── TITOLO MAGLIE: IN NERO CON MARGINI ──
+            # 🪄 FIX MARGINI: Aggiunto div con padding per simmetria con il resto del layout
                 st.markdown("""
-                    <span style="color:#1a1a1a;font-size:13px;font-weight:600;
-                                text-transform:uppercase;letter-spacing:1px;display:block;
-                                margin-bottom:4px;">· Leadership Race ·</span>
-                    <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
-                            color:#1a1a1a;font-size:18px;margin:4px 0 4px;">
-                        Jersey Evolution — Stage by Stage
-                    </h4>
-                    <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
-                            font-style:italic;margin-bottom:12px;">
-                        Select a jersey to see who led the race at each stage. 
-                        Each icon marks a leadership change.
-                    </p>
+                    <div style="padding: 12px 2rem 16px;">
+                        <span style="color:#1a1a1a;font-size:13px;font-weight:600;
+                                    text-transform:uppercase;letter-spacing:1px;display:block;
+                                    margin-bottom:4px;">· Leadership Race ·</span>
+                        <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
+                                    color:#1a1a1a;font-size:18px;margin:2px 0 4px;">
+                            Jersey Evolution — Stage by Stage
+                        </h4>
+                        <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
+                                font-style:italic;margin:0;">
+                            Select a jersey to see who led the race at each stage. 
+                            Each icon marks a leadership change.
+                        </p>
+                    </div>
                 """, unsafe_allow_html=True)
 
                 MAGLIE_CONFIG = {
@@ -4398,12 +4403,12 @@ elif st.session_state.pagina_corrente == "tappe":
                     df_route.columns = ['#','Start','Finish','Stage Winner']
                     df_route['#'] = df_route['#'].apply(lambda x: int(x) if pd.notna(x) else '?')
                     st.dataframe(df_route, use_container_width=True, hide_index=True, height=280)
+    
     # ══════════════════════════════════════════════════════════
-    # VISTA 3 — GEOGRAPHIC MAP 
-    # ══════════════════════════════════════════════════════════
+# VISTA 3 — GEOGRAPHIC MAP 
+# ══════════════════════════════════════════════════════════
     elif vista_corrente == "mappa":
 
-        # ── MAPPA CON GPX
         import streamlit as st
         import pandas as pd
         import folium
@@ -4411,104 +4416,150 @@ elif st.session_state.pagina_corrente == "tappe":
         import io
         import requests
 
-        # ── Custom CSS ────────────────────────────────────────────────────────────────
-        st.markdown("""
-            <style>
-            /* 1. Stili per le intestazioni e i testi descrittivi */
-            .geo-archive {
-                color: #1a1a1a; 
-                font-size: 13px; 
-                font-weight: 600;
-                text-transform: uppercase; 
-                letter-spacing: 1px; 
-                display: block;
-                margin-bottom: 4px;
-            }
-            .main-title {
-                font-family: 'Merriweather', Georgia, serif; 
-                font-size: 24px; 
-                font-weight: 900;
-                color: #000000 !important; /* FORZATO IN NERO PURO */
-                margin: 4px 0 4px;
-            }
-            .subtitle {
-                font-family: 'Merriweather', serif; 
-                font-size: 12px; 
-                color: #666;
-                font-style: italic; 
-                margin-bottom: 16px;
-            }
-            
-            /* 2. Forza il testo della selectbox in bianco */
-            div[data-testid="stSelectbox"] label p {
-                color: white !important;
-            }
+        # Palette beige di riferimento
+        BEIGE_BG      = "#f0ece4"   # sfondo principale pagina
+        BEIGE_CARD    = "#e8e2d8"   # card / expander aperto
+        BEIGE_BORDER  = "#c8bfad"   # separatori / bordi
+        DARK_TEXT     = "#1a1a1a"
+        MID_TEXT      = "#555555"
+        GOLD          = "#FFD700"
 
-            /* 3. Stile per le Card delle Statistiche */
-            .outline-card {
-                background-color: #1a1a1a; 
-                border: 1px solid #333333; 
-                border-left: 4px solid #FFD700; 
-                padding: 12px 16px;
+        # ── Custom CSS & Geographic Headers ──────────────────────────────────────────
+        st.markdown(f"""
+            <style>
+            /* ── Sfondo pagina beige ── */
+            .stApp, [data-testid="stAppViewContainer"], section.main {{
+                background-color: {BEIGE_BG} !important;
+            }}
+
+            /* ── Forza label selectbox nera ── */
+            div[data-testid="stSelectbox"] label p {{
+                color: {DARK_TEXT} !important;
+            }}
+
+            /* ── Selectbox anno: sfondo nero, testo bianco ── */
+            div[data-testid="stSelectbox"] > div > div {{
+                background-color: #1a1a1a !important;
+                color: #ffffff !important;
+                border: 1px solid #333 !important;
+            }}
+            div[data-testid="stSelectbox"] svg {{
+                fill: #ffffff !important;
+            }}
+
+            /* ── Cards statistiche: stile beige ── */
+            .outline-card {{
+                background-color: {BEIGE_CARD};
+                border: 1px solid {BEIGE_BORDER};
+                border-left: 4px solid {GOLD};
+                padding: 14px 18px;
                 border-radius: 6px;
                 margin-bottom: 15px;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            }
-            .outline-val {
-                font-size: 26px;
-                font-weight: bold;
-                color: #ffffff;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            }}
+            .outline-val {{
+                font-size: 28px;
+                font-weight: 900;
+                color: {DARK_TEXT};
                 line-height: 1;
                 margin-bottom: 4px;
-            }
-            .outline-lbl {
-                font-size: 13px;
+                font-family: 'Merriweather', Georgia, serif;
+            }}
+            .outline-lbl {{
+                font-size: 11px;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
-                color: #aaaaaa;
-            }
+                letter-spacing: 1px;
+                color: {MID_TEXT};
+                font-family: Arial, sans-serif;
+            }}
 
-            /* 4. SCUDO PER LE ICONE: Evita il bug del testo "arrow_right" sovrapposto */
-            span[class*="material-symbols"], 
-            [data-testid="stIconMaterial"], 
-            .material-symbols-rounded {
-                font-family: "Material Symbols Rounded" !important;
-            }
-
-            /* 5. STILE EXPANDER: Sfondo scuro costante (anche al click o hover) */
-            [data-testid="stExpander"], 
-            [data-testid="stExpander"] > details {
-                background-color: #1a1a1a !important; 
-                border: 1px solid #333333 !important; 
+            /* ── Expander glossario: sfondo NERO (aperto e chiuso) ── */
+            [data-testid="stExpander"]:first-of-type,
+            [data-testid="stExpander"]:first-of-type > details {{
+                background-color: #1a1a1a !important;
+                border: 1px solid #333333 !important;
                 border-radius: 6px;
-                margin-top: 5px; 
-                margin-bottom: 15px;
-            }
-            
-            /* Forza lo sfondo scuro su focus, hover e active */
-            [data-testid="stExpander"] summary,
-            [data-testid="stExpander"] summary:hover,
-            [data-testid="stExpander"] summary:focus,
-            [data-testid="stExpander"] summary:active {
+            }}
+            [data-testid="stExpander"]:first-of-type summary,
+            [data-testid="stExpander"]:first-of-type summary:hover,
+            [data-testid="stExpander"]:first-of-type summary:focus {{
                 background-color: #1a1a1a !important;
                 color: #f0ece4 !important;
-            }
-            
-            [data-testid="stExpander"] summary p {
+            }}
+            [data-testid="stExpander"]:first-of-type summary p {{
                 color: #f0ece4 !important;
                 font-weight: 600 !important;
-            }
-            [data-testid="stExpander"] div[role="region"] p, 
-            [data-testid="stExpander"] div[role="region"] span {
+            }}
+            [data-testid="stExpander"]:first-of-type div[role="region"] {{
+                background-color: #1a1a1a !important;
+            }}
+            [data-testid="stExpander"]:first-of-type div[role="region"] p,
+            [data-testid="stExpander"]:first-of-type div[role="region"] span {{
                 color: #cccccc !important;
-            }
+            }}
+
+            /* ── Expander "All Stages Detail": sfondo nero ── */
+            [data-testid="stExpander"]:last-of-type,
+            [data-testid="stExpander"]:last-of-type > details {{
+                background-color: #1a1a1a !important;
+                border: 1px solid #333333 !important;
+                border-radius: 8px;
+            }}
+            [data-testid="stExpander"]:last-of-type summary,
+            [data-testid="stExpander"]:last-of-type summary:hover {{
+                background-color: #1a1a1a !important;
+            }}
+            [data-testid="stExpander"]:last-of-type summary p {{
+                color: #f0ece4 !important;
+                font-weight: 700 !important;
+                letter-spacing: 0.5px;
+            }}
+
+            /* ── Tabella dentro All Stages Detail ── */
+            [data-testid="stExpander"]:last-of-type [data-testid="stDataFrame"] {{
+                background: transparent !important;
+            }}
+            [data-testid="stExpander"]:last-of-type thead tr th {{
+                background-color: #FFD700 !important;
+                color: #1a1a1a !important;
+                font-weight: 800 !important;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+                font-size: 11px;
+                font-family: Arial, sans-serif;
+            }}
+            [data-testid="stExpander"]:last-of-type tbody tr:nth-child(even) td {{
+                background-color: #242424 !important;
+                color: #e0e0e0 !important;
+            }}
+            [data-testid="stExpander"]:last-of-type tbody tr:nth-child(odd) td {{
+                background-color: #1a1a1a !important;
+                color: #cccccc !important;
+            }}
+            [data-testid="stExpander"]:last-of-type tbody tr:hover td {{
+                background-color: #2e2b24 !important;
+                color: #FFD700 !important;
+            }}
+
+            /* ── Icone material ── */
+            span[class*="material-symbols"],
+            [data-testid="stIconMaterial"],
+            .material-symbols-rounded {{
+                font-family: "Material Symbols Rounded" !important;
+            }}
             </style>
-            
-            <span class="geo-archive">· Geographic Archive ·</span>
-            <h3 class="main-title">The Geography of Le Tour</h3>
-            <p class="subtitle">
-                Explore the modern era of Le Tour (2022–2025). Select an edition to visualize its route, with cities geocoded from a curated dictionary of historic Tour locations.
-            </p>
+
+            <div style="padding: 12px 2rem 16px;">
+                <span style="font-size:10px; letter-spacing:3px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; display:block; margin-bottom:4px;">
+                    Geographic Archive · 2022 to 2025 · Route Map
+                </span>
+                <h1 style="font-family:'Merriweather',Georgia,serif; font-size:42px; font-weight:900; color:#1a1a1a; margin:4px 0 2px; letter-spacing:-1px; line-height:1.1;">
+                    The Geography of Le Tour
+                </h1>
+                <div style="font-size:10px; letter-spacing:2px; color:#888; font-family:Arial,sans-serif; border-top:1px solid #c8bfad; padding-top:6px; margin-top:6px;">
+                    Modern Route · Geocoded Cities · Curated Dictionary
+                </div>
+            </div>
         """, unsafe_allow_html=True)
 
         # ── Google Drive file IDs ─────────────────────────────────────────────────────
@@ -4519,32 +4570,23 @@ elif st.session_state.pagina_corrente == "tappe":
             2025: "1wFVSCvy34nfIGbCuFXFkHBcUSiTfdr5n",
         }
         STAGES_FILE_ID = "1eCqMb1JKq2yYqchkrBcDy_CdeH3_lZArsgdUX6f4Tao"
+        STAGE_SHEET_NAMES = {2022: 0, 2023: 1, 2024: 2, 2025: 3}
 
-        STAGE_SHEET_NAMES = {
-            2022: 0,
-            2023: 1,
-            2024: 2,
-            2025: 3,
-        }
-
-        # Colori per tipo di tappa
         TYPE_COLORS = {
-            "flat":       "#4FC3F7",
-            "hills":      "#81C784",
-            "mountains":  "#EF5350",
-            "cobbles":    "#CE93D8",
-            "itt":        "#FFD54F",
-            "ttt":        "#FF8A65",
+            "flat":      "#4FC3F7",
+            "hills":     "#81C784",
+            "mountains": "#EF5350",
+            "cobbles":   "#CE93D8",
+            "itt":       "#FFD54F",
+            "ttt":       "#FF8A65",
         }
-
-        # Dizionario descrittivo (Glossario in Inglese)
         STAGE_INFO = {
-            "flat": "Sprint stages, flat profiles typically ending in a bunch sprint.",
-            "hills": "Rolling terrain with short, punchy climbs, ideal for puncheurs and breakaways.",
+            "flat":      "Sprint stages, flat profiles typically ending in a bunch sprint.",
+            "hills":     "Rolling terrain with short, punchy climbs, ideal for puncheurs and breakaways.",
             "mountains": "The queen stages. Massive elevation gains that shape the General Classification.",
-            "cobbles": "Sections of cobbled roads that test the limits of both riders and mechanics.",
-            "itt": "Individual Time Trial. A solo race against the clock.",
-            "ttt": "Team Time Trial. A synchronized team effort focusing on pure aerodynamics."
+            "cobbles":   "Sections of cobbled roads that test the limits of both riders and mechanics.",
+            "itt":       "Individual Time Trial. A solo race against the clock.",
+            "ttt":       "Team Time Trial. A synchronized team effort focusing on pure aerodynamics.",
         }
 
         def gdrive_url(file_id: str) -> str:
@@ -4552,64 +4594,56 @@ elif st.session_state.pagina_corrente == "tappe":
 
         @st.cache_data(show_spinner=False)
         def load_gpx(year: int) -> pd.DataFrame:
-            file_id = GPX_FILE_IDS[year]
-            url = gdrive_url(file_id)
-            r = requests.get(url, timeout=30)
+            r = requests.get(gdrive_url(GPX_FILE_IDS[year]), timeout=30)
             r.raise_for_status()
             df = pd.read_excel(io.BytesIO(r.content))
             df.columns = df.columns.str.strip().str.lower()
             if "source_file" in df.columns:
-                df["stage_num"] = df["source_file"].str.extract(r"stage-?(\d+)", expand=False).astype(float).astype("Int64")
+                df["stage_num"] = (df["source_file"]
+                                .str.extract(r"stage-?(\d+)", expand=False)
+                                .astype(float).astype("Int64"))
             return df
 
         @st.cache_data(show_spinner=False)
         def load_stages(year: int) -> pd.DataFrame:
-            url = gdrive_url(STAGES_FILE_ID)
-            r = requests.get(url, timeout=30)
+            r = requests.get(gdrive_url(STAGES_FILE_ID), timeout=30)
             r.raise_for_status()
-            sheet_index = STAGE_SHEET_NAMES[year]
-            df = pd.read_excel(io.BytesIO(r.content), sheet_name=sheet_index)
+            df = pd.read_excel(io.BytesIO(r.content), sheet_name=STAGE_SHEET_NAMES[year])
             df.columns = df.columns.str.strip().str.lower()
-            first_col = df.columns[0]
-            if first_col not in ("stage", "tappa", "n", "num"):
-                df = df.rename(columns={first_col: "stage_num"})
-            else:
-                df = df.rename(columns={first_col: "stage_num"})
+            df = df.rename(columns={df.columns[0]: "stage_num"})
             df["stage_num"] = pd.to_numeric(df["stage_num"], errors="coerce").astype("Int64")
             return df
 
         def stage_color(stage_type: str) -> str:
             if pd.isna(stage_type):
-                return "#FFD700"
+                return GOLD
             key = str(stage_type).lower().strip()
             for k, v in TYPE_COLORS.items():
                 if k in key:
                     return v
-            return "#FFD700"
+            return GOLD
 
         def build_map(gpx_df: pd.DataFrame, stages_df: pd.DataFrame) -> folium.Map:
             center_lat = gpx_df["latitude"].mean()
             center_lon = gpx_df["longitude"].mean()
 
+            # Mappa con tiles beige/cartografico chiaro
             m = folium.Map(
                 location=[center_lat, center_lon],
                 zoom_start=6,
-                tiles="CartoDB dark_matter",
+                tiles="CartoDB positron",   # ← tile chiaro beige/bianco
             )
 
-            stage_nums = sorted(gpx_df["stage_num"].dropna().unique())
-
-            for sn in stage_nums:
+            for sn in sorted(gpx_df["stage_num"].dropna().unique()):
                 seg = gpx_df[gpx_df["stage_num"] == sn].copy()
                 if len(seg) < 2:
                     continue
 
                 info_row = stages_df[stages_df["stage_num"] == sn]
                 if not info_row.empty:
-                    row = info_row.iloc[0]
-                    s_type = row.get("type", "")
-                    color  = stage_color(s_type)
-
+                    row         = info_row.iloc[0]
+                    s_type      = row.get("type", "")
+                    color       = stage_color(s_type)
                     start_city  = row.get("start", "–")
                     finish_city = row.get("finish", "–")
                     km_val      = row.get("km", "–")
@@ -4622,39 +4656,29 @@ elif st.session_state.pagina_corrente == "tappe":
                     <span style="font-size:0.8rem;color:#aaa">📏 {km_val} km &nbsp;|&nbsp; 🏔 {s_type}</span>
                     </div>"""
                 else:
-                    color        = "#FFD700"
+                    color        = GOLD
                     tooltip_html = f"<b>Stage {int(sn)}</b>"
 
                 coords = list(zip(seg["latitude"], seg["longitude"]))
-
                 folium.PolyLine(
-                    locations=coords,
-                    color=color,
-                    weight=3.5,
-                    opacity=0.85,
+                    locations=coords, color=color,
+                    weight=3.5, opacity=0.9,
                     tooltip=folium.Tooltip(tooltip_html, sticky=True),
                 ).add_to(m)
-
                 folium.CircleMarker(
-                    location=coords[0],
-                    radius=5,
-                    color=color,
-                    fill=True,
-                    fill_color=color,
-                    fill_opacity=1.0,
+                    location=coords[0], radius=5,
+                    color=color, fill=True, fill_color=color, fill_opacity=1.0,
                     tooltip=folium.Tooltip(f"<b style='color:{color}'>Start S{int(sn)}</b>", sticky=False),
                 ).add_to(m)
 
             return m
 
         # ── Layout ────────────────────────────────────────────────────────────────────
-       
         col_sel, col_legend = st.columns([1, 3])
 
         with col_sel:
             year = st.selectbox("Select year:", [2022, 2023, 2024, 2025], index=0)
-            
-        # ── Caricamento dati ──────────────────────────────────────────────────────────
+
         with st.spinner("Loading GPX data..."):
             try:
                 gpx_df    = load_gpx(year)
@@ -4667,136 +4691,130 @@ elif st.session_state.pagina_corrente == "tappe":
 
         if load_ok:
             with col_legend:
-                # Legenda a pallini
+                # Legenda pallini — testo scuro sul beige
                 cols = st.columns(len(TYPE_COLORS))
                 for i, (t, c) in enumerate(TYPE_COLORS.items()):
                     cols[i].markdown(
                         f'<div style="display:flex;align-items:center;gap:6px">'
                         f'<div style="width:12px;height:12px;border-radius:50%;background:{c}"></div>'
-                        f'<span style="font-size:0.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.06em">{t}</span>'
+                        f'<span style="font-size:0.8rem;color:{MID_TEXT};text-transform:uppercase;letter-spacing:.06em">{t}</span>'
                         f'</div>',
-                        unsafe_allow_html=True
+                        unsafe_allow_html=True,
                     )
-                
-                # GLOSSARIO in Inglese
+
+                # Glossario — sfondo nero
                 with st.expander("📖 Glossary: Stage Types"):
                     for k, desc in STAGE_INFO.items():
                         color = TYPE_COLORS.get(k, "#fff")
                         st.markdown(f'''
-                            <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:10px;">
-                                <div style="width:12px; height:12px; border-radius:50%; background:{color}; margin-top:4px; flex-shrink:0;"></div>
+                            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+                                <div style="width:12px;height:12px;border-radius:50%;background:{color};
+                                            margin-top:4px;flex-shrink:0;"></div>
                                 <div>
-                                    <b style="color:#f0ece4; text-transform:uppercase; font-size:13px;">{k}</b><br>
-                                    <span style="color:#aaa; font-size:12px;">{desc}</span>
+                                    <b style="color:#f0ece4;text-transform:uppercase;font-size:13px;">{k}</b><br>
+                                    <span style="color:#aaa;font-size:12px;">{desc}</span>
                                 </div>
                             </div>
                         ''', unsafe_allow_html=True)
 
-            # ── Stats ──────────────────────────────────────────────────────────────────
+            # ── Stat cards ────────────────────────────────────────────────────────────
             n_stages   = gpx_df["stage_num"].nunique()
             total_km   = stages_df["km"].sum() if "km" in stages_df.columns else "–"
             n_mountain = (stages_df["type"].str.lower().str.contains("mountain", na=False).sum()
                         if "type" in stages_df.columns else "–")
 
             s1, s2, s3 = st.columns(3)
-            
-            stats_data = [
-                (s1, n_stages, "STAGES"), 
-                (s2, f"{total_km:.0f}" if isinstance(total_km, float) else total_km, "TOTAL KM"), 
-                (s3, n_mountain, "MOUNTAIN STAGES")
-            ]
-
-            for col, val, lbl in stats_data:
-                col.markdown(
-                    f'''
+            for col, val, lbl in [
+                (s1, n_stages, "STAGES"),
+                (s2, f"{total_km:.0f}" if isinstance(total_km, (int, float)) else total_km, "TOTAL KM"),
+                (s3, n_mountain, "MOUNTAIN STAGES"),
+            ]:
+                col.markdown(f'''
                     <div class="outline-card">
                         <div class="outline-val">{val}</div>
                         <div class="outline-lbl">{lbl}</div>
                     </div>
-                    ''',
-                    unsafe_allow_html=True
-                )
+                ''', unsafe_allow_html=True)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            
-            # ── Mappa ──────────────────────────────────────────────────────────────────
+
+            # ── Mappa (tile chiaro beige) ─────────────────────────────────────────────
             with st.spinner("Building map..."):
                 m = build_map(gpx_df, stages_df)
-
             st_folium(m, width="100%", height=620, returned_objects=[])
 
-            # ── Tabella tappe ──────────────────────────────────────────────────────────
+            # ── Tabella tappe (expander nero + tabella stilizzata) ────────────────────
             with st.expander("📋 All Stages Detail"):
-                display_cols = [c for c in ["stage_num", "start", "finish", "km", "type"] if c in stages_df.columns]
+                display_cols = [c for c in ["stage_num", "start", "finish", "km", "type"]
+                                if c in stages_df.columns]
                 st.dataframe(
                     stages_df[display_cols].sort_values("stage_num"),
                     use_container_width=True,
                     hide_index=True,
+                    column_config={
+                        "stage_num": st.column_config.NumberColumn("Stage", format="%d"),
+                        "start":     st.column_config.TextColumn("Start"),
+                        "finish":    st.column_config.TextColumn("Finish"),
+                        "km":        st.column_config.NumberColumn("Km", format="%.1f"),
+                        "type":      st.column_config.TextColumn("Type"),
+                    },
                 )
 
-
-
-      
-
-
-
-
-       
-        # ── HEATMAP CITTÀ più visitate nella storia (IN DARK MODE) ──
+        # ── Sezione Most Visited Cities ───────────────────────────────────────────────
+        # ── 2. INTESTAZIONE: THE TOUR'S MOST VISITED CITIES (Sotto nella pagina) ──
         st.markdown("""
-            <span style="color:#1a1a1a;font-size:13px;font-weight:600;
-                         text-transform:uppercase;letter-spacing:1px;display:block;
-                         margin-bottom:4px;">· Most Historic Cities ·</span>
-            <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;
-                       color:#1a1a1a;font-size:18px;margin:4px 0 4px;">
-                The Tour's Most Visited Cities — All Time
-            </h4>
-            <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;
-                      font-style:italic;margin-bottom:8px;">
-                Combined count of starts and finishes in each city across all editions.
-            </p>
+            <div style="padding: 32px 2rem 16px;">
+                <span style="font-size:10px; letter-spacing:3px; text-transform:uppercase; color:#888; font-family:Arial,sans-serif; display:block; margin-bottom:4px;">
+                    Top Locations · Historic Host Cities · Statistics
+                </span>
+                <h1 style="font-family:'Merriweather',Georgia,serif; font-size:42px; font-weight:900; color:#1a1a1a; margin:4px 0 2px; letter-spacing:-1px; line-height:1.1;">
+                    The Tour's Most Visited Cities
+                </h1>
+                <div style="font-size:10px; letter-spacing:2px; color:#888; font-family:Arial,sans-serif; border-top:1px solid #c8bfad; padding-top:6px; margin-top:6px;">
+                    Historical Overview · Stage Starts · Stage Finishes
+                </div>
+            </div>
         """, unsafe_allow_html=True)
 
         all_cities_hist = pd.concat([
-            df_coords_all[['Origin']].rename(columns={'Origin':'city'}),
-            df_coords_all[['Destination']].rename(columns={'Destination':'city'}),
+            df_coords_all[['Origin']].rename(columns={'Origin': 'city'}),
+            df_coords_all[['Destination']].rename(columns={'Destination': 'city'}),
         ])
-        # Normalizza encoding
         all_cities_hist['city'] = all_cities_hist['city'].str.strip()
         city_counts = all_cities_hist['city'].value_counts().head(20).reset_index()
-        city_counts.columns = ['City','Appearances']
+        city_counts.columns = ['City', 'Appearances']
 
         fig_cities = px.bar(
             city_counts, y='City', x='Appearances', orientation='h',
             color='Appearances',
-            # Nuova palette ottimizzata per il nero: da Oro Scuro a Giallo Acceso
-            color_continuous_scale=[[0,'#4a3b00'],[0.5,'#e6a800'],[1,'#ffcc00']],
+            color_continuous_scale=[[0, '#c8bfad'], [0.5, '#e6a800'], [1, '#FFD700']],
             labels={'Appearances': 'Starts + Finishes'},
         )
         fig_cities.update_layout(
-            # Sfondo nero come la mappa
-            plot_bgcolor='#0a0a0a', paper_bgcolor='#0a0a0a',
-            # Font bianco per i nomi delle città
-            font=dict(family='Merriweather, serif', color='#ffffff'),
-            height=480, margin=dict(l=0, r=0, t=10, b=0),
-            yaxis=dict(categoryorder='total ascending', title=''),
-            # Griglia grigio scuro invece che chiara
-            xaxis=dict(showgrid=True, gridcolor='#333333'),
+            # Sfondo beige come la pagina
+            plot_bgcolor=BEIGE_BG,
+            paper_bgcolor=BEIGE_BG,
+            font=dict(family='Merriweather, serif', color=DARK_TEXT),
+            height=480,
+            margin=dict(l=0, r=0, t=10, b=0),
+            yaxis=dict(categoryorder='total ascending', title='', color=DARK_TEXT),
+            xaxis=dict(showgrid=True, gridcolor=BEIGE_BORDER, color=DARK_TEXT),
             coloraxis_showscale=False,
             showlegend=False,
         )
-        # Annotazione Parigi
-        paris_row = city_counts[city_counts['City']=='Paris']
+        # Annotazione Parigi adattata al beige
+        paris_row = city_counts[city_counts['City'] == 'Paris']
         if not paris_row.empty:
             fig_cities.add_annotation(
                 x=paris_row['Appearances'].values[0], y='Paris',
                 text="The eternal finish line",
-                showarrow=True, arrowhead=2, arrowcolor='#cccccc', # Freccia più chiara
-                font=dict(size=9, color='#1a1a1a', family='Arial'), # Testo nero...
-                bgcolor='rgba(255,204,0,0.85)', # ...su sfondo giallo dell'etichetta
+                showarrow=True, arrowhead=2, arrowcolor=DARK_TEXT,
+                font=dict(size=9, color='#1a1a1a', family='Arial'),
+                bgcolor='rgba(255,204,0,0.85)',
                 borderpad=4, ax=-80, ay=0,
             )
         st.plotly_chart(fig_cities, use_container_width=True)
+
 # ==========================================
 # SEZIONE TEAMS 
 # ==========================================
