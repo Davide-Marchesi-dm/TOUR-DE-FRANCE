@@ -263,7 +263,7 @@ if st.session_state.pagina_corrente == "home":
     anni_revocati = list(range(1999, 2006)) + [2006]
 
     # Edizioni totali
-    n_edizioni = int(df_tour_w['Year'].nunique()) if not df_tour_w.empty else 112
+    n_edizioni = 112
 
     # Km totali cumulati
     if not df_storico.empty and 'Distance (km)' in df_storico.columns:
@@ -568,7 +568,7 @@ body {
 
   <!-- MASTHEAD -->
   <div class="np-masthead">
-    <div class="np-date">Édition Spéciale · Data Journalism · From 1903 to Today</div>
+    <div class="np-date">Édition Spéciale · From 1903 to Today</div>
     <div class="np-logo">Le Tour de France</div>
     <div class="np-tagline">The complete historical archive of the Grande Boucle · All the data, all the riders, all the stages</div>
   </div>
@@ -706,7 +706,6 @@ body {
       <div class="np-bot-body">
         Select any edition from 1903 to today. Explore the full general classification, the podium, and a radial chart of every winner's gap to the runner-up across all Tours.
       </div>
-      <span class="np-bot-link">Open Standings →</span>
     </div>
 
     <!-- Col 2: RIDERS -->
@@ -720,12 +719,11 @@ body {
       <div class="np-bot-body">
         Track any rider's career arc, compare physical profiles against the champion baseline, and pit the Tour's greatest names head-to-head on a shared timeline.
       </div>
-      <span class="np-bot-link">Explore Riders →</span>
     </div>
 
     <!-- Col 3: STAGES + TEAMS -->
     <div class="np-bot-col">
-      <span class="np-section-tag">Section III</span>
+      <span class="np-section-tag">Section III-IV</span>
       <hr class="np-rule">
       <div class="np-bot-badge">Stages &amp; Teams</div>
       <div class="np-bot-hl">The Road, the Route and the Franchises Behind the Race</div>
@@ -750,9 +748,7 @@ body {
       <div class="np-bot-body">
         Analyse how stage types evolved over a century. Map any edition's route across France. Explore team dynasties, roster heatmaps, and jersey tallies for 100+ franchises.
       </div>
-      <span class="np-bot-link">Explore Stages &amp; Teams →</span>
     </div>
-
   </div>
 
 </div>
