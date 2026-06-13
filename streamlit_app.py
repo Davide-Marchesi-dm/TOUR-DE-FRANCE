@@ -288,7 +288,7 @@ if st.session_state.pagina_corrente == "home":
     else:
         top_nation_name, top_nation_wins = "France", 36
 
-    # Anno con il gap più stretto (dai dati radiali hardcoded già nell'app)
+    # Anno con il gap più stretto
     gap_min_year, gap_min_sec = 1989, 8
 
     # Corridore con più partecipazioni
@@ -313,7 +313,7 @@ if st.session_state.pagina_corrente == "home":
     else:
         longest_km, longest_year = 482, 1919
 
-    # ── Dati per il grafico SVG della velocità vincitori ──
+    # ── Dati per il grafico velocità ──
     if not df_storico.empty:
         df_spd = df_storico.copy()
         df_spd['Rank_Num'] = pd.to_numeric(df_spd['Rank'], errors='coerce')
@@ -324,7 +324,9 @@ if st.session_state.pagina_corrente == "home":
         ].copy()
         df_spd['avg_speed'] = df_spd['Distance (km)'] / (df_spd['TotalSeconds'] / 3600)
         df_spd = df_spd[['Year', 'avg_speed', 'Rider']].sort_values('Year').dropna()
-        speed_data = df_spd.to_dict('records')   # lista di {Year, avg_speed, Rider}
+        # Filtra velocità realistiche
+        df_spd = df_spd[(df_spd['avg_speed'] > 20) & (df_spd['avg_speed'] < 55)]
+        speed_data = df_spd.to_dict('records')
     else:
         speed_data = []
 
@@ -337,125 +339,227 @@ if st.session_state.pagina_corrente == "home":
         spd_current_val = f"{speed_data[-1]['avg_speed']:.2f}"
         spd_current_year = int(speed_data[-1]['Year'])
     else:
-        spd_record_val, spd_record_year, spd_record_name = "41.65", 2005, "Lance Armstrong"
-        spd_current_val, spd_current_year = "39.44", 2024
+        spd_record_val, spd_record_year, spd_record_name = "43.72", 2025, "Tadej Pogacar"
+        spd_current_val, spd_current_year = "43.72", 2025
 
     # ─────────────────────────────────────────────────────────────
-    # 1. COSTRUZIONE POLYLINE SVG VELOCITÀ (pura, niente JS libs)
+    # 1. COSTRUZIONE DATI JSON PER CHART.JS
     # ─────────────────────────────────────────────────────────────
-    SVG_W, SVG_H = 580, 200
-    PAD_L, PAD_R, PAD_T, PAD_B = 44, 12, 18, 32
+
+    # Anni doping (Armstrong, titoli revocati 1999-2005):
+    # questi anni non esistono nel dataset, quindi li costruiamo come punti
+    # "fantasma" interpolando linearmente tra 1998 e 2006
+    anni_doping = list(range(1999, 2006))
 
     if speed_data:
-        years  = [r['Year'] for r in speed_data]
-        speeds = [r['avg_speed'] for r in speed_data]
-        y_min, y_max = min(speeds) - 1, max(speeds) + 0.8
-        x_min, x_max = min(years), max(years)
+        import json
 
-        def to_svg_x(yr):
-            return PAD_L + (yr - x_min) / max(x_max - x_min, 1) * (SVG_W - PAD_L - PAD_R)
-
-        def to_svg_y(sp):
-            return PAD_T + (1 - (sp - y_min) / max(y_max - y_min, 1)) * (SVG_H - PAD_T - PAD_B)
-
-        # Polyline principale
-        pts_line = " ".join(f"{to_svg_x(r['Year']):.1f},{to_svg_y(r['avg_speed']):.1f}"
-                            for r in speed_data
-                            if r['Year'] not in anni_revocati)
-
-        # Area fill (chiude il path verso il basso)
-        pts_area_top = [(to_svg_x(r['Year']), to_svg_y(r['avg_speed']))
-                        for r in speed_data if r['Year'] not in anni_revocati]
-        if pts_area_top:
-            area_d = (f"M {pts_area_top[0][0]:.1f},{pts_area_top[0][1]:.1f} "
-                      + " ".join(f"L {x:.1f},{y:.1f}" for x, y in pts_area_top[1:])
-                      + f" L {pts_area_top[-1][0]:.1f},{SVG_H - PAD_B:.1f}"
-                      + f" L {pts_area_top[0][0]:.1f},{SVG_H - PAD_B:.1f} Z")
-        else:
-            area_d = ""
-
-        # Punti revocati
-        doping_circles = ""
+        # Dataset principale (senza anni doping — già assenti)
+        main_points = []
         for r in speed_data:
-            if r['Year'] in anni_revocati:
-                cx = to_svg_x(r['Year'])
-                cy = to_svg_y(r['avg_speed'])
-                doping_circles += f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="3.5" fill="#cc3333" opacity="0.7" stroke="#fff" stroke-width="1"/>'
+            main_points.append({
+                "x": int(r['Year']),
+                "y": round(r['avg_speed'], 3),
+                "rider": str(r['Rider']).title()
+            })
 
-        # Punto record
-        rec = max(speed_data, key=lambda r: r['avg_speed'])
-        rec_x, rec_y = to_svg_x(rec['Year']), to_svg_y(rec['avg_speed'])
+        # Interpolazione lineare per i punti doping 1999-2005
+        # Usiamo i valori vicini: 1998 (Pantani, 41.74) → 2006 (Pereiro, 40.78)
+        speed_1998 = next((r['avg_speed'] for r in speed_data if int(r['Year']) == 1998), 41.74)
+        speed_2006 = next((r['avg_speed'] for r in speed_data if int(r['Year']) == 2006), 40.78)
+        doping_names = {
+            1999: "Lance Armstrong", 2000: "Lance Armstrong", 2001: "Lance Armstrong",
+            2002: "Lance Armstrong", 2003: "Lance Armstrong", 2004: "Lance Armstrong",
+            2005: "Lance Armstrong"
+        }
+        doping_points = []
+        for i, yr in enumerate(anni_doping):
+            t = (i + 1) / (len(anni_doping) + 1)
+            interp_speed = round(speed_1998 + t * (speed_2006 - speed_1998), 3)
+            doping_points.append({
+                "x": yr,
+                "y": interp_speed,
+                "rider": doping_names.get(yr, "Lance Armstrong")
+            })
 
-        # Tick asse X (ogni ~20 anni)
-        tick_years = [y for y in range(x_min - (x_min % 10), x_max + 10, 20) if x_min <= y <= x_max]
-        x_ticks_svg = ""
-        for ty in tick_years:
-            tx = to_svg_x(ty)
-            x_ticks_svg += (f'<line x1="{tx:.1f}" y1="{SVG_H - PAD_B:.1f}" '
-                            f'x2="{tx:.1f}" y2="{SVG_H - PAD_B + 4:.1f}" stroke="#bbb" stroke-width="1"/>'
-                            f'<text x="{tx:.1f}" y="{SVG_H - PAD_B + 14:.1f}" '
-                            f'text-anchor="middle" font-size="9" fill="#888" font-family="Arial">{ty}</text>')
+        # Media mobile (window=4) per la linea di tendenza
+        all_pts_sorted = sorted(speed_data, key=lambda r: r['Year'])
+        speeds_list = [r['avg_speed'] for r in all_pts_sorted]
+        years_list  = [int(r['Year']) for r in all_pts_sorted]
+        W = 4
+        mavg_points = []
+        for i, (yr, sp) in enumerate(zip(years_list, speeds_list)):
+            window = speeds_list[max(0, i-W): i+W+1]
+            mavg_points.append({"x": yr, "y": round(sum(window)/len(window), 3)})
 
-        # Tick asse Y
-        y_ticks_svg = ""
-        for spv in [30, 33, 36, 39, 42]:
-            if y_min <= spv <= y_max:
-                sy = to_svg_y(spv)
-                y_ticks_svg += (f'<line x1="{PAD_L - 3:.1f}" y1="{sy:.1f}" x2="{SVG_W - PAD_R:.1f}" y2="{sy:.1f}" '
-                                f'stroke="#e8e4da" stroke-width="1"/>'
-                                f'<text x="{PAD_L - 6:.1f}" y="{sy + 3:.1f}" '
-                                f'text-anchor="end" font-size="9" fill="#888" font-family="Arial">{spv}</text>')
+        main_json   = json.dumps(main_points)
+        doping_json = json.dumps(doping_points)
+        mavg_json   = json.dumps(mavg_points)
 
-        # Blocco WWI / WWII
-        def era_rect(y0, y1, label):
-            if y0 > x_max or y1 < x_min:
-                return ""
-            x0s = to_svg_x(max(y0, x_min))
-            x1s = to_svg_x(min(y1, x_max))
-            mid = (x0s + x1s) / 2
-            return (f'<rect x="{x0s:.1f}" y="{PAD_T}" width="{x1s-x0s:.1f}" '
-                    f'height="{SVG_H - PAD_T - PAD_B}" fill="#e8e4da" opacity="0.7"/>'
-                    f'<text x="{mid:.1f}" y="{PAD_T + 10:.1f}" text-anchor="middle" '
-                    f'font-size="8" fill="#999" font-family="Arial">{label}</text>')
+        # Anno e velocità più recente per la label
+        latest_year  = int(speed_data[-1]['Year'])
+        latest_speed = round(speed_data[-1]['avg_speed'], 2)
+        latest_rider = str(speed_data[-1]['Rider']).title()
 
-        era_rects = (era_rect(1914, 1918, "WWI") +
-                     era_rect(1939, 1947, "WWII") +
-                     era_rect(1999, 2005, "Doping era"))
+        CHART_BLOCK = f"""
+<div id="chartjs-speed-wrap" style="position:relative;width:100%;height:220px;margin-bottom:4px;">
+  <canvas id="tdfSpeedChart" role="img"
+    aria-label="Line chart of Tour de France average winning speed from 1903 to {latest_year}. Speed rose from ~25 km/h to ~{latest_speed} km/h.">
+    Speed rose from 25.7 km/h in 1903 to {latest_speed} km/h in {latest_year}.
+  </canvas>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function() {{
+  var mainData   = {main_json};
+  var dopingData = {doping_json};
+  var mavgData   = {mavg_json};
 
-        SVG_CHART = f"""
-        <svg viewBox="0 0 {SVG_W} {SVG_H}" xmlns="http://www.w3.org/2000/svg"
-             style="width:100%;height:auto;display:block;">
-          <defs>
-            <linearGradient id="spd-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#FFCC00" stop-opacity="0.35"/>
-              <stop offset="100%" stop-color="#FFCC00" stop-opacity="0.02"/>
-            </linearGradient>
-          </defs>
-          <!-- Era bands -->
-          {era_rects}
-          <!-- Y grid -->
-          {y_ticks_svg}
-          <!-- Area fill -->
-          <path d="{area_d}" fill="url(#spd-grad)"/>
-          <!-- Main line -->
-          <polyline points="{pts_line}" fill="none" stroke="#1a1a1a" stroke-width="2"
-                    stroke-linejoin="round" stroke-linecap="round"/>
-          <!-- Doping dots -->
-          {doping_circles}
-          <!-- Record dot -->
-          <circle cx="{rec_x:.1f}" cy="{rec_y:.1f}" r="5" fill="#FFCC00"
-                  stroke="#1a1a1a" stroke-width="1.5"/>
-          <!-- X axis -->
-          <line x1="{PAD_L}" y1="{SVG_H - PAD_B}" x2="{SVG_W - PAD_R}" y2="{SVG_H - PAD_B}"
-                stroke="#bbb" stroke-width="1"/>
-          {x_ticks_svg}
-          <!-- Y axis label -->
-          <text x="10" y="{(SVG_H) // 2}" text-anchor="middle"
-                font-size="9" fill="#888" font-family="Arial"
-                transform="rotate(-90,10,{(SVG_H) // 2})">km/h</text>
-        </svg>"""
+  /* ── era shading plugin ── */
+  var eraPlugin = {{
+    id: 'eraShading',
+    beforeDraw: function(chart) {{
+      var ctx = chart.ctx;
+      var ca  = chart.chartArea;
+      var xS  = chart.scales.x;
+      var eras = [
+        {{ from:1914, to:1918, color:'rgba(220,210,190,0.55)', label:'WWI'  }},
+        {{ from:1939, to:1947, color:'rgba(220,210,190,0.55)', label:'WWII' }},
+        {{ from:1999, to:2005, color:'rgba(204,51,51,0.08)',   label:'Doping era' }}
+      ];
+      ctx.save();
+      eras.forEach(function(e) {{
+        var x0 = xS.getPixelForValue(e.from);
+        var x1 = xS.getPixelForValue(e.to);
+        ctx.fillStyle = e.color;
+        ctx.fillRect(x0, ca.top, x1 - x0, ca.bottom - ca.top);
+        ctx.fillStyle = e.color.indexOf('204,51') > -1 ? 'rgba(204,51,51,0.55)' : 'rgba(150,130,100,0.7)';
+        ctx.font = '8px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(e.label, (x0+x1)/2, ca.top + 10);
+      }});
+      ctx.restore();
+    }}
+  }};
+
+  new Chart(document.getElementById('tdfSpeedChart'), {{
+    type: 'line',
+    plugins: [eraPlugin],
+    data: {{
+      datasets: [
+        {{
+          label: 'Tendenza (media mobile)',
+          data: mavgData,
+          parsing: false,
+          borderColor: 'rgba(180,190,160,0.7)',
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.4,
+          fill: false,
+          order: 3
+        }},
+        {{
+          label: 'Velocità vincitore',
+          data: mainData,
+          parsing: false,
+          borderColor: '#1a1a1a',
+          borderWidth: 1.5,
+          pointBackgroundColor: (function() {{
+            var maxSpeed = Math.max.apply(null, mainData.map(function(d) {{ return d.y; }}));
+            return mainData.map(function(d) {{
+                return d.y === maxSpeed ? '#FFCC00' : '#1a1a1a';
+            }});
+            }})(),
+          pointBorderColor: '#1a1a1a',
+          pointBorderWidth: 1,
+          pointRadius: (function() {{
+            var maxSpeed = Math.max.apply(null, mainData.map(function(d) {{ return d.y; }}));
+            return mainData.map(function(d) {{
+                return d.y === maxSpeed ? 5 : 3;
+            }});
+            }})(),
+          pointHoverRadius: 6,
+          tension: 0.2,
+          fill: {{
+            target: 'origin',
+            above: 'rgba(255,204,0,0.08)'
+          }},
+          order: 2
+        }},
+        {{
+          label: 'Titolo revocato (doping)',
+          data: dopingData,
+          parsing: false,
+          borderColor: 'rgba(204,51,51,0.35)',
+          borderWidth: 1,
+          borderDash: [4, 3],
+          pointBackgroundColor: '#cc3333',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 1.5,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          tension: 0.3,
+          fill: false,
+          order: 1
+        }}
+      ]
+    }},
+    options: {{
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {{ mode: 'index', intersect: false }},
+      plugins: {{
+        legend: {{ display: false }},
+        tooltip: {{
+          backgroundColor: '#fff',
+          borderColor: '#ddd',
+          borderWidth: 1,
+          titleColor: '#111',
+          bodyColor: '#555',
+          padding: 10,
+          callbacks: {{
+            title: function(items) {{ return items[0].raw.x + ''; }},
+            label: function(item) {{
+                var d = item.raw;
+                if (!d.rider) return null;
+                var prefix = item.datasetIndex === 2 ? '⚠ ' : '';
+                return prefix + d.rider + ' · ' + d.y.toFixed(2) + ' km/h';
+                }}
+          }}
+        }}
+      }},
+      scales: {{
+        x: {{
+          type: 'linear',
+          min: 1900,
+          max: 2026,
+          ticks: {{
+            stepSize: 20,
+            callback: function(v) {{ return v; }},
+            color: '#888',
+            font: {{ size: 9, family: 'Arial' }}
+          }},
+          grid: {{ color: 'rgba(0,0,0,0.05)' }}
+        }},
+        y: {{
+          min: 22,
+          max: 46,
+          ticks: {{
+            stepSize: 4,
+            callback: function(v) {{ return v + ' km/h'; }},
+            color: '#888',
+            font: {{ size: 9, family: 'Arial' }}
+          }},
+          grid: {{ color: 'rgba(0,0,0,0.06)' }}
+        }}
+      }}
+    }}
+  }});
+}})();
+</script>"""
+
     else:
-        SVG_CHART = '<div style="color:#888;font-style:italic;padding:40px;text-align:center;">Speed data unavailable</div>'
+        CHART_BLOCK = '<div style="color:#888;font-style:italic;padding:40px;text-align:center;">Speed data unavailable</div>'
 
     # ─────────────────────────────────────────────────────────────
     # 2. NUMERI FORMATTATI PER IL RIBBON
@@ -516,9 +620,10 @@ body {
 /* ── GRAFICO ── */
 .np-chart-wrap  { background: #fff; border: 1px solid #e0dbd0; padding: 10px 8px 4px; margin-bottom: 6px; }
 .np-chart-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-family: Arial, sans-serif; color: #888; margin-bottom: 6px; }
-.np-chart-legend { display: flex; gap: 16px; margin-top: 4px; margin-bottom: 2px; }
+.np-chart-legend { display: flex; gap: 16px; margin-top: 4px; margin-bottom: 2px; flex-wrap: wrap; }
 .np-legend-item  { display: flex; align-items: center; gap: 5px; font-size: 9px; color: #666; font-family: Arial, sans-serif; }
 .np-legend-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.np-legend-line  { width: 18px; height: 2px; flex-shrink: 0; border-radius: 1px; }
 .np-caption      { font-size: 10px; color: #666; font-style: italic; text-align: right; font-family: Arial, sans-serif; margin-bottom: 10px; }
 
 /* ── BODY TEXT ── */
@@ -570,7 +675,7 @@ body {
   <div class="np-masthead">
     <div class="np-date">Édition Spéciale · From 1903 to Today</div>
     <div class="np-logo">Le Tour de France</div>
-    <div class="np-tagline">The complete historical archive of the Grande Boucle · All the data, all the riders, all the stages</div>
+    <div class="np-tagline">The complete historical archive of the Grande Boucle for Fans· All the data, all the riders, all the stages</div>
   </div>
 
   <!-- RIBBON: 4 KPI CALCOLATI -->
@@ -618,22 +723,31 @@ body {
 
     <!-- LEAD: grafico velocità -->
     <div class="np-lead">
-      <span class="np-section-tag">Data Viz · Speed of Champions</span>
+      <span class="np-section-tag">Speed of Champions</span>
       <hr class="np-rule">
       <div class="np-headline-xl">How Fast Has the Tour Become? A Century of Winning Speeds</div>
-      <div class="np-deck">From 26 km/h in 1903 to over 41 km/h in the modern era — the physics of the race have been rewritten by technology, tactics, and controversy.</div>
+      <div class="np-deck">From 26 km/h in 1903 to over 43 km/h in the modern era — the physics of the race have been rewritten by technology, tactics, and controversy.</div>
 
-      <!-- SVG CHART -->
+      <!-- CHART.JS CHART -->
       <div class="np-chart-wrap">
         <div class="np-chart-title">Average winning speed (km/h) · 1903–present · Revoked titles in red</div>
-        ##SVG_CHART##
+        ##CHART_BLOCK##
         <div class="np-chart-legend">
-          <div class="np-legend-item"><div class="np-legend-dot" style="background:#1a1a1a;"></div>Official winner</div>
-          <div class="np-legend-item"><div class="np-legend-dot" style="background:#cc3333;"></div>Title revoked (1999–2005)</div>
-          <div class="np-legend-item"><div class="np-legend-dot" style="background:#FFCC00;"></div>Speed record</div>
+          <div class="np-legend-item">
+            <div class="np-legend-dot" style="background:#1a1a1a;"></div>Official winner
+          </div>
+          <div class="np-legend-item">
+            <div class="np-legend-dot" style="background:#FFCC00; border:1px solid #1a1a1a;"></div>Speed record
+          </div>
+          <div class="np-legend-item">
+            <div class="np-legend-dot" style="background:#cc3333;"></div>Title revoked (Armstrong 1999–2005)
+          </div>
+          <div class="np-legend-item">
+            <div class="np-legend-line" style="background:rgba(180,190,160,0.9);"></div>Trend (moving avg)
+          </div>
         </div>
       </div>
-      <div class="np-caption">Source: TDF Historical Dataset · Avg speed = total distance ÷ total race time (winner)</div>
+      <div class="np-caption">Source: TDF Historical Dataset · Avg speed = total distance ÷ total race time (winner) · Doping era points interpolated</div>
 
       <!-- BODY TEXT -->
       <div class="np-body">
@@ -687,7 +801,7 @@ body {
       <!-- Pullquote -->
       <div class="np-pullquote">
         «The race is won in the mountains, but it is built in the data.»
-        <div class="np-pullquote-attr">— Data Journalism principle</div>
+        <div class="np-pullquote-attr"></div>
       </div>
     </div>
   </div>
@@ -772,7 +886,7 @@ body {
         "##SPD_RECORD_NAME##":  spd_record_name,
         "##SPD_CURRENT_VAL##":  spd_current_val,
         "##SPD_CURRENT_YEAR##": str(spd_current_year),
-        "##SVG_CHART##":        SVG_CHART,
+        "##CHART_BLOCK##":      CHART_BLOCK,
     }
 
     for placeholder, value in replacements.items():
@@ -782,36 +896,42 @@ body {
 
 elif st.session_state.pagina_corrente == "classifica":
 
-    # ----------------------------------------------------------
-    # 0. CSS GLOBALE DELLA SEZIONE
+   # ----------------------------------------------------------
+    # 0. CSS GLOBALE DELLA SEZIONE (Versione Corretta e Unificata)
     # ----------------------------------------------------------
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap');
 
-/* ── Selectbox scura ── */
-        div[data-testid="stSelectbox"] label p { color: #f0ece4 !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important; }
+        /* ── Selectbox scura & Label Bianche (Fighter 1, 2, 3) ── */
+        /* 🪄 FIX: Forzato il colore a Bianco Puro (#ffffff) eliminando il vecchio conflitto beige */
+        div[data-testid="stSelectbox"] label p { 
+            color: #ffffff !important; 
+            font-family: Arial, sans-serif !important; 
+            font-weight: 600 !important; 
+        }
         div[data-baseweb="select"] > div { background-color: #111 !important; color: #fff !important; border: 1px solid #444 !important; border-radius: 3px !important; }
         div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111 !important; }
         div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li { color: #fff !important; background-color: #111 !important; }
         div[data-baseweb="popover"] li:hover, ul[role="listbox"] li:hover { background-color: #2a2a2a !important; }
         ul[role="listbox"] li[aria-selected="true"] { color: #FFCC00 !important; }
 
-/* ── Sticky nav bar ── */
+        /* ── Sticky nav bar ── */
         div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) {
             position: sticky; top: 16px; z-index: 999;
             background-color: #0d0d0d !important;
             padding: 10px 24px !important;
-            border: 1px solid #222 !important; /* Stesso bordino elegante degli altri grafici */
+            border: 1px solid #222 !important; 
             border-bottom: 2px solid #FFCC00 !important;
             border-radius: 4px !important;
-            width: calc(100% - 32px) !important; /* Lascia 16 pixel di respiro per lato */
-            margin: 16px auto 30px auto !important; /* Centra la barra e le dà spazio sopra e sotto */
-            box-shadow: 0 6px 12px rgba(0,0,0,0.4); /* Leggera ombra per farla galleggiare sul testo */
+            width: calc(100% - 32px) !important; 
+            margin: 16px auto 30px auto !important; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4); 
         }
         div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) > div { background-color: transparent !important; }
-        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox label { color: #f0ece4 !important; font-size: 13px !important; letter-spacing: 1px; text-transform: uppercase; }
+        div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) .stSelectbox label { color: #ffffff !important; font-size: 13px !important; letter-spacing: 1px; text-transform: uppercase; }
         div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]) div[data-baseweb="select"] > div { background-color: #1a1a1a !important; border: 1px solid #FFCC00 !important; }  
+        
         /* ── Metric cards ── */
         [data-testid="stMetric"] { background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 4px; padding: 14px 18px !important; }
         [data-testid="stMetricLabel"] p { color: #888 !important; font-family: 'Merriweather', serif !important; font-size: 11px !important; text-transform: uppercase; letter-spacing: 1.5px; }
@@ -827,10 +947,18 @@ elif st.session_state.pagina_corrente == "classifica":
             margin-bottom: 24px;
         }
         .st-section-rule { border: none; border-top: 1px solid #c8bfad; margin: 22px 0; }
-        .st-section-label {
-            font-family: 'Merriweather', serif;
-            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
-            color: #666; display: block; margin-bottom: 4px;
+        
+        /* ── Etichette di sezione stile "Individual Archive" ── */
+        /* 🪄 FIX: Allineato lo stile e rimosso il colore grigio scuro statico per sbloccare i titoli */
+        .st-section-label, .r-section-label {
+            font-family: Arial, sans-serif !important;
+            font-size: 10px !important; 
+            letter-spacing: 3px !important; 
+            text-transform: uppercase !important;
+            color: #888888 !important; 
+            display: block; 
+            margin-bottom: 4px;
+            font-weight: 600 !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -1084,9 +1212,9 @@ elif st.session_state.pagina_corrente == "classifica":
         # Inseriamo tutto in un div con margine sinistro per coerenza totale
         st.markdown(f"""
             <div style="margin-left: 16px;">
-                <span class="st-section-label">· Time Gap Anatomy ·</span>
-                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:20px;font-weight:900;color:#1a1a1a;margin:8px 0 4px 0;">
-                    The Time Pyramid - {int(anno_selezionato)}
+                <span class="r-section-label">· Time Gap Anatomy ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
+                    The Time Pyramid — {int(anno_selezionato)}
                 </h3>
                 <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
                     Each bar is a rider's gap from the winner. The wider the pyramid, the more dominant the victory.
@@ -1190,7 +1318,7 @@ elif st.session_state.pagina_corrente == "classifica":
             body {{ margin: 0; background: transparent; overflow: hidden; }}
             .pyr-wrap {{
                 font-family: 'Merriweather', Georgia, serif;
-                background: #0d0d0d;
+                background: transparent;
                 border: 1px solid #222;
                 border-radius: 4px;
                 padding: 20px 12px 16px;
@@ -1232,7 +1360,7 @@ elif st.session_state.pagina_corrente == "classifica":
             }}
             .pyr-name {{
                 font-size: 12px;
-                color: #d0ccc4;
+                color: #1a1a1a;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -1254,8 +1382,8 @@ elif st.session_state.pagina_corrente == "classifica":
                 flex-shrink: 0;
                 font-weight: 700;
             }}
-            .pyr-gap-left  {{ font-size: 11px; color: #888; white-space: nowrap; font-family: monospace; }}
-            .pyr-gap-right {{ font-size: 11px; color: #888; white-space: nowrap; font-family: monospace; }}
+            .pyr-gap-left  {{ font-size: 11px; color: #444; white-space: nowrap; font-family: monospace; }}
+            .pyr-gap-right {{ font-size: 11px; color: #444; white-space: nowrap; font-family: monospace; }}
             .pyr-gap {{ font-size: 12px; white-space: nowrap; font-family: monospace; }}
             .pyr-scale {{
                 margin-top: 14px;
@@ -1314,9 +1442,9 @@ elif st.session_state.pagina_corrente == "classifica":
           :root {
             /* Variabili colore iniettate per mappare il grafico sul tuo tema Streamlit scuro */
             --color-background-primary: #0d0d0d;
-            --color-text-primary: #f0ece4;
-            --color-text-secondary: #aaa;
-            --color-text-tertiary: #666;
+            --color-text-primary: #1a1a1a;
+            --color-text-secondary: #444;
+            --color-text-tertiary: #888;
             --color-border-secondary: #444;
             --color-border-tertiary: #2a2a2a;
             --font-serif: 'Merriweather', Georgia, serif;
@@ -1335,7 +1463,7 @@ body {
             grid-template-columns: 1fr 240px;
             gap: 10px;
             align-items: start;
-            background: #0d0d0d;
+            background: transparent;
             border: 1px solid #222;
             border-radius: 4px;
             padding: 24px 30px 24px 12px;
@@ -1380,7 +1508,7 @@ body {
           .controls{margin-top:14px;padding-top:12px;border-top:0.5px solid var(--color-border-tertiary)}
           .ctrl-label{font-size:10px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
           .filter-btn{font-size:11px;padding:4px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer;margin-right:4px;margin-bottom:4px;transition:background .15s,color .15s}
-          .filter-btn.on{background:var(--color-text-primary);color:var(--color-background-primary);border-color:transparent}
+          .filter-btn.on{background:#1a1a1a;color:#FFCC00;border-color:transparent}
           .hint{font-size:10px;color:var(--color-text-tertiary);text-align:center;margin-top:6px}
         </style>
         </head>
@@ -1551,37 +1679,48 @@ body {
           .attr('r',3).attr('fill','#ff4444').attr('opacity',0.9);
 
         
-        const DECADE_YEARS = [1910, 1930, 1950, 1970, 1990, 2010];
-        
-        DECADE_YEARS.forEach(yr => {
-          const idx = DATA.findIndex(d => d.y >= yr);
-          if (idx < 0) return;
-          
-          // Il segreto dell'allineamento: calcoliamo l'angolo al CENTRO esatto della barra, non al bordo
-          const a = -Math.PI/2 + idx * (arcSpan + GAP_RAD) + (arcSpan / 2);
+                    const ERA_YEARS = {
+            all:  [1910, 1930, 1950, 1970, 1990, 2010],
+            pre:  [1904, 1910, 1920, 1930, 1940],
+            mid:  [1950, 1960, 1970, 1980],
+            mod:  [1990, 2000, 2010, 2020]
+            };
 
-          // Raggio tratteggiato elegante e sottile. Si ferma a R_MAX, così è impossibile che venga tagliato!
-          gMain.append('line')
-            .attr('x1', Math.cos(a) * (R_IN - 4))
-            .attr('y1', Math.sin(a) * (R_IN - 4))
-            .attr('x2', Math.cos(a) * R_MAX) 
-            .attr('y2', Math.sin(a) * R_MAX)
-            .attr('stroke', 'var(--color-border-tertiary)')
-            .attr('stroke-width', 0.8)
-            .attr('stroke-dasharray', '2 4');
+            function drawDecadeLines() {
+            gMain.selectAll('.decade-line, .decade-label').remove();
 
-          // Testo orizzontale, pulito e perfettamente centrato
-          const lx = Math.cos(a) * (R_IN - 18), ly = Math.sin(a) * (R_IN - 18);
-          gMain.append('text')
-            .attr('x', lx)
-            .attr('y', ly)
-            .attr('text-anchor', 'middle')
-            .attr('dominant-baseline', 'central')
-            .attr('font-size', 10)
-            .attr('font-family', 'var(--font-serif)') // Usa lo stesso font elegante Merriweather
-            .attr('fill', 'var(--color-text-secondary)')
-            .text(yr);
-        });
+            const years = ERA_YEARS[activeEra] || ERA_YEARS.all;
+            const visibleData = DATA.filter(d => eraMatch(d));
+
+            years.forEach(yr => {
+                const idx = DATA.findIndex(d => d.y >= yr && eraMatch(d));
+                if (idx < 0) return;
+                const a = -Math.PI/2 + idx * (arcSpan + GAP_RAD) + (arcSpan / 2);
+
+                gMain.append('line')
+                .attr('class', 'decade-line')
+                .attr('x1', Math.cos(a) * (R_IN - 4))
+                .attr('y1', Math.sin(a) * (R_IN - 4))
+                .attr('x2', Math.cos(a) * R_MAX)
+                .attr('y2', Math.sin(a) * R_MAX)
+                .attr('stroke', '#bbb')
+                .attr('stroke-width', 0.8)
+                .attr('stroke-dasharray', '2 4');
+
+                gMain.append('text')
+                .attr('class', 'decade-label')
+                .attr('x', Math.cos(a) * (R_IN - 18))
+                .attr('y', Math.sin(a) * (R_IN - 18))
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'central')
+                .attr('font-size', 10)
+                .attr('font-family', 'var(--font-serif)')
+                .attr('fill', '#888')
+                .text(yr);
+            });
+            }
+
+            drawDecadeLines();
 
         let highlighted=null;
         function showInfo(d){
@@ -1617,6 +1756,7 @@ arcs.on('mouseover',(ev,d)=>{
         }).on('mouseout',()=>{
           arcs.attr('opacity',d=>eraMatch(d)?1:0.12);
         });
+        drawDecadeLines();
 
         function bindEraButtons(){
           document.querySelectorAll('.filter-btn').forEach(btn=>{
@@ -1852,7 +1992,7 @@ elif st.session_state.pagina_corrente == "corridori":
         .r-rule { border: none; border-top: 1px solid #c8bfad; margin: 24px 0; }
 
         /* ── Selectbox dark ── */
-        div[data-testid="stSelectbox"] label p { color: #1a1a1a !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important; }
+        div[data-testid="stSelectbox"] label p { color: #ffffff !important; font-family: 'Merriweather', serif !important; font-weight: 700 !important; }
         div[data-baseweb="select"] > div { background-color: #111 !important; color: #fff !important; border: 1px solid #444 !important; border-radius: 3px !important; }
         div[data-baseweb="popover"] ul, ul[data-baseweb="menu"], ul[role="listbox"] { background-color: #111 !important; }
         div[data-baseweb="popover"] li, ul[data-baseweb="menu"] li, ul[role="listbox"] li { color: #fff !important; background-color: #111 !important; }
@@ -2761,14 +2901,16 @@ elif st.session_state.pagina_corrente == "corridori":
     elif st.session_state.riders_tab == "h2h":
 
         st.markdown("""
-            <span class="r-section-label">· The Duel ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Head-to-Head — The Greatest Rivalries
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
-                Select up to 3 riders. Career normalized: Tour #1 vs Tour #1, regardless of the year.
-                <strong>⚠ Max 3 riders.</strong>
-            </p>
+            <div style="padding: 12px 2rem 16px;">
+                <span class="r-section-label" style="display: block; margin-bottom: 4px;">· The Duel ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif; font-size:24px; font-weight:900; color:#1a1a1a; margin:4px 0 4px;">
+                    Head-to-Head — The Greatest Rivalries
+                </h3>
+                <p style="font-family:'Merriweather',serif; font-size:11px; color:#666; font-style:italic; margin:0;">
+                    Select up to 3 riders. Career normalized: Tour #1 vs Tour #1, regardless of the year.
+                    <strong>⚠ Max 3 riders.</strong>
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         PALETTE_H2H = ['#FFCC00', '#FF6B6B', '#4ECDC4']
