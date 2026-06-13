@@ -1662,7 +1662,6 @@ body {
           .attr('opacity', d=>eraMatch(d)?1:0.12)
           .attr('stroke','none')
           .style('cursor','pointer');
-
         const epicRing = gMain.selectAll('circle.epic')
           .data(DATA.filter(d=>d.epic)).enter().append('circle')
           .attr('class','epic')
@@ -1687,39 +1686,34 @@ body {
             };
 
             function drawDecadeLines() {
-            gMain.selectAll('.decade-line, .decade-label').remove();
+                gMain.selectAll('.decade-line, .decade-label').remove();
 
-            const years = ERA_YEARS[activeEra] || ERA_YEARS.all;
-            const visibleData = DATA.filter(d => eraMatch(d));
+                const targetYears = activeEra === 'all'  ? [1903, 1920, 1940, 1960, 1980, 2000, 2020]
+                    : activeEra === 'pre' ? [1903, 1910, 1920, 1930, 1940]
+                    : activeEra === 'mid' ? [1950, 1960, 1970, 1980]
+                    : [1990, 2000, 2010, 2020];
 
-            years.forEach(yr => {
-                const idx = DATA.findIndex(d => d.y >= yr && eraMatch(d));
-                if (idx < 0) return;
-                const a = -Math.PI/2 + idx * (arcSpan + GAP_RAD) + (arcSpan / 2);
+                targetYears.forEach(yr => {
+                    const idx = DATA.findIndex(d => d.y >= yr);
+                    if (idx < 0) return;
+                    const startA = -Math.PI/2 + idx * (arcSpan + GAP_RAD);
+                    const midA = startA + arcSpan / 2;
 
-                gMain.append('line')
-                .attr('class', 'decade-line')
-                .attr('x1', Math.cos(a) * (R_IN - 4))
-                .attr('y1', Math.sin(a) * (R_IN - 4))
-                .attr('x2', Math.cos(a) * R_MAX)
-                .attr('y2', Math.sin(a) * R_MAX)
-                .attr('stroke', '#bbb')
-                .attr('stroke-width', 0.8)
-                .attr('stroke-dasharray', '2 4');
+                    gMain.append('line').attr('class','decade-line')
+                    .attr('x1', Math.cos(midA) * (R_IN - 4))
+                    .attr('y1', Math.sin(midA) * (R_IN - 4))
+                    .attr('x2', Math.cos(midA) * (R_MAX + 8))
+                    .attr('y2', Math.sin(midA) * (R_MAX + 8))
+                    .attr('stroke','#bbb').attr('stroke-width',0.8).attr('stroke-dasharray','2 4');
 
-                gMain.append('text')
-                .attr('class', 'decade-label')
-                .attr('x', Math.cos(a) * (R_IN - 18))
-                .attr('y', Math.sin(a) * (R_IN - 18))
-                .attr('text-anchor', 'middle')
-                .attr('dominant-baseline', 'central')
-                .attr('font-size', 10)
-                .attr('font-family', 'var(--font-serif)')
-                .attr('fill', '#888')
-                .text(yr);
-            });
-            }
-
+                    gMain.append('text').attr('class','decade-label')
+                    .attr('x', Math.cos(midA) * (R_MAX + 20))
+                    .attr('y', Math.sin(midA) * (R_MAX + 20))
+                    .attr('text-anchor','middle').attr('dominant-baseline','central')
+                    .attr('font-size', 10).attr('font-family','var(--font-serif)').attr('fill','#888')
+                    .text(yr);
+                });
+                }
             drawDecadeLines();
 
         let highlighted=null;
@@ -1759,30 +1753,38 @@ arcs.on('mouseover',(ev,d)=>{
         drawDecadeLines();
 
         function bindEraButtons(){
-          document.querySelectorAll('.filter-btn').forEach(btn=>{
-            btn.addEventListener('click',()=>{
-              activeEra=btn.dataset.era;
-              document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('on',b.dataset.era===activeEra));
-              arcs.attr('opacity',d=>eraMatch(d)?1:0.12);
-              
-              // IL FIX 2: Resetta il pannello laterale quando si cambia filtro
-              document.getElementById('info-col').innerHTML = `
-                <div style="font-size:12px;color:var(--color-text-tertiary);font-style:italic;margin-top:20px">Hover an active arc to see edition details</div>
-                <div class="legend" style="margin-top:24px">
-                  <span class="leg-label">tight</span>
-                  <div class="leg-bar" style="background:linear-gradient(to right,#FFCC00,#ff8c00,#cc3300)"></div>
-                  <span class="leg-label">dominated</span>
-                </div>
-                <div class="controls">
-                  <div class="ctrl-label">Highlight era</div>
-                  ${['all','pre','mid','mod'].map(e=>`<button class="filter-btn${activeEra===e?' on':''}" data-era="${e}">${{all:'All',pre:'Pre-1950',mid:'1950–1989',mod:'1990–today'}[e]}</button>`).join('')}
-                </div>
-              `;
-              bindEraButtons(); // Riattacca gli eventi ai nuovi bottoni ricreati
+            document.querySelectorAll('.filter-btn').forEach(btn=>{
+                btn.addEventListener('click',()=>{
+                activeEra = btn.dataset.era;
+                
+                // Aggiorna visual degli archi
+                arcs.attr('opacity', d => eraMatch(d) ? 1 : 0.12);
+                
+                // Ridisegna le linee decade con la nuova era
+                drawDecadeLines();
+                
+                // Aggiorna classe .on sui bottoni SENZA ricreare l'innerHTML
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.toggle('on', b.dataset.era === activeEra);
+                });
+                
+                // Reset pannello laterale
+                document.getElementById('info-col').innerHTML = `
+                    <div style="font-size:12px;color:var(--color-text-tertiary);font-style:italic;margin-top:20px">Hover an active arc to see edition details</div>
+                    <div class="legend" style="margin-top:24px">
+                    <span class="leg-label">tight</span>
+                    <div class="leg-bar" style="background:linear-gradient(to right,#FFCC00,#ff8c00,#cc3300)"></div>
+                    <span class="leg-label">dominated</span>
+                    </div>
+                    <div class="controls">
+                    <div class="ctrl-label">Highlight era</div>
+                    ${['all','pre','mid','mod'].map(e=>`<button class="filter-btn${activeEra===e?' on':''}" data-era="${e}">${{all:'All',pre:'Pre-1950',mid:'1950–1989',mod:'1990–today'}[e]}</button>`).join('')}
+                    </div>
+                `;
+                bindEraButtons();
+                });
             });
-          });
-        }
-        bindEraButtons();
+            }
 
         const centerLabel = gMain.append('text').attr('text-anchor','middle').attr('dominant-baseline','central')
           .attr('font-size',10).attr('fill','var(--color-text-tertiary)').attr('y',-6).text('Gap');
