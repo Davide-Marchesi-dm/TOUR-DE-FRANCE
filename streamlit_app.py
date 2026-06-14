@@ -2068,7 +2068,7 @@ elif st.session_state.pagina_corrente == "corridori":
             <div style="padding: 0 2rem;">
                 <span class="r-section-label">· The Golden Age ·</span>
                 <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                    Age of Glory — When Champions Conquered the Tour
+                    Age of Glory - When Champions Conquered the Tour
                 </h3>
                 <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
                     Each dot is a Tour winner. Position on Y-axis = age at victory. Color = nation. Hover to explore.
@@ -2164,7 +2164,7 @@ elif st.session_state.pagina_corrente == "corridori":
             <div style="padding: 0 2rem;">
                 <span class="r-section-label">· National Dynasties ·</span>
                 <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                    The Rise & Fall of Nations — A Century of Dominance
+                    The Rise & Fall of Nations - A Century of Dominance
                 </h3>
                 <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:8px;">
                     Victories per decade for the top 8 nations. Hover each line to track the shift of power.
@@ -2277,7 +2277,7 @@ elif st.session_state.pagina_corrente == "corridori":
             <div style="padding: 0 2rem;">
                 <span class="r-section-label">· Tactical Evolution ·</span>
                 <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                    Who Wins the Tour? — The Rider Type Revolution
+                    Who Wins the Tour? - The Rider Type Revolution
                 </h3>
                 <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:8px;">
                     Heatmap of winning rider types per decade. From the early sprinters to the modern pure climbers.
@@ -2540,14 +2540,17 @@ elif st.session_state.pagina_corrente == "corridori":
     # ══════════════════════════════════════════════════════════
     elif st.session_state.riders_tab == "career":
 
+        # ── TITOLO INDIVIDUAL ARCHIVE: CON MARGINI UNIFORMATI ──
         st.markdown("""
-            <span class="r-section-label">· Individual Archive ·</span>
-            <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                Career Explorer — Track Any Rider Through Time
-            </h3>
-            <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
-                Select a rider to explore their complete Tour de France career. Add others to compare on a normalized timeline.
-            </p>
+            <div style="padding: 12px 2rem 16px;">
+                <span class="r-section-label">· Individual Archive ·</span>
+                <h3 style="font-family:'Merriweather',Georgia,serif; font-size:24px; font-weight:900; color:#1a1a1a; margin:4px 0 4px;">
+                    Career Explorer - Track Any Rider Through Time
+                </h3>
+                <p style="font-family:'Merriweather',serif; font-size:12px; color:#666; font-style:italic; margin:0;">
+                    Select a rider to explore their complete Tour de France career. Add others to compare on a normalized timeline.
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         all_riders_list = sorted(df_r_norm['Rider'].dropna().unique())
@@ -2779,7 +2782,7 @@ elif st.session_state.pagina_corrente == "corridori":
             font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
             height=400, 
             margin=dict(l=50, r=40, t=30, b=50),
-            xaxis=dict(title='Best Career GC Rank (lower = better)', showgrid=False, tickfont=dict(size=10), range=[0, 100]),
+            xaxis=dict(title='Best Career TDF Rank (lower = better)', showgrid=False, tickfont=dict(size=10), range=[0, 100]),
             yaxis=dict(title='Total Tour Participations', showgrid=False, tickfont=dict(size=10), range=[2.5, max_y_data + 1]),
             legend=dict(orientation='h', y=-0.18, x=0.5, xanchor='center', font=dict(size=10, family='Arial')),
             showlegend=True
@@ -2816,7 +2819,7 @@ elif st.session_state.pagina_corrente == "corridori":
                         <p style="margin: 0;">
                             <strong style="color: #555; font-size: 11px; uppercase; letter-spacing:0.3px;">⚡ Short Peaks</strong><br>
                             <em>(Low Longevity + High Performance)</em><br>
-                            Riders who achieved extraordinary peaks but had shorter trajectories at the Tour (fewer than 10 ed.), including rising GC stars or captains whose careers were cut short.
+                            Riders who achieved extraordinary peaks but had shorter trajectories at the Tour (fewer than 10 ed.), including rising stars or captains whose careers were cut short.
                         </p>
                     </div>
                     <div>
@@ -2854,7 +2857,7 @@ elif st.session_state.pagina_corrente == "corridori":
             <div style="padding: 12px 2rem 16px;">
                 <span class="r-section-label" style="display: block; margin-bottom: 4px;">· The Duel ·</span>
                 <h3 style="font-family:'Merriweather',Georgia,serif; font-size:24px; font-weight:900; color:#1a1a1a; margin:4px 0 4px;">
-                    Head-to-Head — The Greatest Rivalries
+                    Head-to-Head - The Greatest Rivalries
                 </h3>
                 <p style="font-family:'Merriweather',serif; font-size:11px; color:#666; font-style:italic; margin:0;">
                     Select up to 3 riders. Career normalized: Tour #1 vs Tour #1, regardless of the year.
@@ -3184,7 +3187,7 @@ elif st.session_state.pagina_corrente == "corridori":
             <div style="padding: 0 16px;">
                 <span class="r-section-label">· Career Stats Breakdown ·</span>
                 <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                    Career Breakdown — Rank Distribution by Zone
+                    Career Breakdown - Rank Distribution by Zone
                 </h4>
                 <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;">
                     For each rider: how many Tours ended in the Win / Podium / Top-10 / Rest zone.
@@ -3317,18 +3320,20 @@ elif st.session_state.pagina_corrente == "corridori":
         )
         fig_choro.update_geos(
             showcoastlines=True, coastlinecolor='#c8bfad',
-            showland=True, landcolor='#F4F1EA', # I paesi a zero vittorie rimangono neutri del colore dello sfondo
+            showland=True, landcolor='#F4F1EA',
             showocean=True, oceancolor='#e8f4f8',
             showframe=False,
             projection_type='natural earth',
+            projection_scale=1.4,
             center=dict(lat=48, lon=10),
             lataxis_range=[35, 72],
             lonaxis_range=[-15, 40],
         )
+
         fig_choro.update_layout(
             plot_bgcolor='#F4F1EA', paper_bgcolor='#F4F1EA',
             font=dict(family='Merriweather, Georgia, serif', color='#1a1a1a'),
-            height=480, margin=dict(l=0, r=0, t=10, b=0),
+            height=650, margin=dict(l=0, r=0, t=10, b=0),
             coloraxis_colorbar=dict(
                 title='Victories', tickfont=dict(size=10),
                 len=0.6, thickness=12,
@@ -3339,15 +3344,12 @@ elif st.session_state.pagina_corrente == "corridori":
         st.plotly_chart(fig_choro, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # ── SUNBURST: Continente → Nazione ──
-        # ── SUNBURST: Continente → Nazione ──
-# ── SUNBURST: Continente → Nazione ──
 # ── SUNBURST: Continente → Nazione ──
         st.markdown("""
             <div style="padding: 0 16px;">
                 <span class="r-section-label">· Victory Share ·</span>
                 <h4 style="font-family:'Merriweather',Georgia,serif;font-size:18px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                    The Geography of Glory — Victory Share by Region
+                    The Geography of Glory - Victory Share by Region
                 </h4>
                 <p style="font-family:'Merriweather',serif;font-size:11px;color:#666;font-style:italic;margin-bottom:8px;line-height:1.5;">
                     Inner ring = continent region. Outer ring = specific nation. Segment size represents the volume of GC victories. Click on a region to zoom.
@@ -3842,16 +3844,16 @@ elif st.session_state.pagina_corrente == "tappe":
 
 # ── 1. UNICO TITOLO DI SEZIONE ──
         st.markdown("""
-            <div style="padding: 0 2rem;">
-                <span class="r-section-label">· Historical Overview ·</span>
-                <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;
-                        color:#1a1a1a;margin:4px 0 4px;">
-                    A Century of Racing — Distance, Intensity & Speed Evolution
-                </h3>
-                <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;
-                        font-style:italic;margin-bottom: 0;">
+            <div style="padding: 12px 2rem 16px;">
+                <span style="font-size:10px; letter-spacing:3px; text-transform:uppercase; color:#888888; font-family:Arial,sans-serif; display:block; margin-bottom:4px;">
+                    · Historical Overview ·
+                </span>
+                <h1 style="font-family:'Merriweather',Georgia,serif; font-size:24px; font-weight:900; color:#1a1a1a; margin:4px 0 2px; letter-spacing:-1px; line-height:1.1;">
+                    A Century of Racing - Distance, Intensity & Speed Evolution
+                </h1>
+                <div style="font-size:10px; letter-spacing:2px; color:#888888; font-family:Arial,sans-serif; border-top:1px solid #c8bfad; padding-top:6px; margin-top:6px;">
                     Drag the slider to filter the historical window. All charts update simultaneously.
-                </p>
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -3989,50 +3991,52 @@ elif st.session_state.pagina_corrente == "tappe":
             showlegend=True, legend=dict(orientation='h', y=-0.18, x=0.5, xanchor='center', bgcolor='rgba(0,0,0,0)')
         )
 
-
-        # ── 6. RENDERING FINALE IN STREAMLIT ──
-        
-        # Grafico 1
+# ── GRAFICO 1: TOTAL RACE DISTANCE ──
         st.markdown("""
-            <div style="padding: 0 2rem;">
-                <span class="r-section-label">· Total Race Distance ·</span>
-                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;color:#1a1a1a;font-size:16px;margin:2px 0 8px;">
+            <div style="padding: 0 16px;">
+                <div style="font-size:10px; letter-spacing:3px; text-transform:uppercase; color:#888888; font-family:Arial,sans-serif; margin-bottom:4px; margin-left:0px; padding-left:0px; line-height:1;">
+                    <span style="letter-spacing:normal;">·</span> Total Race Distance <span style="letter-spacing:normal;">·</span>
+                </div>
+                <div style="font-family:'Merriweather',Georgia,serif; font-weight:900; color:#1a1a1a; font-size:16px; margin:4px 0 8px 0px; margin-left:0px; padding-left:0px; line-height:1.2;">
                     Total km per Edition
-                </h4>
+                </div>
             </div>
         """, unsafe_allow_html=True)
-        st.markdown('<div style="padding: 0 2rem;">', unsafe_allow_html=True)
+        st.markdown('<div style="padding: 0 16px;">', unsafe_allow_html=True)
         st.plotly_chart(fig_dist, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Grafico 2
+        # ── GRAFICO 2: STAGE INTENSITY ──
         st.markdown("""
-            <div style="padding: 0 2rem; margin-top: 16px;">
-                <span class="r-section-label">· Stage Intensity ·</span>
-                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;color:#1a1a1a;font-size:16px;margin:2px 0 8px;">
+            <div style="padding: 0 16px; margin-top: 16px;">
+                <div style="font-size:10px; letter-spacing:3px; text-transform:uppercase; color:#888888; font-family:Arial,sans-serif; margin-bottom:4px; margin-left:0px; padding-left:0px; line-height:1;">
+                    <span style="letter-spacing:normal;">·</span> Stage Intensity <span style="letter-spacing:normal;">·</span>
+                </div>
+                <div style="font-family:'Merriweather',Georgia,serif; font-weight:900; color:#1a1a1a; font-size:16px; margin:4px 0 8px 0px; margin-left:0px; padding-left:0px; line-height:1.2;">
                     Average km per Stage
-                </h4>
+                </div>
             </div>
         """, unsafe_allow_html=True)
-        st.markdown('<div style="padding: 0 2rem;">', unsafe_allow_html=True)
+        st.markdown('<div style="padding: 0 16px;">', unsafe_allow_html=True)
         st.plotly_chart(fig_avg, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Grafico 3
+        # ── GRAFICO 3: SPEED OF CHAMPIONS ──
         st.markdown("""
-            <div style="padding: 0 2rem; margin-top: 16px;">
-                <span class="r-section-label">· Speed of Champions ·</span>
-                <h4 style="font-family:'Merriweather',Georgia,serif;font-weight:900;color:#1a1a1a;font-size:16px;margin:2px 0 8px;">
+            <div style="padding: 0 16px; margin-top: 16px;">
+                <div style="font-size:10px; letter-spacing:3px; text-transform:uppercase; color:#888888; font-family:Arial,sans-serif; margin-bottom:4px; margin-left:0px; padding-left:0px; line-height:1;">
+                    <span style="letter-spacing:normal;">·</span> Speed of Champions <span style="letter-spacing:normal;">·</span>
+                </div>
+                <div style="font-family:'Merriweather',Georgia,serif; font-weight:900; color:#1a1a1a; font-size:16px; margin:4px 0 8px 0px; margin-left:0px; padding-left:0px; line-height:1.2;">
                     Evolution of Average Winning Speed
-                </h4>
+                </div>
             </div>
         """, unsafe_allow_html=True)
-        st.markdown('<div style="padding: 0 2rem;">', unsafe_allow_html=True)
+        st.markdown('<div style="padding: 0 16px;">', unsafe_allow_html=True)
         st.plotly_chart(fig_speed, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown(hr, unsafe_allow_html=True)
-
 
 # ── 3. STACKED AREA: COMPOSIZIONE TAPPE PER DECADE ──
         st.markdown("""
