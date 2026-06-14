@@ -814,7 +814,7 @@ body {
       <span class="np-section-tag">Section I</span>
       <hr class="np-rule">
       <div class="np-bot-badge">Standings</div>
-      <div class="np-bot-hl">The Time Pyramid — See Every Gap, Every Edition</div>
+      <div class="np-bot-hl">The Time Pyramid - See Every Gap, Every Edition</div>
       <div class="np-bot-stat">##N_EDIZIONI##</div>
       <div class="np-bot-stat-lbl">editions in the archive</div>
       <div class="np-bot-body">
@@ -1214,7 +1214,7 @@ elif st.session_state.pagina_corrente == "classifica":
             <div style="margin-left: 16px;">
                 <span class="r-section-label">· Time Gap Anatomy ·</span>
                 <h3 style="font-family:'Merriweather',Georgia,serif;font-size:24px;font-weight:900;color:#1a1a1a;margin:4px 0 4px;">
-                    The Time Pyramid — {int(anno_selezionato)}
+                    The Time Pyramid - {int(anno_selezionato)}
                 </h3>
                 <p style="font-family:'Merriweather',serif;font-size:12px;color:#666;font-style:italic;margin-bottom:16px;">
                     Each bar is a rider's gap from the winner. The wider the pyramid, the more dominant the victory.
@@ -1591,7 +1591,8 @@ body {
         ];
 
         const EPIC_THRESHOLD = 60;
-        const DOM_THRESHOLD  = 1200;
+        const DOM_THRESHOLD  = 420;
+        const COLOR_SCALE_MAX = 3000;
 
         function fmtGap(s){
           if(s<60) return s+'″';
@@ -1602,7 +1603,7 @@ body {
         }
 
         function gapColor(g){
-          const t = Math.min(1, Math.log(g+1)/Math.log(DOM_THRESHOLD+1));
+          const t = Math.min(1, Math.log(g+1)/Math.log(COLOR_SCALE_MAX+1));
           const stops = [
             [255,204,0],[255,140,0],[204,60,0],[140,20,0]
           ];
@@ -1643,15 +1644,6 @@ body {
         gMain.append('circle').attr('r',R_IN-6).attr('fill','none')
           .attr('stroke','var(--color-border-tertiary)').attr('stroke-width',0.5);
 
-        [1,2,3].forEach(i=>{
-          gMain.append('circle')
-            .attr('r', R_IN + i*(R_MAX-R_IN)/3)
-            .attr('fill','none')
-            .attr('stroke','var(--color-border-tertiary)')
-            .attr('stroke-width',0.5)
-            .attr('stroke-dasharray','3 4');
-        });
-
         const arcs = gMain.selectAll('path.arc')
           .data(DATA).enter().append('path').attr('class','arc')
           .attr('d',(d,i)=>{
@@ -1676,45 +1668,6 @@ body {
             return Math.sin(a)*(scaleR(d.g)+8);
           })
           .attr('r',3).attr('fill','#ff4444').attr('opacity',0.9);
-
-        
-                    const ERA_YEARS = {
-            all:  [1910, 1930, 1950, 1970, 1990, 2010],
-            pre:  [1904, 1910, 1920, 1930, 1940],
-            mid:  [1950, 1960, 1970, 1980],
-            mod:  [1990, 2000, 2010, 2020]
-            };
-
-            function drawDecadeLines() {
-                gMain.selectAll('.decade-line, .decade-label').remove();
-
-                const targetYears = activeEra === 'all'  ? [1903, 1920, 1940, 1960, 1980, 2000, 2020]
-                    : activeEra === 'pre' ? [1903, 1910, 1920, 1930, 1940]
-                    : activeEra === 'mid' ? [1950, 1960, 1970, 1980]
-                    : [1990, 2000, 2010, 2020];
-
-                targetYears.forEach(yr => {
-                    const idx = DATA.findIndex(d => d.y >= yr);
-                    if (idx < 0) return;
-                    const startA = -Math.PI/2 + idx * (arcSpan + GAP_RAD);
-                    const midA = startA + arcSpan / 2;
-
-                    gMain.append('line').attr('class','decade-line')
-                    .attr('x1', Math.cos(midA) * (R_IN - 4))
-                    .attr('y1', Math.sin(midA) * (R_IN - 4))
-                    .attr('x2', Math.cos(midA) * (R_MAX + 8))
-                    .attr('y2', Math.sin(midA) * (R_MAX + 8))
-                    .attr('stroke','#bbb').attr('stroke-width',0.8).attr('stroke-dasharray','2 4');
-
-                    gMain.append('text').attr('class','decade-label')
-                    .attr('x', Math.cos(midA) * (R_MAX + 20))
-                    .attr('y', Math.sin(midA) * (R_MAX + 20))
-                    .attr('text-anchor','middle').attr('dominant-baseline','central')
-                    .attr('font-size', 10).attr('font-family','var(--font-serif)').attr('fill','#888')
-                    .text(yr);
-                });
-                }
-            drawDecadeLines();
 
         let highlighted=null;
         function showInfo(d){
@@ -1750,7 +1703,6 @@ arcs.on('mouseover',(ev,d)=>{
         }).on('mouseout',()=>{
           arcs.attr('opacity',d=>eraMatch(d)?1:0.12);
         });
-        drawDecadeLines();
 
         function bindEraButtons(){
             document.querySelectorAll('.filter-btn').forEach(btn=>{
@@ -1759,9 +1711,6 @@ arcs.on('mouseover',(ev,d)=>{
                 
                 // Aggiorna visual degli archi
                 arcs.attr('opacity', d => eraMatch(d) ? 1 : 0.12);
-                
-                // Ridisegna le linee decade con la nuova era
-                drawDecadeLines();
                 
                 // Aggiorna classe .on sui bottoni SENZA ricreare l'innerHTML
                 document.querySelectorAll('.filter-btn').forEach(b => {
@@ -1925,7 +1874,6 @@ arcs.on('mouseover',(ev,d)=>{
 
 # ==========================================
 # SEZIONE RIDERS — CODICE COMPLETO
-# Sostituisce il blocco: elif st.session_state.pagina_corrente == "corridori":
 # ==========================================
 
 elif st.session_state.pagina_corrente == "corridori":
